@@ -18,15 +18,22 @@
             background-color: #f0f0f0;
         }
 
-        /* Container Styling */
+        /* Main container holds everything except debug console */
         #container {
             position: relative;
             width: 100%;
-            height: calc(100% - 240px); /* Leaves room for the debug console and controls */
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            padding-bottom: 240px; /* Leave space for console and controls at bottom */
+        }
+
+        /* Video wrapper to hold video and overlay together */
+        #videoWrapper {
+            position: relative;
+            display: inline-block;
+            margin-top: 20px;
         }
 
         /* Video Styling */
@@ -36,17 +43,19 @@
             border: 2px solid #333;
             border-radius: 8px;
             background-color: #000;
+            display: block;
         }
 
         /* ROI Overlay Styling */
+        /* Position the overlay absolutely inside the video wrapper so it's centered on the video itself */
         #overlay {
             position: absolute;
-            width: 60%; /* 60% of the video width */
-            max-width: 600px; /* Maximum width */
-            height: 200px; /* Fixed height */
-            border: 4px solid red; /* Initial border color */
+            width: 60%; 
+            max-width: 600px;
+            height: 200px;
+            border: 4px solid red;
             border-radius: 8px;
-            pointer-events: auto; /* Allow tapping */
+            pointer-events: auto;
             transition: border-color 0.3s ease;
             top: 50%;
             left: 50%;
@@ -119,7 +128,7 @@
         #debugCanvas {
             margin-top: 20px;
             border: 1px solid #000;
-            display: block; /* Visible for debugging */
+            display: block;
             max-width: 80%;
             height: auto;
         }
@@ -186,15 +195,18 @@
             border-radius: 4px;
             font-size: 12px;
             display: none;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
     <div id="errorMsg"></div>
     <div id="container">
-        <video id="video" autoplay playsinline></video>
-        <div id="overlay"></div>
-        <div id="focusIndicator">Focusing...</div>
+        <div id="videoWrapper">
+            <video id="video" autoplay playsinline></video>
+            <div id="overlay"></div>
+            <div id="focusIndicator">Focusing...</div>
+        </div>
         <div id="controls">
             <button id="start-button">Start Scanner</button>
             <button id="stop-button" disabled>Stop Scanner</button>
@@ -270,13 +282,11 @@
         const MIN_CONFIDENCE = 60; // Minimum confidence for OCR
         const SHARPNESS_THRESHOLD = 200; // Adjust this threshold as needed
 
-        // Pre-created canvases for reuse
         const videoCanvas = document.createElement('canvas');
         const roiCanvas = document.createElement('canvas');
         const scaledCanvas = document.createElement('canvas');
         const debugCtx = debugCanvas.getContext('2d');
 
-        // Show an error message
         function showError(message) {
             console.error(`Error: ${message}`);
             errorMsg.innerText = message;
@@ -286,7 +296,6 @@
             }, 5000);
         }
 
-        // Initialize camera
         async function initCamera() {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
@@ -302,7 +311,6 @@
             }
         }
 
-        // Preprocess image for better OCR accuracy
         function preprocessImage(videoCanvas, width, height) {
             const ctx = videoCanvas.getContext('2d');
             ctx.drawImage(video, 0, 0, width, height);
@@ -311,7 +319,7 @@
             let imageData = ctx.getImageData(0, 0, width, height);
             let data = imageData.data;
 
-            const contrastFactor = 1.3; 
+            const contrastFactor = 1.3;
             for (let i = 0; i < data.length; i += 4) {
                 data[i] = ((data[i] - 128) * contrastFactor) + 128;     
                 data[i+1] = ((data[i+1] - 128) * contrastFactor) + 128;
@@ -326,14 +334,12 @@
             console.log('Image preprocessing complete.');
         }
 
-        // Measure sharpness using variance of Laplacian (simple approximation)
         function measureSharpness(canvas) {
             const ctx = canvas.getContext('2d');
             const { width, height } = canvas;
             const imgData = ctx.getImageData(0, 0, width, height);
             const grayData = new Uint8ClampedArray(width * height);
 
-            // Convert to grayscale
             for (let i = 0; i < imgData.data.length; i += 4) {
                 const r = imgData.data[i];
                 const g = imgData.data[i+1];
@@ -342,12 +348,8 @@
                 grayData[i/4] = gray;
             }
 
-            // Compute Laplacian
             let lapData = new Float32Array(width * height);
-            // Simple kernel:
-            // 0  1 0
-            // 1 -4 1
-            // 0  1 0
+            // Laplacian kernel
             for (let y = 1; y < height - 1; y++) {
                 for (let x = 1; x < width - 1; x++) {
                     const i = y * width + x;
@@ -360,7 +362,6 @@
                 }
             }
 
-            // Compute variance
             let mean = 0;
             let count = 0;
             for (let i = 0; i < lapData.length; i++) {
@@ -368,10 +369,9 @@
                 count++;
             }
             mean /= count;
-            return mean; // The higher the mean of squared laplacian values, the sharper the image.
+            return mean;
         }
 
-        // Perform OCR
         async function performOCR(blob) {
             console.log('Starting OCR process.');
             try {
@@ -401,7 +401,6 @@
             }
         }
 
-        // Process a frame
         async function processFrame() {
             if (!scanning) return;
 
@@ -467,7 +466,6 @@
             debugCtx.drawImage(scaledCanvas, 0, 0);
             console.log('Debugging canvas updated.');
 
-            // Check sharpness
             const sharpness = measureSharpness(scaledCanvas);
             console.log(`Frame sharpness: ${Math.round(sharpness)}`);
             if (sharpness < SHARPNESS_THRESHOLD) {
@@ -487,7 +485,6 @@
             }, 'image/png');
         }
 
-        // Start scanning
         async function startScanning() {
             if (scanning) return;
             if (stream) {
@@ -517,10 +514,8 @@
             requestAnimationFrame(processFrame);
         }
 
-        // Stop scanning
         function stopScanning() {
             if (!scanning) return;
-
             scanning = false;
             startButton.disabled = false;
             stopButton.disabled = true;
@@ -537,7 +532,6 @@
             console.log('Camera stream stopped and debugging canvas cleared.');
         }
 
-        // Attempt to refocus camera on tap
         async function requestFocus() {
             focusIndicator.style.display = 'block';
             setTimeout(() => { focusIndicator.style.display = 'none'; }, 1000);
@@ -545,9 +539,7 @@
             if (!stream) return; 
             const track = stream.getVideoTracks()[0];
             const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-            const settings = track.getSettings ? track.getSettings() : {};
 
-            // Attempt to change focusMode if supported
             if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
                 try {
                     await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
@@ -557,17 +549,13 @@
                 }
             } else {
                 console.log('Focus control not supported by this device/browser.');
-                // Without hardware focus control, rely on automatic focus changes.
             }
         }
 
         overlay.addEventListener('click', requestFocus);
-
-        // Handle start and stop buttons
         startButton.addEventListener('click', startScanning);
         stopButton.addEventListener('click', stopScanning);
 
-        // Clean up on page unload
         window.addEventListener('beforeunload', () => {
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
