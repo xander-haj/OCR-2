@@ -22,7 +22,7 @@
         #container {
             position: relative;
             width: 100%;
-            height: calc(100% - 200px); /* Leave space for the debug console at bottom */
+            height: calc(100% - 240px); /* Adjusted to leave room for controls and debug console */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -139,12 +139,39 @@
             box-sizing: border-box;
             border-top: 2px solid #000;
         }
+
         .log-entry {
             margin-bottom: 5px;
         }
         .log-entry.log { color: #eee; }
         .log-entry.warn { color: #ffb400; }
         .log-entry.error { color: #ff4f4f; }
+
+        /* Debug Console Controls */
+        #debugControls {
+            position: fixed;
+            bottom: 200px;
+            left: 0;
+            width: 100%;
+            background: #444;
+            color: #fff;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: center;
+            border-top: 2px solid #000;
+        }
+        #save-logs-button {
+            background: #007bff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #save-logs-button:hover {
+            background: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -159,6 +186,9 @@
         </div>
         <!-- Debugging Canvas -->
         <canvas id="debugCanvas"></canvas>
+    </div>
+    <div id="debugControls">
+        <button id="save-logs-button">Save Logs</button>
     </div>
     <div id="debugConsole"></div>
 
@@ -192,6 +222,29 @@
                 addLogEntry('error', args);
             };
         })();
+
+        // Function to save logs to a file
+        function saveLogs() {
+            const debugConsole = document.getElementById('debugConsole');
+            const logsText = debugConsole.innerText;
+
+            // Create a blob from the logs text
+            const blob = new Blob([logsText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+
+            // Create a temporary link to download the file
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'logs.txt';
+            document.body.appendChild(a);
+            a.click();
+
+            // Cleanup
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('save-logs-button').addEventListener('click', saveLogs);
 
         // References to DOM elements
         const video = document.getElementById('video');
