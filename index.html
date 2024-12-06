@@ -282,7 +282,6 @@
 
                 if (confidence >= MIN_CONFIDENCE && text.trim().length > 0) {
                     overlay.style.borderColor = 'green';
-                    // Append the extracted text to the output field if not already present
                     if (!output.value.includes(text.trim())) {
                         output.value += text.trim() + '\n';
                         console.log('Text appended to output.');
@@ -300,16 +299,18 @@
 
         // Function to process frame
         async function processFrame() {
+            if (!scanning) return; // Stop if scanning has been set to false
+
             const now = Date.now();
             if (now - lastScanTime < MIN_INTERVAL) {
-                requestAnimationFrame(processFrame);
+                if (scanning) requestAnimationFrame(processFrame);
                 return;
             }
             lastScanTime = now;
 
             if (video.readyState !== video.HAVE_ENOUGH_DATA) {
                 console.warn('Video not ready');
-                requestAnimationFrame(processFrame);
+                if (scanning) requestAnimationFrame(processFrame);
                 return;
             }
 
@@ -363,13 +364,13 @@
             console.log('Debugging canvas updated.');
 
             scaledCanvas.toBlob(async (blob) => {
-                if (blob) {
+                if (blob && scanning) {
                     console.log('Blob created for OCR.');
                     await performOCR(blob);
                 } else {
-                    console.warn('Blob conversion failed.');
+                    console.warn('Blob conversion failed or scanning stopped.');
                 }
-                requestAnimationFrame(processFrame);
+                if (scanning) requestAnimationFrame(processFrame);
             }, 'image/png');
         }
 
