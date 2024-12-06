@@ -6,44 +6,145 @@
     <!-- Tesseract.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v4.0.2/dist/tesseract.min.js"></script>
     <style>
-        /* Existing styles remain unchanged */
+        /* Reset and Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
 
-        /* Debug Console Styling */
+        /* Container Styling */
+        #container {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 200px); /* Leave space for the debug console at bottom */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Video Styling */
+        #video {
+            width: 80%;
+            max-width: 800px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background-color: #000;
+        }
+
+        /* ROI Overlay Styling */
+        #overlay {
+            position: absolute;
+            width: 60%; /* 60% of the video width */
+            max-width: 600px; /* Maximum width */
+            height: 200px; /* Fixed height */
+            border: 4px solid red; /* Initial border color */
+            border-radius: 8px;
+            pointer-events: none; /* Allows clicks to pass through */
+            transition: border-color 0.3s ease;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Centers the overlay */
+        }
+
+        /* Controls Styling */
+        #controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        /* Button Styling */
+        #start-button, #stop-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 10px;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+        }
+        #start-button {
+            background-color: #28a745;
+        }
+        #start-button:disabled {
+            background-color: #94d3a2;
+            cursor: not-allowed;
+        }
+        #stop-button {
+            background-color: #dc3545;
+        }
+        #stop-button:disabled {
+            background-color: #e99a9f;
+            cursor: not-allowed;
+        }
+
+        /* Output Textarea Styling */
+        #output {
+            margin-top: 20px;
+            width: 80%;
+            max-width: 800px;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+            font-size: 14px;
+            overflow-y: auto;
+            background-color: #fff;
+        }
+
+        /* Error Message Styling */
+        #errorMsg {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255,0,0,0.9);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 4px;
+            display: none;
+            z-index: 10;
+            font-weight: bold;
+        }
+
+        /* Debugging Canvas Styling */
+        #debugCanvas {
+            margin-top: 20px;
+            border: 1px solid #000;
+            display: block; /* Visible for debugging */
+            max-width: 80%;
+            height: auto;
+        }
+
+        /* Debug Console Overlay */
         #debugConsole {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            max-height: 200px;
-            overflow-y: auto;
-            background-color: #000;
+            height: 200px;
+            background: #333;
             color: #fff;
-            font-size: 12px;
             font-family: monospace;
+            font-size: 12px;
+            overflow-y: scroll;
             padding: 10px;
-            border-top: 2px solid #333;
-            z-index: 9999;
+            box-sizing: border-box;
+            border-top: 2px solid #000;
         }
-
-        #debugConsole .entry {
+        .log-entry {
             margin-bottom: 5px;
         }
-
-        #debugConsole .entry.error {
-            color: red;
-        }
-
-        #debugConsole .entry.warn {
-            color: orange;
-        }
-
-        #debugConsole .entry.info {
-            color: lightblue;
-        }
-
-        #debugConsole .entry.log {
-            color: white;
-        }
+        .log-entry.log { color: #eee; }
+        .log-entry.warn { color: #ffb400; }
+        .log-entry.error { color: #ff4f4f; }
     </style>
 </head>
 <body>
@@ -59,34 +160,285 @@
         <!-- Debugging Canvas -->
         <canvas id="debugCanvas"></canvas>
     </div>
-
-    <!-- Debug Console -->
     <div id="debugConsole"></div>
 
     <script>
-        // References to DOM elements
-        const debugConsole = document.getElementById('debugConsole');
+        // Capture and display console logs in the debugConsole
+        (function() {
+            const debugConsole = document.getElementById('debugConsole');
 
-        // Custom Debug Logger
-        function debugLog(message, type = 'log') {
-            console[type](message); // Logs to the browser console
-            const entry = document.createElement('div');
-            entry.className = `entry ${type}`;
-            entry.textContent = `[${type.toUpperCase()}] ${message}`;
-            debugConsole.appendChild(entry);
-            debugConsole.scrollTop = debugConsole.scrollHeight; // Scroll to the bottom
+            function addLogEntry(type, args) {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `[${type.toUpperCase()}] ` + Array.from(args).join(' ');
+                debugConsole.appendChild(entry);
+                debugConsole.scrollTop = debugConsole.scrollHeight;
+            }
+
+            const originalLog = console.log;
+            const originalWarn = console.warn;
+            const originalError = console.error;
+
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                addLogEntry('log', args);
+            };
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                addLogEntry('warn', args);
+            };
+            console.error = function(...args) {
+                originalError.apply(console, args);
+                addLogEntry('error', args);
+            };
+        })();
+
+        // References to DOM elements
+        const video = document.getElementById('video');
+        const overlay = document.getElementById('overlay');
+        const startButton = document.getElementById('start-button');
+        const stopButton = document.getElementById('stop-button');
+        const output = document.getElementById('output');
+        const errorMsg = document.getElementById('errorMsg');
+        const debugCanvas = document.getElementById('debugCanvas');
+
+        let stream = null;
+        let scanning = false;
+        let lastScanTime = 0;
+        const MIN_INTERVAL = 1000; // 1 second between scans
+        const MIN_CONFIDENCE = 60; // Minimum confidence percentage to accept OCR result
+
+        // Pre-created canvases for reuse
+        const videoCanvas = document.createElement('canvas');
+        const roiCanvas = document.createElement('canvas');
+        const scaledCanvas = document.createElement('canvas');
+        const debugCtx = debugCanvas.getContext('2d');
+
+        // Function to display error messages
+        function showError(message) {
+            console.error(`Error: ${message}`); // Log error to console
+            errorMsg.innerText = message;
+            errorMsg.style.display = 'block';
+            setTimeout(() => {
+                errorMsg.style.display = 'none';
+            }, 5000);
         }
 
-        // Override default console methods to capture all logs
-        ['log', 'warn', 'error', 'info'].forEach((method) => {
-            const original = console[method];
-            console[method] = (...args) => {
-                original.apply(console, args);
-                debugLog(args.join(' '), method);
-            };
+        // Function to initialize camera
+        async function initCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { exact: "environment" } }, // Prefer rear camera
+                    audio: false
+                });
+                video.srcObject = stream;
+                console.log('Camera initialized successfully.');
+            } catch (err) {
+                console.error('Camera initialization failed:', err);
+                showError('Unable to access the rear camera. Please check permissions or try a different device.');
+                throw err; // Rethrow to handle in caller
+            }
+        }
+
+        // Function to preprocess image for better OCR accuracy
+        function preprocessImage(videoCanvas, width, height) {
+            const ctx = videoCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, width, height);
+            console.log('Image drawn on videoCanvas.');
+
+            // Get the image data from the canvas
+            let imageData = ctx.getImageData(0, 0, width, height);
+            let data = imageData.data;
+
+            // Enhance contrast (simple contrast adjustment)
+            const contrastFactor = 1.3; // Adjust as needed
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = ((data[i] - 128) * contrastFactor) + 128;     // R
+                data[i + 1] = ((data[i + 1] - 128) * contrastFactor) + 128; // G
+                data[i + 2] = ((data[i + 2] - 128) * contrastFactor) + 128; // B
+                data[i] = Math.min(255, Math.max(0, data[i]));
+                data[i + 1] = Math.min(255, Math.max(0, data[i + 1]));
+                data[i + 2] = Math.min(255, Math.max(0, data[i + 2]));
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            console.log('Image preprocessing complete.');
+        }
+
+        // Function to perform OCR
+        async function performOCR(blob) {
+            console.log('Starting OCR process.');
+            try {
+                const { data: { text, confidence } } = await Tesseract.recognize(
+                    blob,
+                    'eng',
+                    { 
+                        logger: m => console.log(`[Tesseract.js] ${m.status}: ${Math.round(m.progress * 100)}%`)
+                    }
+                );
+
+                console.log(`OCR Confidence: ${confidence}`);
+                console.log(`OCR Extracted Text: "${text.trim()}"`);
+
+                if (confidence >= MIN_CONFIDENCE && text.trim().length > 0) {
+                    overlay.style.borderColor = 'green';
+                    // Append the extracted text to the output field if not already present
+                    if (!output.value.includes(text.trim())) {
+                        output.value += text.trim() + '\n';
+                        console.log('Text appended to output.');
+                    }
+                } else {
+                    overlay.style.borderColor = 'red';
+                    console.log('OCR confidence too low or no text detected.');
+                }
+            } catch (err) {
+                console.error('Tesseract.js error:', err);
+                showError('An error occurred while processing the image.');
+                overlay.style.borderColor = 'red';
+            }
+        }
+
+        // Function to process frame
+        async function processFrame() {
+            const now = Date.now();
+            if (now - lastScanTime < MIN_INTERVAL) {
+                requestAnimationFrame(processFrame);
+                return;
+            }
+            lastScanTime = now;
+
+            if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+                console.warn('Video not ready');
+                requestAnimationFrame(processFrame);
+                return;
+            }
+
+            console.log('Processing a new frame for OCR.');
+
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+            videoCanvas.width = videoWidth;
+            videoCanvas.height = videoHeight;
+            preprocessImage(videoCanvas, videoWidth, videoHeight);
+
+            const overlayRect = overlay.getBoundingClientRect();
+            const videoRect = video.getBoundingClientRect();
+
+            const scaleX = videoWidth / videoRect.width;
+            const scaleY = videoHeight / videoRect.height;
+
+            const roiX = (overlayRect.left - videoRect.left) * scaleX;
+            const roiY = (overlayRect.top - videoRect.top) * scaleY;
+            const roiWidth = overlayRect.width * scaleX;
+            const roiHeight = overlayRect.height * scaleY;
+
+            console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
+
+            if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
+                console.warn('ROI is out of video frame bounds.');
+                showError('ROI is out of video frame bounds.');
+                stopScanning();
+                return;
+            }
+
+            roiCanvas.width = roiWidth;
+            roiCanvas.height = roiHeight;
+            const roiCtx = roiCanvas.getContext('2d');
+            roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
+            console.log('ROI extracted.');
+
+            const scaleFactor = 1.5;
+            scaledCanvas.width = roiWidth * scaleFactor;
+            scaledCanvas.height = roiHeight * scaleFactor;
+            const scaledCtx = scaledCanvas.getContext('2d');
+            scaledCtx.imageSmoothingEnabled = true;
+            scaledCtx.imageSmoothingQuality = 'high';
+            scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+            console.log('ROI scaled.');
+
+            debugCanvas.width = scaledCanvas.width;
+            debugCanvas.height = scaledCanvas.height;
+            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+            debugCtx.drawImage(scaledCanvas, 0, 0);
+            console.log('Debugging canvas updated.');
+
+            scaledCanvas.toBlob(async (blob) => {
+                if (blob) {
+                    console.log('Blob created for OCR.');
+                    await performOCR(blob);
+                } else {
+                    console.warn('Blob conversion failed.');
+                }
+                requestAnimationFrame(processFrame);
+            }, 'image/png');
+        }
+
+        // Function to start scanning
+        async function startScanning() {
+            if (scanning) return;
+            if (stream) {
+                showError('Scanner is already running.');
+                return;
+            }
+
+            startButton.disabled = true;
+            stopButton.disabled = true;
+            startButton.innerText = 'Starting...';
+            console.log('Initializing camera...');
+            try {
+                await initCamera();
+            } catch (err) {
+                startButton.disabled = false;
+                startButton.innerText = 'Start Scanner';
+                return;
+            }
+
+            scanning = true;
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            startButton.innerText = 'Scanning...';
+            output.value = '';
+            console.log('Scanning started.');
+
+            requestAnimationFrame(processFrame);
+        }
+
+        // Function to stop scanning
+        function stopScanning() {
+            if (!scanning) return;
+
+            scanning = false;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            startButton.innerText = 'Start Scanner';
+            overlay.style.borderColor = 'red';
+            console.log('Scanning stopped.');
+
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+
+            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+            console.log('Camera stream stopped and debugging canvas cleared.');
+        }
+
+        // Handle start button click
+        startButton.addEventListener('click', () => {
+            startScanning();
         });
 
-        // Rest of the existing script remains unchanged
+        // Handle stop button click
+        stopButton.addEventListener('click', () => {
+            stopScanning();
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
     </script>
 </body>
 </html>
