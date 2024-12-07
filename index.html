@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Centered Rectangular OCR Scanner with Tap-to-Focus</title>
+    <title>Advanced OCR Scanner with Multiple Workers</title>
     <!-- Viewport Meta Tag for Mobile Responsiveness -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Tesseract.js CDN -->
+    <!-- Tesseract.js CDN (Ensure using a compatible version) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v4.0.2/dist/tesseract.min.js"></script>
     <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,47 +31,10 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Apply dark theme to html as well to cover entire viewport */
+        /* Apply dark theme to html and body */
         html.dark-theme, body.dark-theme {
             background: #121212;
             color: #e0e0e0;
-        }
-
-        /* ------------------------------
-           Dark Theme Styles for Specific Elements
-        ------------------------------ */
-        body.dark-theme #overlay {
-            border-color: #00b4d8;
-        }
-
-        body.dark-theme #overlay:hover {
-            border-color: #0077b6;
-        }
-
-        body.dark-theme #output {
-            background-color: #1e1e1e;
-            border: 1px solid #555;
-            color: #e0e0e0;
-        }
-
-        body.dark-theme #errorMsg {
-            background-color: #e63946;
-            color: #fff;
-        }
-
-        body.dark-theme #debugCanvas {
-            background: #1e1e1e;
-            border: 1px solid #555;
-        }
-
-        body.dark-theme #debugConsole {
-            background: #1e1e1e;
-            color: #ccc;
-        }
-
-        body.dark-theme #debugControls {
-            background: #292929;
-            border-top: 2px solid #111;
         }
 
         /* ------------------------------
@@ -628,7 +591,6 @@
     ------------------------------ -->
     <div class="side-menu" id="side-menu">
         <h2>Side Menu</h2>
-        <p>This is a blank side menu. Add your controls here.</p>
         <!-- ------------------------------
            Resolutions Dropdown
         ------------------------------ -->
@@ -1083,7 +1045,7 @@
                     stream = await navigator.mediaDevices.getUserMedia(constraints);
                     video.srcObject = stream;
                     console.log('Camera initialized successfully.');
-                    
+
                     // After initializing camera, populate resolutions and cameras
                     const track = stream.getVideoTracks()[0];
                     const resolutions = getAvailableResolutions(track);
@@ -1129,27 +1091,42 @@
                Function to Initialize Tesseract.js Workers
             ------------------------------ */
             async function initializeTesseract(workersCount) {
-                // Terminate existing workers if any
-                if (workers.length > 0) {
-                    await Promise.all(workers.map(worker => worker.terminate()));
-                    workers = [];
-                    console.log('Existing Tesseract.js workers terminated.');
-                }
+                try {
+                    // Terminate existing workers if any
+                    if (workers.length > 0) {
+                        await Promise.all(workers.map(worker => worker.terminate()));
+                        workers = [];
+                        console.log('Existing Tesseract.js workers terminated.');
+                    }
 
-                // Initialize new workers based on the selected count
-                for (let i = 0; i < workersCount; i++) {
-                    const worker = Tesseract.createWorker({
-                        logger: m => console.log(`[Tesseract.js Worker ${i + 1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
-                    });
-                    await worker.load();
-                    await worker.loadLanguage('eng');
-                    await worker.initialize('eng');
-                    workers.push(worker);
-                    console.log(`Tesseract.js Worker ${i + 1} initialized.`);
-                }
+                    // Initialize new workers based on the selected count
+                    for (let i = 0; i < workersCount; i++) {
+                        // Ensure Tesseract.createWorker exists
+                        if (typeof Tesseract.createWorker !== 'function') {
+                            throw new TypeError('Tesseract.createWorker is not a function. Check the Tesseract.js version and script loading.');
+                        }
 
-                isTesseractInitialized = true;
-                console.log(`Initialized ${workersCount} Tesseract.js workers.`);
+                        const worker = Tesseract.createWorker({
+                            logger: m => console.log(`[Tesseract.js Worker ${i + 1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
+                        });
+
+                        // Additional logging
+                        console.log(`Initializing Tesseract.js Worker ${i + 1}...`);
+
+                        await worker.load();
+                        await worker.loadLanguage('eng');
+                        await worker.initialize('eng');
+                        workers.push(worker);
+                        console.log(`Tesseract.js Worker ${i + 1} initialized.`);
+                    }
+
+                    isTesseractInitialized = true;
+                    console.log(`Initialized ${workersCount} Tesseract.js workers.`);
+                } catch (err) {
+                    console.error('Failed to initialize Tesseract.js workers:', err);
+                    showError('Failed to initialize OCR workers.');
+                    throw err; // Re-throw to handle it in the caller if necessary
+                }
             }
 
             /* ------------------------------
@@ -1483,9 +1460,14 @@
                 console.log(`Selected workers count: ${selectedWorkers}`);
 
                 if (isTesseractInitialized) {
-                    // Reinitialize Tesseract.js workers with the new count
-                    await initializeTesseract(selectedWorkers);
-                    console.log(`Reinitialized Tesseract.js with ${selectedWorkers} workers.`);
+                    try {
+                        // Reinitialize Tesseract.js workers with the new count
+                        await initializeTesseract(selectedWorkers);
+                        console.log(`Reinitialized Tesseract.js with ${selectedWorkers} workers.`);
+                    } catch (err) {
+                        console.error('Failed to reinitialize Tesseract.js workers:', err);
+                        showError('Failed to reinitialize OCR workers.');
+                    }
                 }
             }
 
