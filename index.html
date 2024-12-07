@@ -596,7 +596,7 @@
         ------------------------------ -->
         <div style="margin-top: 20px;">
             <label for="resolution-select">Resolutions:</label>
-            <select id="resolution-select">
+            <select id="resolution-select" disabled>
                 <option value="">Select Resolution</option>
             </select>
         </div>
@@ -605,7 +605,7 @@
         ------------------------------ -->
         <div style="margin-top: 20px;">
             <label for="camera-select">Cameras:</label>
-            <select id="camera-select">
+            <select id="camera-select" disabled>
                 <option value="">Select Camera</option>
             </select>
         </div>
@@ -1263,29 +1263,35 @@
             async function startScanning() {
                 if (scanning) return;
 
-                // If stream is not initialized, initialize it
-                if (!stream) {
-                    // Initialize the camera
-                    startButton.disabled = true;
-                    stopButton.disabled = true;
-                    debugButton.disabled = true; // Disable debug button while starting
-                    workersSelect.disabled = true; // Disable workers selection during initialization
-                    startButton.innerText = 'Starting...';
-                    console.log('Initializing camera...');
-                    try {
-                        // Get the selected camera device ID
-                        const cameraSelect = document.getElementById('camera-select');
-                        const selectedCameraId = cameraSelect.value || null;
+                // Initialize the camera
+                startButton.disabled = true;
+                stopButton.disabled = true;
+                debugButton.disabled = true; // Disable debug button while starting
+                workersSelect.disabled = true; // Temporarily disable workers selection during initialization
+                startButton.innerText = 'Starting...';
+                console.log('Initializing camera...');
+                try {
+                    // Get the selected camera device ID
+                    const cameraSelect = document.getElementById('camera-select');
+                    const selectedCameraId = cameraSelect.value || null;
 
-                        await initCamera(null, selectedCameraId);
-                    } catch (err) {
-                        startButton.disabled = false;
-                        stopButton.disabled = true;
-                        debugButton.disabled = false;
-                        workersSelect.disabled = false;
-                        startButton.innerText = 'Start Scanner';
-                        return;
+                    // Get the selected resolution
+                    const resolutionSelect = document.getElementById('resolution-select');
+                    const selectedResolutionValue = resolutionSelect.value;
+                    let selectedResolution = null;
+                    if (selectedResolutionValue) {
+                        const [width, height] = selectedResolutionValue.split('x').map(Number);
+                        selectedResolution = { width, height };
                     }
+
+                    await initCamera(selectedResolution, selectedCameraId);
+                } catch (err) {
+                    startButton.disabled = false;
+                    stopButton.disabled = true;
+                    debugButton.disabled = false;
+                    workersSelect.disabled = false;
+                    startButton.innerText = 'Start Scanner';
+                    return;
                 }
 
                 // Initialize Tesseract.js workers based on selection
@@ -1308,7 +1314,7 @@
                 startButton.disabled = true;
                 stopButton.disabled = false;
                 debugButton.disabled = false;
-                workersSelect.disabled = true; // Disable workers selection while scanning
+                workersSelect.disabled = false; // Re-enable workers selection after initialization
                 startButton.innerText = 'Scanning...';
                 output.value = '';
                 console.log('Scanning started.');
@@ -1325,7 +1331,7 @@
                 startButton.disabled = false;
                 stopButton.disabled = true;
                 debugButton.disabled = false;
-                workersSelect.disabled = false; // Enable workers selection after stopping
+                workersSelect.disabled = false; // Ensure workers selection is enabled after stopping
                 startButton.innerText = 'Start Scanner';
                 roiOverlay.style.borderColor = '#00b4d8';
                 console.log('Scanning stopped.');
@@ -1543,14 +1549,8 @@
             /* ------------------------------
                Initial Population of Cameras and Resolutions
             ------------------------------ */
-            (async function populateInitialCamerasAndResolutions() {
-                try {
-                    // Initialize camera with default settings to populate cameras and resolutions
-                    await initCamera();
-                } catch (err) {
-                    console.error('Failed to populate cameras and resolutions:', err);
-                }
-            })();
+            // Removed automatic camera initialization on page load to prevent automatic video streaming
+            // Resolutions and cameras will be populated when the user clicks "Start Scanner"
 
             /* ------------------------------
                Cleanup on Page Unload
