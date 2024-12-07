@@ -9,10 +9,164 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        /* Existing CSS */
-        /* ... previous CSS ... */
+        /* ------------------------------
+           Reset and Base Styles
+        ------------------------------ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            background: #f9f9f9;
+            color: #333;
+            height: 100%;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
 
-        /* Side Menu Styles */
+        /* ------------------------------
+           Dark Theme Styles
+        ------------------------------ */
+        body.dark-theme {
+            background: #121212;
+            color: #e0e0e0;
+        }
+
+        body.dark-theme #overlay {
+            border-color: #00b4d8;
+        }
+
+        body.dark-theme #overlay:hover {
+            border-color: #0077b6;
+        }
+
+        body.dark-theme #output {
+            background-color: #1e1e1e;
+            border: 1px solid #555;
+            color: #e0e0e0;
+        }
+
+        body.dark-theme #errorMsg {
+            background-color: #e63946;
+            color: #fff;
+        }
+
+        body.dark-theme #debugCanvas {
+            background: #1e1e1e;
+            border: 1px solid #555;
+        }
+
+        body.dark-theme #debugConsole {
+            background: #1e1e1e;
+            color: #ccc;
+        }
+
+        body.dark-theme #debugControls {
+            background: #292929;
+            border-top: 2px solid #111;
+        }
+
+        /* ------------------------------
+           Theme Toggle Switch Styles
+        ------------------------------ */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        /* Hide default checkbox */
+        .theme-toggle input {
+            display: none;
+        }
+
+        /* Toggle Switch Label */
+        .toggle-label {
+            position: relative;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            width: 80px;
+        }
+
+        /* Toggle Switch Styles */
+        .toggle-switch {
+            width: 50px;
+            height: 24px;
+            background-color: #ccc;
+            border-radius: 12px;
+            position: relative;
+            transition: background-color 0.3s ease;
+            margin: 0 10px;
+        }
+
+        .toggle-switch::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #fff;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        /* Checked State */
+        input:checked ~ .toggle-switch {
+            background-color: #4f46e5;
+        }
+
+        input:checked ~ .toggle-switch::after {
+            transform: translateX(26px);
+        }
+
+        /* Icon Styles */
+        .toggle-icon {
+            width: 20px;
+            height: 20px;
+            transition: opacity 0.3s ease;
+            flex-shrink: 0;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .sun-icon {
+            left: -30px; /* Position to the left of the switch */
+            fill: #FDB813;
+        }
+
+        .moon-icon {
+            right: -30px; /* Position to the right of the switch */
+            fill: #FFD700;
+        }
+
+        /* Icon Visibility */
+        input:checked ~ .sun-icon {
+            opacity: 0;
+        }
+
+        input:not(:checked) ~ .moon-icon {
+            opacity: 0;
+        }
+
+        /* Body Transition */
+        body {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* ------------------------------
+           Side Menu Styles
+        ------------------------------ */
         .side-menu {
             position: fixed;
             top: 0;
@@ -89,28 +243,335 @@
             }
         }
 
-        /* ... rest of the existing CSS ... */
+        /* ------------------------------
+           Container and Video Styles
+        ------------------------------ */
+        #container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-bottom: 240px;
+            overflow: hidden;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Video Wrapper */
+        #videoWrapper {
+            position: relative;
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Video Styling */
+        #video {
+            width: 90%;
+            max-width: 500px;
+            border-radius: 12px;
+            background: #000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* ROI Overlay */
+        #overlay {
+            position: absolute;
+            width: 60%;
+            max-width: 350px;
+            height: 150px;
+            border: 3px dashed #00b4d8;
+            border-radius: 8px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        #overlay:hover {
+            border-color: #0077b6;
+        }
+
+        /* Focus Indicator */
+        #focusIndicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -110%);
+            background-color: rgba(0,0,0,0.75);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+            z-index: 10;
+        }
+
+        /* ------------------------------
+           Controls Section
+        ------------------------------ */
+        #controls {
+            margin-top: 20px;
+            width: 90%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Buttons */
+        #start-button, #stop-button, #debug-button {
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 0 5px 10px 5px; /* Adjusted margin for spacing */
+            transition: background-color 0.3s ease, opacity 0.3s ease;
+            width: 100%;
+            max-width: 250px;
+        }
+
+        #start-button {
+            background-color: #2cb67d;
+            color: #fff;
+        }
+        #start-button:hover:not(:disabled) {
+            background-color: #249763;
+        }
+        #start-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #stop-button {
+            background-color: #d00000;
+            color: #fff;
+        }
+        #stop-button:hover:not(:disabled) {
+            background-color: #b20000;
+        }
+        #stop-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Debug Button Styling */
+        #debug-button {
+            background-color: #0d6efd; /* Bootstrap primary color */
+            color: #fff;
+        }
+        #debug-button:hover {
+            background-color: #0b5ed7;
+        }
+        #debug-button:active {
+            background-color: #0a58ca;
+        }
+        #debug-button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.5);
+        }
+
+        /* Output Textarea */
+        #output {
+            margin-top: 20px;
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: none;
+            font-size: 14px;
+            background-color: #fff;
+            line-height: 1.4;
+            color: #333;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-theme #output {
+            background-color: #1e1e1e;
+            border: 1px solid #555;
+            color: #e0e0e0;
+        }
+
+        /* ------------------------------
+           Error Message (Toast) Styles
+        ------------------------------ */
+        #errorMsg {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #e63946;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: none;
+            z-index: 10;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* ------------------------------
+           Debugging Canvas Styles
+        ------------------------------ */
+        #debugCanvas {
+            margin-top: 20px;
+            max-width: 90%;
+            width: auto;
+            height: auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fff;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            display: none; /* Initially hidden */
+        }
+
+        body.dark-theme #debugCanvas {
+            background: #1e1e1e;
+            border: 1px solid #555;
+        }
+
+        /* ------------------------------
+           Debug Console Styles
+        ------------------------------ */
+        #debugConsole {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            background: #1e1e1e;
+            color: #ccc;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-y: scroll;
+            padding: 10px;
+            box-sizing: border-box;
+            border-top: 2px solid #111;
+            display: none; /* Initially hidden */
+            z-index: 999;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .log-entry.log { color: #ccc; }
+        .log-entry.warn { color: #ffbb33; }
+        .log-entry.error { color: #ff4f4f; }
+
+        /* ------------------------------
+           Debug Controls Styles
+        ------------------------------ */
+        #debugControls {
+            position: fixed;
+            bottom: 200px;
+            left: 0;
+            width: 100%;
+            background: #292929;
+            color: #fff;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: center;
+            border-top: 2px solid #111;
+            display: none; /* Initially hidden */
+            z-index: 998;
+        }
+
+        #save-logs-button {
+            background: #0d6efd;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+        #save-logs-button:hover {
+            background: #0b5ed7;
+        }
+
+        /* ------------------------------
+           Side Menu Specific Styles
+        ------------------------------ */
+        /* Already included above */
+
+        /* ------------------------------
+           Responsive Adjustments
+        ------------------------------ */
+        @media (max-width: 600px) {
+            /* Adjust Toggle Button for Mobile */
+            .menu-toggle {
+                width: 25px;
+                height: 20px;
+            }
+
+            .menu-toggle span {
+                height: 3px;
+            }
+
+            /* Adjust Side Menu Padding */
+            .side-menu {
+                padding: 15px;
+            }
+
+            /* Adjust Debug Button for Mobile */
+            #debug-button {
+                padding: 10px 16px;
+                font-size: 14px;
+                margin: 0 5px 8px 5px;
+            }
+
+            /* Adjust Debug Canvas and Console for Mobile */
+            #debugCanvas {
+                height: 150px;
+            }
+
+            #debugConsole {
+                height: 150px;
+            }
+
+            #debugControls {
+                bottom: 150px;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- Side Menu Structure -->
+    <!-- ------------------------------
+       Side Menu Structure
+    ------------------------------ -->
     <div class="side-menu" id="side-menu">
         <h2>Side Menu</h2>
         <p>This is a blank side menu. Add your controls here.</p>
         <!-- Future controls can be added here -->
     </div>
 
-    <!-- Overlay for Side Menu -->
+    <!-- ------------------------------
+       Overlay for Side Menu
+    ------------------------------ -->
     <div class="overlay" id="menu-overlay"></div>
 
-    <!-- Menu Toggle Button -->
+    <!-- ------------------------------
+       Menu Toggle Button (Hamburger Icon)
+    ------------------------------ -->
     <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
         <span></span>
         <span></span>
         <span></span>
     </div>
 
-    <!-- Existing Theme Toggle Switch -->
+    <!-- ------------------------------
+       Theme Toggle Switch
+    ------------------------------ -->
     <div class="theme-toggle">
         <label class="toggle-label">
             <!-- Toggle Switch -->
@@ -127,29 +588,59 @@
         </label>
     </div>
 
+    <!-- ------------------------------
+       Error Message (Toast)
+    ------------------------------ -->
     <div id="errorMsg"></div>
+
+    <!-- ------------------------------
+       Main Container
+    ------------------------------ -->
     <div id="container">
+        <!-- ------------------------------
+           Video Wrapper
+        ------------------------------ -->
         <div id="videoWrapper">
             <video id="video" autoplay playsinline></video>
             <div id="overlay"></div> <!-- ROI Bounding Box -->
             <div id="focusIndicator">Focusing...</div>
         </div>
+
+        <!-- ------------------------------
+           Controls Section
+        ------------------------------ -->
         <div id="controls">
             <button id="start-button">Start Scanner</button>
             <button id="stop-button" disabled>Stop Scanner</button>
-            <!-- New Debug Button -->
             <button id="debug-button">Show Debug</button>
             <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
         </div>
+
+        <!-- ------------------------------
+           Debugging Canvas
+        ------------------------------ -->
         <canvas id="debugCanvas"></canvas>
     </div>
+
+    <!-- ------------------------------
+       Debug Controls
+    ------------------------------ -->
     <div id="debugControls">
         <button id="save-logs-button">Save Logs</button>
     </div>
+
+    <!-- ------------------------------
+       Debug Console
+    ------------------------------ -->
     <div id="debugConsole"></div>
 
+    <!-- ------------------------------
+       JavaScript Functionality
+    ------------------------------ -->
     <script>
-        // Side Menu Functionality
+        /* ------------------------------
+           Side Menu Functionality
+        ------------------------------ */
         (function() {
             const menuToggle = document.getElementById('menu-toggle');
             const sideMenu = document.getElementById('side-menu');
@@ -197,7 +688,9 @@
             });
         })();
 
-        // Theme Toggle Functionality
+        /* ------------------------------
+           Theme Toggle Functionality
+        ------------------------------ */
         (function() {
             const toggleCheckbox = document.getElementById('theme-checkbox');
             const currentTheme = localStorage.getItem('theme') || 'light';
@@ -218,7 +711,9 @@
             });
         })();
 
-        // Capture and display console logs in the debugConsole
+        /* ------------------------------
+           Capture and Display Console Logs in Debug Console
+        ------------------------------ */
         (function() {
             const debugConsole = document.getElementById('debugConsole');
             function addLogEntry(type, args) {
@@ -245,7 +740,9 @@
             };
         })();
 
-        // Function to save logs to a file
+        /* ------------------------------
+           Function to Save Logs to a File
+        ------------------------------ */
         function saveLogs() {
             const debugConsole = document.getElementById('debugConsole');
             const logsText = debugConsole.innerText;
@@ -262,15 +759,19 @@
 
         document.getElementById('save-logs-button').addEventListener('click', saveLogs);
 
-        // Debug Button Functionality
+        /* ------------------------------
+           Debug Button Functionality
+        ------------------------------ */
         (function() {
             const debugButton = document.getElementById('debug-button');
             const debugCanvas = document.getElementById('debugCanvas');
             const debugConsole = document.getElementById('debugConsole');
+            const debugControls = document.getElementById('debugControls');
 
             // Initially hide the debug elements
             debugCanvas.style.display = 'none';
             debugConsole.style.display = 'none';
+            debugControls.style.display = 'none';
 
             let isDebugVisible = false;
 
@@ -279,270 +780,315 @@
                 if (isDebugVisible) {
                     debugCanvas.style.display = 'block';
                     debugConsole.style.display = 'block';
+                    debugControls.style.display = 'block';
                     debugButton.innerText = 'Hide Debug';
                 } else {
                     debugCanvas.style.display = 'none';
                     debugConsole.style.display = 'none';
+                    debugControls.style.display = 'none';
                     debugButton.innerText = 'Show Debug';
                 }
             });
         })();
 
-        // References to DOM elements
-        const video = document.getElementById('video');
-        const roiOverlay = document.getElementById('overlay'); // Renamed for clarity
-        const startButton = document.getElementById('start-button');
-        const stopButton = document.getElementById('stop-button');
-        const debugButton = document.getElementById('debug-button'); // Ensure this exists
-        const output = document.getElementById('output');
-        const errorMsg = document.getElementById('errorMsg');
-        const debugCanvas = document.getElementById('debugCanvas');
-        const focusIndicator = document.getElementById('focusIndicator');
+        /* ------------------------------
+           OCR Scanning Functionality
+        ------------------------------ */
+        (function() {
+            // References to DOM elements
+            const video = document.getElementById('video');
+            const roiOverlay = document.getElementById('overlay'); // ROI Bounding Box
+            const startButton = document.getElementById('start-button');
+            const stopButton = document.getElementById('stop-button');
+            const debugButton = document.getElementById('debug-button');
+            const output = document.getElementById('output');
+            const errorMsg = document.getElementById('errorMsg');
+            const debugCanvas = document.getElementById('debugCanvas');
+            const focusIndicator = document.getElementById('focusIndicator');
 
-        let stream = null;
-        let scanning = false;
-        let lastScanTime = 0;
-        const MIN_INTERVAL = 1000; // 1 second between scans
-        const MIN_CONFIDENCE = 60; // Minimum confidence for OCR
+            let stream = null;
+            let scanning = false;
+            let lastScanTime = 0;
+            const MIN_INTERVAL = 1000; // 1 second between scans
+            const MIN_CONFIDENCE = 60; // Minimum confidence for OCR
 
-        const videoCanvas = document.createElement('canvas');
-        const roiCanvas = document.createElement('canvas');
-        const scaledCanvas = document.createElement('canvas');
-        const debugCtx = debugCanvas.getContext('2d');
+            // Create off-screen canvases
+            const videoCanvas = document.createElement('canvas');
+            const roiCanvas = document.createElement('canvas');
+            const scaledCanvas = document.createElement('canvas');
+            const debugCtx = debugCanvas.getContext('2d');
 
-        function showError(message) {
-            console.error(`Error: ${message}`);
-            errorMsg.innerText = message;
-            errorMsg.style.display = 'block';
-            setTimeout(() => {
-                errorMsg.style.display = 'none';
-            }, 5000);
-        }
-
-        async function initCamera() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { exact: "environment" } },
-                    audio: false
-                });
-                video.srcObject = stream;
-                console.log('Camera initialized successfully.');
-            } catch (err) {
-                console.error('Camera initialization failed:', err);
-                showError('Unable to access the rear camera. Please check permissions or try a different device.');
-                throw err;
-            }
-        }
-
-        function preprocessImage(videoCanvas, width, height) {
-            const ctx = videoCanvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, width, height);
-            console.log('Image drawn on videoCanvas.');
-
-            let imageData = ctx.getImageData(0, 0, width, height);
-            let data = imageData.data;
-
-            const contrastFactor = 1.3;
-            for (let i = 0; i < data.length; i += 4) {
-                data[i] = ((data[i] - 128) * contrastFactor) + 128;     
-                data[i+1] = ((data[i+1] - 128) * contrastFactor) + 128;
-                data[i+2] = ((data[i+2] - 128) * contrastFactor) + 128;
-
-                data[i] = Math.min(255, Math.max(0, data[i]));
-                data[i+1] = Math.min(255, Math.max(0, data[i+1]));
-                data[i+2] = Math.min(255, Math.max(0, data[i+2]));
+            /* ------------------------------
+               Function to Show Error Messages
+            ------------------------------ */
+            function showError(message) {
+                console.error(`Error: ${message}`);
+                errorMsg.innerText = message;
+                errorMsg.style.display = 'block';
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                }, 5000);
             }
 
-            ctx.putImageData(imageData, 0, 0);
-            console.log('Image preprocessing complete.');
-        }
+            /* ------------------------------
+               Function to Initialize Camera
+            ------------------------------ */
+            async function initCamera() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { exact: "environment" } },
+                        audio: false
+                    });
+                    video.srcObject = stream;
+                    console.log('Camera initialized successfully.');
+                } catch (err) {
+                    console.error('Camera initialization failed:', err);
+                    showError('Unable to access the rear camera. Please check permissions or try a different device.');
+                    throw err;
+                }
+            }
 
-        async function performOCR(blob) {
-            console.log('Starting OCR process.');
-            try {
-                const { data: { text, confidence } } = await Tesseract.recognize(
-                    blob,
-                    'eng',
-                    { logger: m => console.log(`[Tesseract.js] ${m.status}: ${Math.round(m.progress * 100)}%`) }
-                );
+            /* ------------------------------
+               Function to Preprocess Image
+            ------------------------------ */
+            function preprocessImage(videoCanvas, width, height) {
+                const ctx = videoCanvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, width, height);
+                console.log('Image drawn on videoCanvas.');
 
-                console.log(`OCR Confidence: ${confidence}`);
-                console.log(`OCR Extracted Text: "${text.trim()}"`);
+                let imageData = ctx.getImageData(0, 0, width, height);
+                let data = imageData.data;
 
-                if (confidence >= MIN_CONFIDENCE && text.trim().length > 0) {
-                    roiOverlay.style.borderColor = '#2cb67d';
-                    if (!output.value.includes(text.trim())) {
-                        output.value += text.trim() + '\n';
-                        console.log('Text appended to output.');
+                // Apply contrast adjustment
+                const contrastFactor = 1.3;
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = ((data[i] - 128) * contrastFactor) + 128;     
+                    data[i+1] = ((data[i+1] - 128) * contrastFactor) + 128;
+                    data[i+2] = ((data[i+2] - 128) * contrastFactor) + 128;
+
+                    data[i] = Math.min(255, Math.max(0, data[i]));
+                    data[i+1] = Math.min(255, Math.max(0, data[i+1]));
+                    data[i+2] = Math.min(255, Math.max(0, data[i+2]));
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+                console.log('Image preprocessing complete.');
+            }
+
+            /* ------------------------------
+               Function to Perform OCR
+            ------------------------------ */
+            async function performOCR(blob) {
+                console.log('Starting OCR process.');
+                try {
+                    const { data: { text, confidence } } = await Tesseract.recognize(
+                        blob,
+                        'eng',
+                        { logger: m => console.log(`[Tesseract.js] ${m.status}: ${Math.round(m.progress * 100)}%`) }
+                    );
+
+                    console.log(`OCR Confidence: ${confidence}`);
+                    console.log(`OCR Extracted Text: "${text.trim()}"`);
+
+                    if (confidence >= MIN_CONFIDENCE && text.trim().length > 0) {
+                        roiOverlay.style.borderColor = '#2cb67d';
+                        if (!output.value.includes(text.trim())) {
+                            output.value += text.trim() + '\n';
+                            console.log('Text appended to output.');
+                        }
+                    } else {
+                        roiOverlay.style.borderColor = '#d00000';
+                        console.log('OCR confidence too low or no text detected.');
                     }
-                } else {
+                } catch (err) {
+                    console.error('Tesseract.js error:', err);
+                    showError('An error occurred while processing the image.');
                     roiOverlay.style.borderColor = '#d00000';
-                    console.log('OCR confidence too low or no text detected.');
                 }
-            } catch (err) {
-                console.error('Tesseract.js error:', err);
-                showError('An error occurred while processing the image.');
-                roiOverlay.style.borderColor = '#d00000';
-            }
-        }
-
-        async function processFrame() {
-            if (!scanning) return;
-
-            const now = Date.now();
-            if (now - lastScanTime < MIN_INTERVAL) {
-                if (scanning) requestAnimationFrame(processFrame);
-                return;
-            }
-            lastScanTime = now;
-
-            if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-                console.warn('Video not ready');
-                if (scanning) requestAnimationFrame(processFrame);
-                return;
             }
 
-            console.log('Processing a new frame for OCR.');
+            /* ------------------------------
+               Function to Process Each Video Frame
+            ------------------------------ */
+            async function processFrame() {
+                if (!scanning) return;
 
-            const videoWidth = video.videoWidth;
-            const videoHeight = video.videoHeight;
-            videoCanvas.width = videoWidth;
-            videoCanvas.height = videoHeight;
-            preprocessImage(videoCanvas, videoWidth, videoHeight);
-
-            const overlayRect = roiOverlay.getBoundingClientRect();
-            const videoRect = video.getBoundingClientRect();
-
-            const scaleX = videoWidth / videoRect.width;
-            const scaleY = videoHeight / videoRect.height;
-
-            const roiX = (overlayRect.left - videoRect.left) * scaleX;
-            const roiY = (overlayRect.top - videoRect.top) * scaleY;
-            const roiWidth = overlayRect.width * scaleX;
-            const roiHeight = overlayRect.height * scaleY;
-
-            console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
-
-            if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
-                console.warn('ROI is out of video frame bounds.');
-                showError('ROI is out of video frame bounds.');
-                stopScanning();
-                return;
-            }
-
-            roiCanvas.width = roiWidth;
-            roiCanvas.height = roiHeight;
-            const roiCtx = roiCanvas.getContext('2d');
-            roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
-            console.log('ROI extracted.');
-
-            const scaleFactor = 1.5;
-            scaledCanvas.width = roiWidth * scaleFactor;
-            scaledCanvas.height = roiHeight * scaleFactor;
-            const scaledCtx = scaledCanvas.getContext('2d');
-            scaledCtx.imageSmoothingEnabled = true;
-            scaledCtx.imageSmoothingQuality = 'high';
-            scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-            console.log('ROI scaled.');
-
-            debugCanvas.width = scaledCanvas.width;
-            debugCanvas.height = scaledCanvas.height;
-            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-            debugCtx.drawImage(scaledCanvas, 0, 0);
-            console.log('Debugging canvas updated.');
-
-            scaledCanvas.toBlob(async (blob) => {
-                if (blob && scanning) {
-                    console.log('Blob created for OCR.');
-                    await performOCR(blob);
-                } else {
-                    console.warn('Blob conversion failed or scanning stopped.');
+                const now = Date.now();
+                if (now - lastScanTime < MIN_INTERVAL) {
+                    if (scanning) requestAnimationFrame(processFrame);
+                    return;
                 }
-                if (scanning) requestAnimationFrame(processFrame);
-            }, 'image/png');
-        }
+                lastScanTime = now;
 
-        async function startScanning() {
-            if (scanning) return;
-            if (stream) {
-                showError('Scanner is already running.');
-                return;
+                if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+                    console.warn('Video not ready');
+                    if (scanning) requestAnimationFrame(processFrame);
+                    return;
+                }
+
+                console.log('Processing a new frame for OCR.');
+
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+                videoCanvas.width = videoWidth;
+                videoCanvas.height = videoHeight;
+                preprocessImage(videoCanvas, videoWidth, videoHeight);
+
+                const overlayRect = roiOverlay.getBoundingClientRect();
+                const videoRect = video.getBoundingClientRect();
+
+                const scaleX = videoWidth / videoRect.width;
+                const scaleY = videoHeight / videoRect.height;
+
+                const roiX = (overlayRect.left - videoRect.left) * scaleX;
+                const roiY = (overlayRect.top - videoRect.top) * scaleY;
+                const roiWidth = overlayRect.width * scaleX;
+                const roiHeight = overlayRect.height * scaleY;
+
+                console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
+
+                // Validate ROI boundaries
+                if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
+                    console.warn('ROI is out of video frame bounds.');
+                    showError('ROI is out of video frame bounds.');
+                    stopScanning();
+                    return;
+                }
+
+                // Extract ROI
+                roiCanvas.width = roiWidth;
+                roiCanvas.height = roiHeight;
+                const roiCtx = roiCanvas.getContext('2d');
+                roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
+                console.log('ROI extracted.');
+
+                // Scale ROI for better OCR accuracy
+                const scaleFactor = 1.5;
+                scaledCanvas.width = roiWidth * scaleFactor;
+                scaledCanvas.height = roiHeight * scaleFactor;
+                const scaledCtx = scaledCanvas.getContext('2d');
+                scaledCtx.imageSmoothingEnabled = true;
+                scaledCtx.imageSmoothingQuality = 'high';
+                scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+                console.log('ROI scaled.');
+
+                // Update Debug Canvas
+                debugCanvas.width = scaledCanvas.width;
+                debugCanvas.height = scaledCanvas.height;
+                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                debugCtx.drawImage(scaledCanvas, 0, 0);
+                console.log('Debugging canvas updated.');
+
+                // Convert Canvas to Blob for OCR
+                scaledCanvas.toBlob(async (blob) => {
+                    if (blob && scanning) {
+                        console.log('Blob created for OCR.');
+                        await performOCR(blob);
+                    } else {
+                        console.warn('Blob conversion failed or scanning stopped.');
+                    }
+                    if (scanning) requestAnimationFrame(processFrame);
+                }, 'image/png');
             }
 
-            startButton.disabled = true;
-            stopButton.disabled = true;
-            debugButton.disabled = true; // Disable debug button while starting
-            startButton.innerText = 'Starting...';
-            console.log('Initializing camera...');
-            try {
-                await initCamera();
-            } catch (err) {
+            /* ------------------------------
+               Function to Start Scanning
+            ------------------------------ */
+            async function startScanning() {
+                if (scanning) return;
+                if (stream) {
+                    showError('Scanner is already running.');
+                    return;
+                }
+
+                // Disable buttons during initialization
+                startButton.disabled = true;
+                stopButton.disabled = true;
+                debugButton.disabled = true; // Disable debug button while starting
+                startButton.innerText = 'Starting...';
+                console.log('Initializing camera...');
+                try {
+                    await initCamera();
+                } catch (err) {
+                    startButton.disabled = false;
+                    stopButton.disabled = true;
+                    debugButton.disabled = false;
+                    startButton.innerText = 'Start Scanner';
+                    return;
+                }
+
+                scanning = true;
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                debugButton.disabled = false;
+                startButton.innerText = 'Scanning...';
+                output.value = '';
+                console.log('Scanning started.');
+
+                requestAnimationFrame(processFrame);
+            }
+
+            /* ------------------------------
+               Function to Stop Scanning
+            ------------------------------ */
+            function stopScanning() {
+                if (!scanning) return;
+                scanning = false;
                 startButton.disabled = false;
                 stopButton.disabled = true;
                 debugButton.disabled = false;
                 startButton.innerText = 'Start Scanner';
-                return;
-            }
+                roiOverlay.style.borderColor = '#00b4d8';
+                console.log('Scanning stopped.');
 
-            scanning = true;
-            startButton.disabled = true;
-            stopButton.disabled = false;
-            debugButton.disabled = false;
-            startButton.innerText = 'Scanning...';
-            output.value = '';
-            console.log('Scanning started.');
-
-            requestAnimationFrame(processFrame);
-        }
-
-        function stopScanning() {
-            if (!scanning) return;
-            scanning = false;
-            startButton.disabled = false;
-            stopButton.disabled = true;
-            debugButton.disabled = false;
-            startButton.innerText = 'Start Scanner';
-            roiOverlay.style.borderColor = '#00b4d8';
-            console.log('Scanning stopped.');
-
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
-
-            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-            console.log('Camera stream stopped and debugging canvas cleared.');
-        }
-
-        async function requestFocus() {
-            focusIndicator.style.display = 'block';
-            setTimeout(() => { focusIndicator.style.display = 'none'; }, 1000);
-
-            if (!stream) return; 
-            const track = stream.getVideoTracks()[0];
-            const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-
-            if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-                try {
-                    await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
-                    console.log('Requested camera to refocus using continuous mode.');
-                } catch (err) {
-                    console.warn('Failed to set focusMode:', err);
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
                 }
-            } else {
-                console.log('Focus control not supported by this device/browser.');
-            }
-        }
 
-        roiOverlay.addEventListener('click', requestFocus);
-        startButton.addEventListener('click', startScanning);
-        stopButton.addEventListener('click', stopScanning);
-
-        window.addEventListener('beforeunload', () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                console.log('Camera stream stopped and debugging canvas cleared.');
             }
-        });
+
+            /* ------------------------------
+               Function to Request Focus (Tap-to-Focus)
+            ------------------------------ */
+            async function requestFocus() {
+                focusIndicator.style.display = 'block';
+                setTimeout(() => { focusIndicator.style.display = 'none'; }, 1000);
+
+                if (!stream) return; 
+                const track = stream.getVideoTracks()[0];
+                const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+
+                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                    try {
+                        await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+                        console.log('Requested camera to refocus using continuous mode.');
+                    } catch (err) {
+                        console.warn('Failed to set focusMode:', err);
+                    }
+                } else {
+                    console.log('Focus control not supported by this device/browser.');
+                }
+            }
+
+            /* ------------------------------
+               Event Listeners
+            ------------------------------ */
+            roiOverlay.addEventListener('click', requestFocus);
+            startButton.addEventListener('click', startScanning);
+            stopButton.addEventListener('click', stopScanning);
+
+            /* ------------------------------
+               Cleanup on Page Unload
+            ------------------------------ */
+            window.addEventListener('beforeunload', () => {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            });
+        })();
     </script>
 </body>
 </html>
