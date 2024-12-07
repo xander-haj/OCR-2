@@ -507,7 +507,7 @@
         }
 
         /* ------------------------------
-           Resolutions and Cameras Dropdown Styles
+           Resolutions, Cameras, and Workers Dropdown Styles
         ------------------------------ */
         #side-menu label {
             font-size: 18px;
@@ -515,7 +515,7 @@
             display: block;
         }
 
-        #resolution-select, #camera-select {
+        #resolution-select, #camera-select, #workers-select {
             width: 100%;
             padding: 12px;
             font-size: 16px;
@@ -526,7 +526,8 @@
         }
 
         body.dark-theme #resolution-select,
-        body.dark-theme #camera-select {
+        body.dark-theme #camera-select,
+        body.dark-theme #workers-select {
             background-color: #1e1e1e;
             border: 1px solid #555;
             color: #e0e0e0;
@@ -590,7 +591,7 @@
                 padding: 14px 28px;
             }
 
-            #resolution-select, #camera-select {
+            #resolution-select, #camera-select, #workers-select {
                 font-size: 18px;
                 padding: 12px;
             }
@@ -614,7 +615,7 @@
                 padding: 12px 24px;
             }
 
-            #resolution-select, #camera-select {
+            #resolution-select, #camera-select, #workers-select {
                 font-size: 16px;
                 padding: 10px;
             }
@@ -638,12 +639,25 @@
             </select>
         </div>
         <!-- ------------------------------
-           Cameras Dropdown (New Control)
+           Cameras Dropdown
         ------------------------------ -->
         <div style="margin-top: 20px;">
             <label for="camera-select">Cameras:</label>
             <select id="camera-select">
                 <option value="">Loading...</option>
+            </select>
+        </div>
+        <!-- ------------------------------
+           Workers Dropdown (New Control)
+        ------------------------------ -->
+        <div style="margin-top: 20px;">
+            <label for="workers-select">Workers:</label>
+            <select id="workers-select">
+                <option value="1">1 Worker</option>
+                <option value="2">2 Workers</option>
+                <option value="4">4 Workers</option>
+                <option value="6">6 Workers</option>
+                <option value="8">8 Workers</option>
             </select>
         </div>
     </div>
@@ -901,6 +915,7 @@
             const errorMsg = document.getElementById('errorMsg');
             const debugCanvas = document.getElementById('debugCanvas');
             const focusIndicator = document.getElementById('focusIndicator');
+            const workersSelect = document.getElementById('workers-select');
 
             let stream = null;
             let scanning = false;
@@ -913,6 +928,10 @@
             const roiCanvas = document.createElement('canvas');
             const scaledCanvas = document.createElement('canvas');
             const debugCtx = debugCanvas.getContext('2d');
+
+            // Tesseract.js Workers Management
+            let workers = [];
+            let isTesseractInitialized = false;
 
             /* ------------------------------
                Common Resolutions
@@ -1107,24 +1126,62 @@
             }
 
             /* ------------------------------
-               Function to Perform OCR
+               Function to Initialize Tesseract.js Workers
+            ------------------------------ */
+            async function initializeTesseract(workersCount) {
+                // Terminate existing workers if any
+                if (workers.length > 0) {
+                    await Promise.all(workers.map(worker => worker.terminate()));
+                    workers = [];
+                    console.log('Existing Tesseract.js workers terminated.');
+                }
+
+                // Initialize new workers based on the selected count
+                for (let i = 0; i < workersCount; i++) {
+                    const worker = Tesseract.createWorker({
+                        logger: m => console.log(`[Tesseract.js Worker ${i + 1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
+                    });
+                    await worker.load();
+                    await worker.loadLanguage('eng');
+                    await worker.initialize('eng');
+                    workers.push(worker);
+                    console.log(`Tesseract.js Worker ${i + 1} initialized.`);
+                }
+
+                isTesseractInitialized = true;
+                console.log(`Initialized ${workersCount} Tesseract.js workers.`);
+            }
+
+            /* ------------------------------
+               Function to Perform OCR Using Workers
             ------------------------------ */
             async function performOCR(blob) {
                 console.log('Starting OCR process.');
+                if (!isTesseractInitialized || workers.length === 0) {
+                    console.warn('Tesseract.js workers are not initialized.');
+                    showError('OCR workers are not initialized.');
+                    return;
+                }
+
                 try {
-                    const { data: { text, confidence } } = await Tesseract.recognize(
-                        blob,
-                        'eng',
-                        { logger: m => console.log(`[Tesseract.js] ${m.status}: ${Math.round(m.progress * 100)}%`) }
-                    );
+                    const ocrPromises = workers.map(worker => worker.recognize(blob));
+                    const results = await Promise.all(ocrPromises);
 
-                    console.log(`OCR Confidence: ${confidence}`);
-                    console.log(`OCR Extracted Text: "${text.trim()}"`);
+                    // Aggregate results
+                    let aggregatedText = '';
+                    let totalConfidence = 0;
+                    results.forEach(result => {
+                        aggregatedText += result.data.text + '\n';
+                        totalConfidence += result.data.confidence;
+                    });
 
-                    if (confidence >= MIN_CONFIDENCE && text.trim().length > 0) {
+                    const averageConfidence = totalConfidence / workers.length;
+                    console.log(`OCR Average Confidence: ${averageConfidence}`);
+
+                    if (averageConfidence >= MIN_CONFIDENCE && aggregatedText.trim().length > 0) {
                         roiOverlay.style.borderColor = '#2cb67d';
-                        if (!output.value.includes(text.trim())) {
-                            output.value += text.trim() + '\n';
+                        if (!output.value.includes(aggregatedText.trim())) {
+                            output.value += aggregatedText.trim() + '\n';
                             console.log('Text appended to output.');
                         }
                     } else {
@@ -1132,7 +1189,7 @@
                         console.log('OCR confidence too low or no text detected.');
                     }
                 } catch (err) {
-                    console.error('Tesseract.js error:', err);
+                    console.error('Tesseract.js OCR error:', err);
                     showError('An error occurred while processing the image.');
                     roiOverlay.style.borderColor = '#d00000';
                 }
@@ -1251,6 +1308,21 @@
                     }
                 }
 
+                // Initialize Tesseract.js workers based on selection
+                const workersCount = parseInt(workersSelect.value) || 1;
+                console.log(`Selected workers count: ${workersCount}`);
+                try {
+                    await initializeTesseract(workersCount);
+                } catch (err) {
+                    console.error('Failed to initialize Tesseract.js workers:', err);
+                    showError('Failed to initialize OCR workers.');
+                    startButton.disabled = false;
+                    stopButton.disabled = true;
+                    debugButton.disabled = false;
+                    startButton.innerText = 'Start Scanner';
+                    return;
+                }
+
                 scanning = true;
                 startButton.disabled = true;
                 stopButton.disabled = false;
@@ -1265,7 +1337,7 @@
             /* ------------------------------
                Function to Stop Scanning
             ------------------------------ */
-            function stopScanning() {
+            async function stopScanning() {
                 if (!scanning) return;
                 scanning = false;
                 startButton.disabled = false;
@@ -1278,6 +1350,14 @@
                 if (stream) {
                     stream.getTracks().forEach(track => track.stop());
                     stream = null;
+                }
+
+                // Terminate Tesseract.js workers
+                if (workers.length > 0) {
+                    await Promise.all(workers.map(worker => worker.terminate()));
+                    workers = [];
+                    isTesseractInitialized = false;
+                    console.log('Tesseract.js workers terminated.');
                 }
 
                 debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
@@ -1396,6 +1476,20 @@
             }
 
             /* ------------------------------
+               Function to Handle Workers Changes
+            ------------------------------ */
+            async function handleWorkersChange() {
+                const selectedWorkers = parseInt(workersSelect.value);
+                console.log(`Selected workers count: ${selectedWorkers}`);
+
+                if (isTesseractInitialized) {
+                    // Reinitialize Tesseract.js workers with the new count
+                    await initializeTesseract(selectedWorkers);
+                    console.log(`Reinitialized Tesseract.js with ${selectedWorkers} workers.`);
+                }
+            }
+
+            /* ------------------------------
                Event Listeners
             ------------------------------ */
             roiOverlay.addEventListener('click', requestFocus);
@@ -1404,6 +1498,7 @@
 
             document.getElementById('resolution-select').addEventListener('change', handleResolutionChange);
             document.getElementById('camera-select').addEventListener('change', handleCameraChange);
+            workersSelect.addEventListener('change', handleWorkersChange);
 
             /* ------------------------------
                Initial Population of Cameras
@@ -1416,9 +1511,13 @@
             /* ------------------------------
                Cleanup on Page Unload
             ------------------------------ */
-            window.addEventListener('beforeunload', () => {
+            window.addEventListener('beforeunload', async () => {
                 if (stream) {
                     stream.getTracks().forEach(track => track.stop());
+                }
+                if (workers.length > 0) {
+                    await Promise.all(workers.map(worker => worker.terminate()));
+                    workers = [];
                 }
             });
         })();
