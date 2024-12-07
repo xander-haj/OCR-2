@@ -42,7 +42,7 @@
 
         body.dark-theme #output {
             background-color: #1e1e1e;
-            border: 1px solid #333;
+            border: 1px solid #555;
             color: #e0e0e0;
         }
 
@@ -97,7 +97,7 @@
             border-radius: 12px;
             position: relative;
             transition: background-color 0.3s ease;
-            margin-right: 10px;
+            margin: 0 10px;
         }
 
         .toggle-switch::after {
@@ -126,24 +126,16 @@
             width: 20px;
             height: 20px;
             transition: opacity 0.3s ease;
+            flex-shrink: 0;
         }
 
-        .sun-icon {
-            position: absolute;
-            left: 60px;
-            top: 2px;
-            width: 20px;
-            height: 20px;
-            opacity: 1;
-            transition: opacity 0.3s ease;
+        /* Optional: Adjust icon colors based on theme */
+        .sun-icon path {
+            fill: #FDB813;
         }
 
-        input:checked ~ .sun-icon {
-            opacity: 0;
-        }
-
-        input:not(:checked) ~ .moon-icon {
-            opacity: 0;
+        .moon-icon path {
+            fill: #FFD700;
         }
 
         /* Body Transition */
@@ -383,6 +375,7 @@
             .toggle-switch {
                 width: 40px;
                 height: 20px;
+                margin: 0 8px;
             }
 
             .toggle-switch::after {
@@ -396,13 +389,9 @@
                 transform: translateX(20px);
             }
 
-            .sun-icon, .moon-icon {
+            .toggle-icon {
                 width: 16px;
                 height: 16px;
-            }
-
-            .sun-icon {
-                left: 50px;
             }
         }
     </style>
@@ -410,14 +399,17 @@
 <body>
     <!-- Theme Toggle Switch -->
     <div class="theme-toggle">
-        <input type="checkbox" id="theme-checkbox">
-        <label for="theme-checkbox" class="toggle-label">
-            <div class="toggle-switch"></div>
-            <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path fill="#FDB813" d="M6.76 4.84l-1.8-1.79-1.42 1.42 1.79 1.8 1.43-1.43zm10.48 0l1.43 1.43 1.8-1.8-1.42-1.42-1.81 1.79zM12 5a7 7 0 100 14 7 7 0 000-14zm0 12a5 5 0 110-10 5 5 0 010 10zm6 2h2v2h-2v-2zm-12 0H4v2h2v-2zm12-12h2V3h-2v2zm-12 0H4V3h2v2zm12.36 3.64l1.79-1.8-1.42-1.42-1.8 1.79 1.43 1.43zm-10.48 0l-1.43-1.43-1.8 1.8 1.42 1.42 1.81-1.79z"/>
+        <label class="toggle-label">
+            <!-- Sun Icon -->
+            <svg class="toggle-icon sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M6.76 4.84l-1.8-1.79-1.42 1.42 1.79 1.8 1.43-1.43zm10.48 0l1.43 1.43 1.8-1.8-1.42-1.42-1.81 1.79zM12 5a7 7 0 100 14 7 7 0 000-14zm0 12a5 5 0 110-10 5 5 0 010 10zm6 2h2v2h-2v-2zm-12 0H4v2h2v-2zm12-12h2V3h-2v2zm-12 0H4V3h2v2zm12.36 3.64l1.79-1.8-1.42-1.42-1.8 1.79 1.43 1.43zm-10.48 0l-1.43-1.43-1.8 1.8 1.42 1.42 1.81-1.79z"/>
             </svg>
-            <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path fill="#FFD700" d="M21.752 15.002A9 9 0 0112 3a9 9 0 000 18 9 9 0 009.752-6.998z"/>
+            <!-- Toggle Switch -->
+            <input type="checkbox" id="theme-checkbox">
+            <div class="toggle-switch"></div>
+            <!-- Moon Icon -->
+            <svg class="toggle-icon moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M21.752 15.002A9 9 0 0112 3a9 9 0 000 18 9 9 0 009.752-6.998z"/>
             </svg>
         </label>
     </div>
