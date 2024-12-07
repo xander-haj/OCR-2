@@ -1254,8 +1254,11 @@
 
                 console.log(`Selected resolution: ${selectedResolution.width}x${selectedResolution.height}`);
 
+                // Store the current scanning state
+                const wasScanning = scanning;
+
                 // Stop current scanning if active
-                if (scanning) {
+                if (wasScanning) {
                     stopScanning();
                 }
 
@@ -1268,7 +1271,7 @@
                 // Re-initialize camera with selected resolution
                 initCamera(selectedResolution).then(() => {
                     console.log('Camera re-initialized with new resolution.');
-                    if (scanning) {
+                    if (wasScanning) {
                         startScanning();
                     }
                 }).catch(err => {
