@@ -541,7 +541,7 @@
         let lastScanTime = 0;
         const MIN_INTERVAL = 1000; // 1 second between scans
         const MIN_CONFIDENCE = 60; // Minimum confidence for OCR
-        const SHARPNESS_THRESHOLD = 200; // Adjust this threshold as needed
+        // Removed: const SHARPNESS_THRESHOLD = 200; // Adjust this threshold as needed
 
         const videoCanvas = document.createElement('canvas');
         const roiCanvas = document.createElement('canvas');
@@ -595,42 +595,7 @@
             console.log('Image preprocessing complete.');
         }
 
-        function measureSharpness(canvas) {
-            const ctx = canvas.getContext('2d');
-            const { width, height } = canvas;
-            const imgData = ctx.getImageData(0, 0, width, height);
-            const grayData = new Uint8ClampedArray(width * height);
-
-            for (let i = 0; i < imgData.data.length; i += 4) {
-                const r = imgData.data[i];
-                const g = imgData.data[i+1];
-                const b = imgData.data[i+2];
-                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                grayData[i/4] = gray;
-            }
-
-            let lapData = new Float32Array(width * height);
-            for (let y = 1; y < height - 1; y++) {
-                for (let x = 1; x < width - 1; x++) {
-                    const i = y * width + x;
-                    const val = (grayData[i - width] +
-                                 grayData[i + width] +
-                                 grayData[i - 1] +
-                                 grayData[i + 1] -
-                                 4 * grayData[i]);
-                    lapData[i] = val;
-                }
-            }
-
-            let mean = 0;
-            let count = 0;
-            for (let i = 0; i < lapData.length; i++) {
-                mean += lapData[i] * lapData[i];
-                count++;
-            }
-            mean /= count;
-            return mean;
-        }
+        // Removed: function measureSharpness(canvas) { ... }
 
         async function performOCR(blob) {
             console.log('Starting OCR process.');
@@ -726,13 +691,8 @@
             debugCtx.drawImage(scaledCanvas, 0, 0);
             console.log('Debugging canvas updated.');
 
-            const sharpness = measureSharpness(scaledCanvas);
-            console.log(`Frame sharpness: ${Math.round(sharpness)}`);
-            if (sharpness < SHARPNESS_THRESHOLD) {
-                console.log('Frame not in focus, skipping OCR.');
-                if (scanning) requestAnimationFrame(processFrame);
-                return;
-            }
+            // Removed: const sharpness = measureSharpness(scaledCanvas);
+            // Removed: if (sharpness < SHARPNESS_THRESHOLD) { ... }
 
             scaledCanvas.toBlob(async (blob) => {
                 if (blob && scanning) {
