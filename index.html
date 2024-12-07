@@ -2,1087 +2,226 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Advanced OCR Scanner with Multiple Workers</title>
-    <!-- Viewport Meta Tag for Mobile Responsiveness -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Tesseract.js CDN (Ensure using a compatible version) -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-    <!-- Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <title>OCR Scanner</title>
     <style>
-        /* ------------------------------
-           Reset and Base Styles
-        ------------------------------ */
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-        html, body {
+        body {
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', sans-serif;
-            font-size: 16px;
-            background: #f9f9f9;
-            color: #333;
-            height: 100%;
-            width: 100%;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        /* Apply dark theme to html and body */
-        html.dark-theme, body.dark-theme {
-            background: #121212;
-            color: #e0e0e0;
-        }
-
-        /* ------------------------------
-           Theme Toggle Switch Styles
-        ------------------------------ */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        /* Hide default checkbox */
-        .theme-toggle input {
-            display: none;
-        }
-
-        /* Toggle Switch Label */
-        .toggle-label {
-            position: relative;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            user-select: none;
-            width: 80px;
-        }
-
-        /* Toggle Switch Styles */
-        .toggle-switch {
-            width: 50px;
-            height: 24px;
-            background-color: #ccc;
-            border-radius: 12px;
-            position: relative;
-            transition: background-color 0.3s ease;
-            margin: 0 10px;
-        }
-
-        .toggle-switch::after {
-            content: "";
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background-color: #fff;
-            border-radius: 50%;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.3s ease;
-        }
-
-        /* Checked State */
-        input:checked ~ .toggle-switch {
-            background-color: #4f46e5;
-        }
-
-        input:checked ~ .toggle-switch::after {
-            transform: translateX(26px);
-        }
-
-        /* Icon Styles */
-        .toggle-icon {
-            width: 20px;
-            height: 20px;
-            transition: opacity 0.3s ease;
-            flex-shrink: 0;
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        .sun-icon {
-            left: -30px; /* Position to the left of the switch */
-            fill: #FDB813;
-        }
-
-        .moon-icon {
-            right: -30px; /* Position to the right of the switch */
-            fill: #FFD700;
-        }
-
-        /* Icon Visibility */
-        input:checked ~ .sun-icon {
-            opacity: 0;
-        }
-
-        input:not(:checked) ~ .moon-icon {
-            opacity: 0;
-        }
-
-        /* Body Transition */
-        body {
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        /* ------------------------------
-           Side Menu Styles
-        ------------------------------ */
-        .side-menu {
-            position: fixed;
-            top: 0;
-            left: -250px; /* Hidden by default */
-            width: 250px;
-            height: 100%;
-            background-color: #2c3e50;
-            color: #ecf0f1;
-            overflow-y: auto;
-            transition: left 0.3s ease;
-            z-index: 1001; /* Above other elements */
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* To push Debug button to bottom */
+            height: 100vh;
         }
-
-        .side-menu.active {
-            left: 0;
-        }
-
-        /* Toggle Button (Hamburger Icon) */
-        .menu-toggle {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            width: 30px;
-            height: 25px;
-            cursor: pointer;
-            z-index: 1002; /* Above the side menu */
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .menu-toggle span {
-            display: block;
-            height: 4px;
-            background-color: #333;
-            border-radius: 2px;
-            transition: background-color 0.3s ease;
-        }
-
-        /* Change color when side menu is active */
-        .side-menu.active + .menu-toggle span {
-            background-color: #ecf0f1;
-        }
-
-        /* Overlay to cover the main content when side menu is open (for mobile) */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            z-index: 1000;
-        }
-
-        .overlay.active {
-            display: block;
-        }
-
-        /* Adjust main content when side menu is open (for desktop) */
-        #container.side-menu-open {
-            margin-left: 250px;
-            transition: margin-left 0.3s ease;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            /* On smaller screens, the side menu overlays the content */
-            #container.side-menu-open {
-                margin-left: 0;
-            }
-        }
-
-        /* ------------------------------
-           Container and Video Styles
-        ------------------------------ */
-        #container {
+        #video-container {
+            position: relative;
             flex: 1;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-bottom: 240px; /* Space for fixed debug console */
-            overflow: visible; /* Allow content to overflow for scrolling */
-            transition: margin-left 0.3s ease;
-            min-height: 100vh; /* Ensure container covers at least full viewport height */
-            width: 100%; /* Use full width */
+            background-color: #000;
         }
-
-        /* Video Wrapper */
-        #videoWrapper {
-            position: relative;
-            margin-top: 20px;
+        video {
             width: 100%;
-            display: flex;
-            justify-content: center;
+            height: 100%;
+            object-fit: cover;
         }
-
-        /* Video Styling */
-        #video {
-            width: 90%;
-            max-width: 500px;
-            border-radius: 12px;
-            background: #000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        /* ROI Overlay */
-        #overlay {
+        #roi-overlay {
             position: absolute;
-            width: 60%;
-            max-width: 350px;
-            height: 150px;
-            border: 3px dashed #00b4d8;
-            border-radius: 8px;
+            border: 2px dashed #00b4d8;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            width: 50%;
+            height: 50%;
             cursor: pointer;
-            transition: border-color 0.3s ease;
         }
-
-        #overlay:hover {
-            border-color: #0077b6;
-        }
-
-        /* Focus Indicator */
-        #focusIndicator {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -110%);
-            background-color: rgba(0,0,0,0.75);
-            color: #fff;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 14px;
-            display: none;
-            z-index: 10;
-        }
-
-        /* ------------------------------
-           Controls Section
-        ------------------------------ */
         #controls {
-            margin-top: 20px;
-            width: 90%;
-            max-width: 500px;
+            padding: 10px;
+            background-color: #f0f0f0;
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             align-items: center;
+            gap: 10px;
         }
-
-        /* Buttons Container */
-        .buttons-container {
-            display: flex;
-            gap: 20px; /* Space between Start and Stop buttons */
-            width: 100%; /* Ensure buttons-container takes full width */
-            justify-content: center; /* Center the buttons horizontally */
+        #controls > * {
+            margin: 5px;
         }
-
-        /* Buttons */
-        #start-button, #stop-button {
-            padding: 14px 24px;
-            font-size: 18px;
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: background-color 0.3s ease, opacity 0.3s ease;
-            width: 150px;
-        }
-
-        #start-button {
-            background-color: #2cb67d;
-            color: #fff;
-        }
-        #start-button:hover:not(:disabled) {
-            background-color: #249763;
-        }
-        #start-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        #stop-button {
-            background-color: #d00000;
-            color: #fff;
-        }
-        #stop-button:hover:not(:disabled) {
-            background-color: #b20000;
-        }
-        #stop-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Restart Scanner Button */
-        #restart-button {
-            padding: 14px 24px;
-            font-size: 18px;
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            background-color: #f39c12;
-            color: #fff;
-            transition: background-color 0.3s ease, opacity 0.3s ease;
-            width: 150px;
-            margin-top: 20px;
-            display: none; /* Hidden by default */
-        }
-
-        #restart-button:hover:not(:disabled) {
-            background-color: #e67e22;
-        }
-        #restart-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Output Textarea */
         #output {
-            margin-top: 20px;
             width: 100%;
-            height: 150px;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            height: 100px;
             resize: none;
-            font-size: 16px;
-            background-color: #fff;
-            line-height: 1.6;
-            color: #333;
-            font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            padding: 10px;
+            box-sizing: border-box;
         }
-
-        body.dark-theme #output {
-            background-color: #1e1e1e;
-            border: 1px solid #555;
-            color: #e0e0e0;
-        }
-
-        /* ------------------------------
-           Error Message (Toast) Styles
-        ------------------------------ */
         #errorMsg {
-            position: fixed; /* Changed from absolute to fixed to ensure it overlays the entire viewport */
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #e63946;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 8px;
+            color: red;
+            margin-top: 10px;
+        }
+        /* Side Menu Styles */
+        #side-menu {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            background-color: #fff;
+            border-left: 1px solid #ccc;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            box-sizing: border-box;
             display: none;
-            z-index: 1003; /* Increased z-index to ensure it appears above all other elements */
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            font-size: 16px;
+            z-index: 1000;
         }
-
-        /* ------------------------------
-           Debugging Canvas Styles
-        ------------------------------ */
-        #debugCanvas {
+        #side-menu.show {
+            display: block;
+        }
+        #side-menu h2 {
+            margin-top: 0;
+        }
+        #side-menu button {
             margin-top: 20px;
-            max-width: 90%;
-            width: auto;
-            height: auto;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background: #fff;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-            display: none; /* Initially hidden */
         }
-
-        body.dark-theme #debugCanvas {
-            background-color: #1e1e1e;
-            border: 1px solid #555;
-        }
-
-        /* ------------------------------
-           Debug Console Styles
-        ------------------------------ */
-        #debugConsole {
+        /* Debug Canvas */
+        #debug-container {
             position: fixed;
             bottom: 0;
             left: 0;
-            width: 100%;
+            width: 200px;
             height: 200px;
-            background: #1e1e1e;
-            color: #ccc;
-            font-family: monospace;
-            font-size: 14px;
-            overflow-y: scroll;
-            padding: 10px;
-            box-sizing: border-box;
-            border-top: 2px solid #111;
-            display: none; /* Initially hidden */
-            z-index: 999;
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 1001;
         }
-
-        .log-entry {
-            margin-bottom: 5px;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        .log-entry.log { color: #ccc; }
-        .log-entry.warn { color: #ffbb33; }
-        .log-entry.error { color: #ff4f4f; }
-
-        /* ------------------------------
-           Debug Controls Styles
-        ------------------------------ */
-        #debugControls {
-            position: fixed;
-            bottom: 200px;
-            left: 0;
-            width: 100%;
-            background: #292929;
-            color: #fff;
-            padding: 10px;
-            box-sizing: border-box;
-            text-align: center;
-            border-top: 2px solid #111;
-            display: none; /* Initially hidden */
-            z-index: 998;
-        }
-
-        #save-logs-button {
-            background: #0d6efd;
-            border: none;
-            border-radius: 4px;
-            padding: 10px 20px;
-            color: #fff;
-            font-size: 16px;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-        }
-        #save-logs-button:hover {
-            background: #0b5ed7;
-        }
-
-        /* ------------------------------
-           Resolutions, Cameras, and Workers Dropdown Styles
-        ------------------------------ */
-        #side-menu label {
-            font-size: 18px;
-            margin-bottom: 8px;
+        #debug-container.show {
             display: block;
         }
-
-        #resolution-select, #camera-select, #workers-select {
+        #debugCanvas {
             width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            background-color: #fff;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-            display: block; /* Ensure dropdowns are on a new line */
-            margin-bottom: 20px; /* Add spacing between dropdowns */
-        }
-
-        body.dark-theme #resolution-select,
-        body.dark-theme #camera-select,
-        body.dark-theme #workers-select {
-            background-color: #1e1e1e;
-            border: 1px solid #555;
-            color: #e0e0e0;
-        }
-
-        /* ------------------------------
-           Responsive Adjustments
-        ------------------------------ */
-        @media (max-width: 768px) {
-            /* Adjust Toggle Button for Mobile */
-            .menu-toggle {
-                width: 25px;
-                height: 20px;
-            }
-
-            .menu-toggle span {
-                height: 3px;
-            }
-
-            /* Adjust Side Menu Padding */
-            .side-menu {
-                padding: 15px;
-            }
-
-            /* Adjust Debug Button for Mobile */
-            .side-menu .debug-button {
-                padding: 10px 0;
-                font-size: 16px;
-            }
-
-            /* Adjust Debug Canvas and Console for Mobile */
-            #debugCanvas {
-                height: 150px;
-            }
-
-            #debugConsole {
-                height: 150px;
-                font-size: 13px;
-            }
-
-            #debugControls {
-                bottom: 150px;
-            }
-
-            /* Increase button sizes for better touch targets */
-            .buttons-container {
-                gap: 15px; /* Reduce gap on smaller screens */
-            }
-
-            #start-button, #stop-button, #restart-button {
-                padding: 16px 28px;
-                font-size: 20px;
-                width: 160px; /* Adjusted width to maintain original size */
-            }
-
-            /* Increase font sizes for better readability */
-            #output {
-                font-size: 18px;
-                height: 180px;
-            }
-
-            #errorMsg {
-                font-size: 18px;
-                padding: 14px 28px;
-            }
-
-            #resolution-select, #camera-select, #workers-select {
-                font-size: 18px;
-                padding: 12px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            /* Further adjustments for very small screens */
-            .buttons-container {
-                gap: 10px; /* Further reduce gap */
-            }
-
-            #start-button, #stop-button, #restart-button {
-                padding: 14px 24px;
-                font-size: 18px;
-                width: 140px; /* Adjusted width to maintain original size */
-            }
-
-            #output {
-                font-size: 16px;
-                height: 160px;
-            }
-
-            #errorMsg {
-                font-size: 16px;
-                padding: 12px 24px;
-            }
-
-            #resolution-select, #camera-select, #workers-select {
-                font-size: 16px;
-                padding: 10px;
-            }
+            height: 100%;
         }
     </style>
 </head>
 <body>
-    <!-- ------------------------------
-       Side Menu Structure
-    ------------------------------ -->
-    <div class="side-menu" id="side-menu">
-        <div>
-            <h2>Settings</h2>
-            <!-- ------------------------------
-               Resolutions Dropdown
-            ------------------------------ -->
-            <div style="margin-top: 20px;">
-                <label for="resolution-select">Resolutions:</label>
-                <select id="resolution-select">
-                    <option value="">Select Resolution</option>
-                    <!-- Pre-populated with common resolutions -->
-                    <option value="320x240">320 x 240</option>
-                    <option value="640x480">640 x 480</option>
-                    <option value="800x600">800 x 600</option>
-                    <option value="1024x768">1024 x 768</option>
-                    <option value="1280x720">1280 x 720</option>
-                    <option value="1280x800">1280 x 800</option>
-                    <option value="1366x768">1366 x 768</option>
-                    <option value="1440x900">1440 x 900</option>
-                    <option value="1600x900">1600 x 900</option>
-                    <option value="1920x1080">1920 x 1080</option>
-                    <option value="2560x1440">2560 x 1440</option>
-                    <option value="3840x2160">3840 x 2160</option>
-                </select>
-            </div>
-            <!-- ------------------------------
-               Cameras Dropdown
-            ------------------------------ -->
-            <div style="margin-top: 20px;">
-                <label for="camera-select">Cameras:</label>
-                <select id="camera-select">
-                    <option value="">Select Camera</option>
-                    <!-- Camera options will be populated on page load -->
-                </select>
-            </div>
-            <!-- ------------------------------
-               Workers Dropdown (Always Enabled)
-            ------------------------------ -->
-            <div style="margin-top: 20px;">
-                <label for="workers-select">Workers:</label>
-                <select id="workers-select">
-                    <option value="1">1 Worker</option>
-                    <option value="2">2 Workers</option>
-                    <option value="4">4 Workers</option>
-                    <option value="6">6 Workers</option>
-                    <option value="8">8 Workers</option>
-                </select>
-            </div>
-        </div>
-        <!-- ------------------------------
-           Debug Show Button (Moved to Side Menu)
-        ------------------------------ -->
-        <button id="debug-button" class="debug-button">Show Debug</button>
+    <div id="video-container">
+        <video id="video" autoplay muted></video>
+        <div id="roi-overlay"></div>
     </div>
-
-    <!-- ------------------------------
-       Overlay for Side Menu
-    ------------------------------ -->
-    <div class="overlay" id="menu-overlay"></div>
-
-    <!-- ------------------------------
-       Menu Toggle Button (Hamburger Icon)
-    ------------------------------ -->
-    <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
-        <span></span>
-        <span></span>
-        <span></span>
+    <div id="controls">
+        <button id="start-button">Start Scanner</button>
+        <button id="stop-button" disabled>Stop Scanner</button>
+        <button id="restart-button" style="display: none;">Restart Scanner</button>
+        <label for="camera-select">Camera:</label>
+        <select id="camera-select"></select>
+        <label for="resolution-select">Resolution:</label>
+        <select id="resolution-select">
+            <option value="">Default</option>
+            <option value="1280x720">1280x720</option>
+            <option value="1920x1080">1920x1080</option>
+            <option value="3840x2160">3840x2160</option>
+        </select>
+        <label for="workers-select">Workers:</label>
+        <select id="workers-select">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="4">4</option>
+            <option value="6">6</option>
+            <option value="8">8</option>
+        </select>
+        <textarea id="output" readonly placeholder="OCR Output..."></textarea>
+        <div id="errorMsg"></div>
     </div>
-
-    <!-- ------------------------------
-       Theme Toggle Switch
-    ------------------------------ -->
-    <div class="theme-toggle">
-        <label class="toggle-label">
-            <!-- Toggle Switch -->
-            <input type="checkbox" id="theme-checkbox">
-            <div class="toggle-switch"></div>
-            <!-- Sun Icon -->
-            <svg class="toggle-icon sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M6.76 4.84l-1.8-1.79-1.42 1.42 1.79 1.8 1.43-1.43zm10.48 0l1.43 1.43 1.8-1.8-1.42-1.42-1.81 1.79zM12 5a7 7 0 100 14 7 7 0 000-14zm0 12a5 5 0 110-10 5 5 0 010 10zm6 2h2v2h-2v-2zm-12 0H4v2h2v-2zm12-12h2V3h-2v2zm-12 0H4V3h2v2zm12.36 3.64l1.79-1.8-1.42-1.42-1.8 1.79 1.43 1.43zm-10.48 0l-1.43-1.43-1.8 1.8 1.42 1.42 1.81-1.79z"/>
-            </svg>
-            <!-- Moon Icon -->
-            <svg class="toggle-icon moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M21.752 15.002A9 9 0 0112 3a9 9 0 000 18 9 9 0 009.752-6.998z"/>
-            </svg>
-        </label>
+    <button id="side-menu-toggle" style="position: fixed; top: 10px; right: 10px; z-index: 1002;">☰</button>
+    <div id="side-menu">
+        <h2>Debug Menu</h2>
+        <button id="show-debug">Show Debug</button>
+        <button id="hide-debug" style="display: none;">Hide Debug</button>
     </div>
-
-    <!-- ------------------------------
-       Error Message (Toast)
-    ------------------------------ -->
-    <div id="errorMsg"></div>
-
-    <!-- ------------------------------
-       Main Container
-    ------------------------------ -->
-    <div id="container">
-        <!-- ------------------------------
-           Video Wrapper
-        ------------------------------ -->
-        <div id="videoWrapper">
-            <video id="video" autoplay playsinline></video>
-            <div id="overlay"></div> <!-- ROI Bounding Box -->
-            <div id="focusIndicator">Processing...</div>
-        </div>
-
-        <!-- ------------------------------
-           Controls Section
-        ------------------------------ -->
-        <div id="controls">
-            <div class="buttons-container">
-                <button id="start-button">Start Scanner</button>
-                <button id="stop-button" disabled>Stop Scanner</button>
-            </div>
-            <button id="restart-button">Restart Scanner</button>
-            <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
-        </div>
-
-        <!-- ------------------------------
-           Debugging Canvas
-        ------------------------------ -->
+    <div id="debug-container">
         <canvas id="debugCanvas"></canvas>
     </div>
-
-    <!-- ------------------------------
-       Debug Controls
-    ------------------------------ -->
-    <div id="debugControls">
-        <button id="save-logs-button">Save Logs</button>
-    </div>
-
-    <!-- ------------------------------
-       Debug Console
-    ------------------------------ -->
-    <div id="debugConsole"></div>
-
-    <!-- ------------------------------
-       JavaScript Functionality
-    ------------------------------ -->
+    <!-- Tesseract.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script>
-        /* ------------------------------
-           Side Menu Functionality
-        ------------------------------ */
-        (function() {
-            const menuToggle = document.getElementById('menu-toggle');
-            const sideMenu = document.getElementById('side-menu');
-            const menuOverlay = document.getElementById('menu-overlay');
-            const container = document.getElementById('container');
-
-            let isMenuOpen = false;
-
-            function openMenu() {
-                sideMenu.classList.add('active');
-                menuOverlay.classList.add('active');
-                container.classList.add('side-menu-open');
-                menuToggle.setAttribute('aria-expanded', 'true');
-                isMenuOpen = true;
-            }
-
-            function closeMenu() {
-                sideMenu.classList.remove('active');
-                menuOverlay.classList.remove('active');
-                container.classList.remove('side-menu-open');
-                menuToggle.setAttribute('aria-expanded', 'false');
-                isMenuOpen = false;
-            }
-
-            menuToggle.addEventListener('click', function() {
-                if (isMenuOpen) {
-                    closeMenu();
-                } else {
-                    openMenu();
-                }
-            });
-
-            // Close the side menu when clicking on the overlay
-            menuOverlay.addEventListener('click', function() {
-                if (isMenuOpen) {
-                    closeMenu();
-                }
-            });
-
-            // Optional: Close the menu with the Escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && isMenuOpen) {
-                    closeMenu();
-                }
-            });
-        })();
-
-        /* ------------------------------
-           Theme Toggle Functionality
-        ------------------------------ */
-        (function() {
-            const toggleCheckbox = document.getElementById('theme-checkbox');
-            const currentTheme = localStorage.getItem('theme') || 'light';
-
-            if (currentTheme === 'dark') {
-                document.documentElement.classList.add('dark-theme');
-                document.body.classList.add('dark-theme');
-                toggleCheckbox.checked = true;
-            }
-
-            toggleCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    document.documentElement.classList.add('dark-theme');
-                    document.body.classList.add('dark-theme');
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    document.documentElement.classList.remove('dark-theme');
-                    document.body.classList.remove('dark-theme');
-                    localStorage.setItem('theme', 'light');
-                }
-            });
-        })();
-
-        /* ------------------------------
-           Capture and Display Console Logs in Debug Console
-        ------------------------------ */
-        (function() {
-            const debugConsole = document.getElementById('debugConsole');
-            function addLogEntry(type, args) {
-                const entry = document.createElement('div');
-                entry.className = `log-entry ${type}`;
-                entry.textContent = `[${type.toUpperCase()}] ` + Array.from(args).join(' ');
-                debugConsole.appendChild(entry);
-                debugConsole.scrollTop = debugConsole.scrollHeight;
-            }
-            const originalLog = console.log;
-            const originalWarn = console.warn;
-            const originalError = console.error;
-            console.log = function(...args) {
-                originalLog.apply(console, args);
-                addLogEntry('log', args);
-            };
-            console.warn = function(...args) {
-                originalWarn.apply(console, args);
-                addLogEntry('warn', args);
-            };
-            console.error = function(...args) {
-                originalError.apply(console, args);
-                addLogEntry('error', args);
-            };
-        })();
-
-        /* ------------------------------
-           Function to Save Logs to a File
-        ------------------------------ */
-        function saveLogs() {
-            const debugConsole = document.getElementById('debugConsole');
-            const logsText = debugConsole.innerText;
-            const blob = new Blob([logsText], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'logs.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        document.getElementById('save-logs-button').addEventListener('click', saveLogs);
-
-        /* ------------------------------
-           Debug Button Functionality (Moved to Side Menu)
-        ------------------------------ */
-        (function() {
-            const debugButton = document.getElementById('debug-button');
-            const debugCanvas = document.getElementById('debugCanvas');
-            const debugConsole = document.getElementById('debugConsole');
-            const debugControls = document.getElementById('debugControls');
-
-            // Initially hide the debug elements
-            debugCanvas.style.display = 'none';
-            debugConsole.style.display = 'none';
-            debugControls.style.display = 'none';
-
-            let isDebugVisible = false;
-
-            debugButton.addEventListener('click', function() {
-                isDebugVisible = !isDebugVisible;
-                if (isDebugVisible) {
-                    debugCanvas.style.display = 'block';
-                    debugConsole.style.display = 'block';
-                    debugControls.style.display = 'block';
-                    debugButton.innerText = 'Hide Debug';
-                } else {
-                    debugCanvas.style.display = 'none';
-                    debugConsole.style.display = 'none';
-                    debugControls.style.display = 'none';
-                    debugButton.innerText = 'Show Debug';
-                }
-            });
-        })();
-
-        /* ------------------------------
-           OCR Scanning Functionality
-        ------------------------------ */
-        (function() {
-            // References to DOM elements
+        (async function() {
+            /* ------------------------------
+               Variable Declarations
+            ------------------------------ */
             const video = document.getElementById('video');
-            const roiOverlay = document.getElementById('overlay'); // ROI Bounding Box
+            const roiOverlay = document.getElementById('roi-overlay');
             const startButton = document.getElementById('start-button');
             const stopButton = document.getElementById('stop-button');
-            const restartButton = document.getElementById('restart-button'); // New Restart Button
-            const debugButton = document.getElementById('debug-button'); // Now in side menu
+            const restartButton = document.getElementById('restart-button');
+            const cameraSelect = document.getElementById('camera-select');
+            const resolutionSelect = document.getElementById('resolution-select');
+            const workersSelect = document.getElementById('workers-select');
             const output = document.getElementById('output');
             const errorMsg = document.getElementById('errorMsg');
+            const sideMenuToggle = document.getElementById('side-menu-toggle');
+            const sideMenu = document.getElementById('side-menu');
+            const showDebugBtn = document.getElementById('show-debug');
+            const hideDebugBtn = document.getElementById('hide-debug');
+            const debugContainer = document.getElementById('debug-container');
             const debugCanvas = document.getElementById('debugCanvas');
-            const focusIndicator = document.getElementById('focusIndicator');
-            const workersSelect = document.getElementById('workers-select');
-
-            let stream = null;
-            let scanning = false;
-            let lastScanTime = 0;
-            const MIN_INTERVAL = 1000; // 1 second between scans
-            const MIN_CONFIDENCE = 60; // Minimum confidence for OCR
-
-            // Create off-screen canvases
+            const debugCtx = debugCanvas.getContext('2d');
+    
             const videoCanvas = document.createElement('canvas');
             const roiCanvas = document.createElement('canvas');
             const scaledCanvas = document.createElement('canvas');
-            const debugCtx = debugCanvas.getContext('2d');
-
-            // Tesseract.js Workers Management
+    
+            let stream = null;
+            let scanning = false;
             let workers = [];
             let isTesseractInitialized = false;
-
+            const MIN_CONFIDENCE = 20; // Threshold for OCR confidence
+    
             /* ------------------------------
-               Common Resolutions
+               Utility Functions
             ------------------------------ */
-            const COMMON_RESOLUTIONS = [
-                { width: 320, height: 240 },
-                { width: 640, height: 480 },
-                { width: 800, height: 600 },
-                { width: 1024, height: 768 },
-                { width: 1280, height: 720 },
-                { width: 1280, height: 800 },
-                { width: 1366, height: 768 },
-                { width: 1440, height: 900 },
-                { width: 1600, height: 900 },
-                { width: 1920, height: 1080 },
-                { width: 2560, height: 1440 },
-                { width: 3840, height: 2160 },
-            ];
-
-            /* ------------------------------
-               Function to Show Error Messages
-            ------------------------------ */
+            /* Function to Show Error Messages */
             function showError(message) {
-                console.error(`Error: ${message}`);
                 errorMsg.innerText = message;
-                errorMsg.style.display = 'block';
                 setTimeout(() => {
-                    errorMsg.style.display = 'none';
+                    errorMsg.innerText = '';
                 }, 5000);
             }
-
-            /* ------------------------------
-               Function to Get Available Cameras
-            ------------------------------ */
-            async function getAvailableCameras() {
+    
+            /* Function to Populate Available Cameras */
+            async function populateCameras() {
                 try {
                     const devices = await navigator.mediaDevices.enumerateDevices();
                     const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                    return videoDevices;
+                    cameraSelect.innerHTML = '';
+                    videoDevices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Camera ${cameraSelect.length + 1}`;
+                        cameraSelect.appendChild(option);
+                    });
                 } catch (err) {
                     console.error('Error enumerating devices:', err);
-                    showError('Unable to access camera devices.');
-                    return [];
+                    showError('Failed to access camera devices.');
                 }
             }
-
-            /* ------------------------------
-               Function to Populate Cameras Dropdown
-            ------------------------------ */
-            async function populateCameras() {
-                const cameraSelect = document.getElementById('camera-select');
-                cameraSelect.innerHTML = ''; // Clear existing options
-
-                // Add a default option
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.text = 'Select Camera';
-                cameraSelect.appendChild(defaultOption);
-
-                const cameras = await getAvailableCameras();
-                cameras.forEach(camera => {
-                    const option = document.createElement('option');
-                    option.value = camera.deviceId;
-                    option.text = camera.label || `Camera ${cameraSelect.length}`;
-                    cameraSelect.appendChild(option);
-                });
-
-                if (cameras.length === 0) {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.text = 'No cameras found';
-                    cameraSelect.appendChild(option);
-                }
-            }
-
-            /* ------------------------------
-               Function to Preprocess Image
-            ------------------------------ */
-            function preprocessImage(videoCanvas, width, height) {
-                const ctx = videoCanvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, width, height);
-                console.log('Image drawn on videoCanvas.');
-
-                let imageData = ctx.getImageData(0, 0, width, height);
-                let data = imageData.data;
-
-                // Apply contrast adjustment
-                const contrastFactor = 1.3;
-                for (let i = 0; i < data.length; i += 4) {
-                    data[i] = ((data[i] - 128) * contrastFactor) + 128;     
-                    data[i+1] = ((data[i+1] - 128) * contrastFactor) + 128;
-                    data[i+2] = ((data[i+2] - 128) * contrastFactor) + 128;
-
-                    data[i] = Math.min(255, Math.max(0, data[i]));
-                    data[i+1] = Math.min(255, Math.max(0, data[i+1]));
-                    data[i+2] = Math.min(255, Math.max(0, data[i+2]));
-                }
-
-                ctx.putImageData(imageData, 0, 0);
-                console.log('Image preprocessing complete.');
-            }
-
-            /* ------------------------------
-               Function to Initialize Camera
-            ------------------------------ */
-            async function initCamera(resolution = null, cameraId = null) {
+    
+            /* Function to Initialize the Camera */
+            async function initCamera(selectedResolution = null, selectedCameraId = null) {
                 try {
-                    const videoConstraints = {};
-
-                    if (cameraId) {
-                        // If a specific camera is selected, set deviceId only
-                        videoConstraints.deviceId = { exact: cameraId };
-                    } else {
-                        // If no specific camera is selected, default to environment-facing camera
-                        videoConstraints.facingMode = { exact: "environment" };
-                    }
-
-                    if (resolution) {
-                        videoConstraints.width = { exact: resolution.width };
-                        videoConstraints.height = { exact: resolution.height };
-                    }
-
                     const constraints = {
-                        video: videoConstraints,
-                        audio: false
+                        video: {
+                            deviceId: selectedCameraId ? { exact: selectedCameraId } : undefined,
+                            width: selectedResolution ? { exact: selectedResolution.width } : undefined,
+                            height: selectedResolution ? { exact: selectedResolution.height } : undefined
+                        }
                     };
-
                     stream = await navigator.mediaDevices.getUserMedia(constraints);
                     video.srcObject = stream;
-                    console.log('Camera initialized successfully.');
+                    await video.play();
                 } catch (err) {
-                    console.error('Camera initialization failed:', err);
-                    showError('Unable to access the selected camera. Please check permissions or try a different device.');
+                    console.error('Error initializing camera:', err);
+                    showError('Failed to initialize the camera with the selected settings.');
                     throw err;
                 }
             }
-
-            /* ------------------------------
-               Function to Initialize Tesseract.js Workers
-            ------------------------------ */
+    
+            /* Function to Initialize Tesseract.js Workers */
             async function initializeTesseract(workersCount) {
                 try {
                     // Terminate existing workers if any
@@ -1091,29 +230,23 @@
                         workers = [];
                         console.log('Existing Tesseract.js workers terminated.');
                     }
-
+    
                     // Initialize new workers based on the selected count
                     for (let i = 0; i < workersCount; i++) {
-                        // Ensure Tesseract.createWorker exists
-                        if (typeof Tesseract.createWorker !== 'function') {
-                            throw new TypeError('Tesseract.createWorker is not a function. Check the Tesseract.js version and script loading.');
-                        }
-
-                        // Create worker with appropriate options
                         const worker = await Tesseract.createWorker({
                             lang: 'eng', // Default language
                             logger: m => console.log(`[Tesseract.js Worker ${i + 1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
                         });
-
+    
                         console.log(`Initializing Tesseract.js Worker ${i + 1}...`);
-
-                        await worker.load(); // Depending on Tesseract.js version, this might be deprecated
+    
+                        // Load language data without using the deprecated load method
                         await worker.loadLanguage('eng');
                         await worker.initialize('eng');
                         workers.push(worker);
                         console.log(`Tesseract.js Worker ${i + 1} initialized.`);
                     }
-
+    
                     isTesseractInitialized = true;
                     console.log(`Initialized ${workersCount} Tesseract.js workers.`);
                 } catch (err) {
@@ -1122,22 +255,31 @@
                     throw err; // Re-throw to handle it in the caller if necessary
                 }
             }
-
+    
             /* ------------------------------
                Function to Perform OCR Using Workers
             ------------------------------ */
+            let isPerformingOCR = false;
+    
             async function performOCR(blob) {
+                if (isPerformingOCR) {
+                    console.warn('OCR is already in progress.');
+                    return;
+                }
+                isPerformingOCR = true;
+    
                 console.log('Starting OCR process.');
                 if (!isTesseractInitialized || workers.length === 0) {
                     console.warn('Tesseract.js workers are not initialized.');
                     showError('OCR workers are not initialized.');
+                    isPerformingOCR = false;
                     return;
                 }
-
+    
                 try {
                     const ocrPromises = workers.map(worker => worker.recognize(blob));
                     const results = await Promise.all(ocrPromises);
-
+    
                     // Aggregate results
                     let aggregatedText = '';
                     let totalConfidence = 0;
@@ -1145,10 +287,10 @@
                         aggregatedText += result.data.text + '\n';
                         totalConfidence += result.data.confidence;
                     });
-
+    
                     const averageConfidence = totalConfidence / workers.length;
                     console.log(`OCR Average Confidence: ${averageConfidence}`);
-
+    
                     if (averageConfidence >= MIN_CONFIDENCE && aggregatedText.trim().length > 0) {
                         roiOverlay.style.borderColor = '#2cb67d';
                         if (!output.value.includes(aggregatedText.trim())) {
@@ -1163,49 +305,54 @@
                     console.error('Tesseract.js OCR error:', err);
                     showError('An error occurred while processing the image.');
                     roiOverlay.style.borderColor = '#d00000';
+                } finally {
+                    isPerformingOCR = false;
                 }
             }
-
+    
             /* ------------------------------
-               Function to Process Each Video Frame
+               Function to Process Frames
             ------------------------------ */
             async function processFrame() {
                 if (!scanning) return;
-
-                const now = Date.now();
-                if (now - lastScanTime < MIN_INTERVAL) {
-                    if (scanning) requestAnimationFrame(processFrame);
-                    return;
-                }
-                lastScanTime = now;
-
-                if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-                    console.warn('Video not ready');
-                    if (scanning) requestAnimationFrame(processFrame);
-                    return;
-                }
-
-                console.log('Processing a new frame for OCR.');
-
+    
+                // Draw the video frame to videoCanvas
                 const videoWidth = video.videoWidth;
                 const videoHeight = video.videoHeight;
                 videoCanvas.width = videoWidth;
                 videoCanvas.height = videoHeight;
-                preprocessImage(videoCanvas, videoWidth, videoHeight);
-
+                const ctx = videoCanvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+                console.log('Image drawn on videoCanvas.');
+    
+                // Image preprocessing (e.g., grayscale, contrast adjustment)
+                // Example: Convert to grayscale
+                const imageData = ctx.getImageData(0, 0, videoWidth, videoHeight);
+                const data = imageData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = avg;     // Red
+                    data[i + 1] = avg; // Green
+                    data[i + 2] = avg; // Blue
+                    // data[i + 3] is alpha
+                }
+                ctx.putImageData(imageData, 0, 0);
+                console.log('Image preprocessing complete.');
+    
+                // Determine ROI (Region of Interest)
                 const overlayRect = roiOverlay.getBoundingClientRect();
                 const videoRect = video.getBoundingClientRect();
-
+    
                 const scaleX = videoWidth / videoRect.width;
                 const scaleY = videoHeight / videoRect.height;
-
+    
                 const roiX = (overlayRect.left - videoRect.left) * scaleX;
                 const roiY = (overlayRect.top - videoRect.top) * scaleY;
                 const roiWidth = overlayRect.width * scaleX;
                 const roiHeight = overlayRect.height * scaleY;
-
+    
                 console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
-
+    
                 // Validate ROI boundaries
                 if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
                     console.warn('ROI is out of video frame bounds.');
@@ -1213,14 +360,14 @@
                     stopScanning();
                     return;
                 }
-
+    
                 // Extract ROI
                 roiCanvas.width = roiWidth;
                 roiCanvas.height = roiHeight;
                 const roiCtx = roiCanvas.getContext('2d');
                 roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
                 console.log('ROI extracted.');
-
+    
                 // Scale ROI for better OCR accuracy
                 const scaleFactor = 1.5;
                 scaledCanvas.width = roiWidth * scaleFactor;
@@ -1230,14 +377,14 @@
                 scaledCtx.imageSmoothingQuality = 'high';
                 scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
                 console.log('ROI scaled.');
-
+    
                 // Update Debug Canvas
                 debugCanvas.width = scaledCanvas.width;
                 debugCanvas.height = scaledCanvas.height;
                 debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
                 debugCtx.drawImage(scaledCanvas, 0, 0);
                 console.log('Debugging canvas updated.');
-
+    
                 // Convert Canvas to Blob for OCR
                 scaledCanvas.toBlob(async (blob) => {
                     if (blob && scanning) {
@@ -1249,128 +396,24 @@
                     if (scanning) requestAnimationFrame(processFrame);
                 }, 'image/png');
             }
-
+    
             /* ------------------------------
-               Function to Start Scanning
+               Function to Capture Frame and Perform OCR (for Tap-to-Focus)
             ------------------------------ */
-            async function startScanning() {
-                if (scanning) return;
-
-                // Initialize the camera
-                startButton.disabled = true;
-                stopButton.disabled = true;
-                restartButton.style.display = 'none'; // Hide Restart button when starting
-                debugButton.disabled = true; // Disable debug button while starting
-                startButton.innerText = 'Starting...';
-                console.log('Initializing camera...');
-                try {
-                    // Get the selected camera device ID
-                    const cameraSelect = document.getElementById('camera-select');
-                    const selectedCameraId = cameraSelect.value || null;
-
-                    // Get the selected resolution
-                    const resolutionSelect = document.getElementById('resolution-select');
-                    const selectedResolutionValue = resolutionSelect.value;
-                    let selectedResolution = null;
-                    if (selectedResolutionValue) {
-                        const [width, height] = selectedResolutionValue.split('x').map(Number);
-                        selectedResolution = { width, height };
-                    }
-
-                    await initCamera(selectedResolution, selectedCameraId);
-                } catch (err) {
-                    startButton.disabled = false;
-                    stopButton.disabled = true;
-                    debugButton.disabled = false;
-                    startButton.innerText = 'Start Scanner';
-                    return;
-                }
-
-                // Initialize Tesseract.js workers based on selection
-                const workersCount = parseInt(workersSelect.value) || 1;
-                console.log(`Selected workers count: ${workersCount}`);
-                try {
-                    await initializeTesseract(workersCount);
-                } catch (err) {
-                    console.error('Failed to initialize Tesseract.js workers:', err);
-                    showError('Failed to initialize OCR workers.');
-                    startButton.disabled = false;
-                    stopButton.disabled = true;
-                    debugButton.disabled = false;
-                    startButton.innerText = 'Start Scanner';
-                    return;
-                }
-
-                scanning = true;
-                startButton.disabled = true;
-                stopButton.disabled = false;
-                debugButton.disabled = false;
-                startButton.innerText = 'Scanning...';
-                output.value = '';
-                console.log('Scanning started.');
-
-                requestAnimationFrame(processFrame);
-            }
-
-            /* ------------------------------
-               Function to Stop Scanning (Full Stop)
-            ------------------------------ */
-            async function stopScanning() {
+            async function captureFrameAndPerformOCR() {
                 if (!scanning) return;
-                scanning = false;
-                startButton.disabled = false;
-                stopButton.disabled = true;
-                debugButton.disabled = false;
-                restartButton.style.display = 'block'; // Show Restart button when stopped
-                startButton.innerText = 'Start Scanner';
-                roiOverlay.style.borderColor = '#00b4d8';
-                console.log('Scanning stopped.');
-
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                    stream = null;
-                }
-
-                // Terminate Tesseract.js workers
-                if (workers.length > 0) {
-                    await Promise.all(workers.map(worker => worker.terminate()));
-                    workers = [];
-                    isTesseractInitialized = false;
-                    console.log('Tesseract.js workers terminated.');
-                }
-
-                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-                console.log('Camera stream stopped and debugging canvas cleared.');
-            }
-
-            /* ------------------------------
-               Function to Pause Scanning (For OCR Capture)
-            ------------------------------ */
-            async function pauseScanning() {
-                if (!scanning) return;
+    
+                console.log('Capturing frame for OCR.');
+    
+                // Pause scanning to perform OCR
                 scanning = false;
                 startButton.disabled = true;
                 stopButton.disabled = true;
                 debugButton.disabled = true;
                 restartButton.style.display = 'block'; // Show Restart button when paused
-                startButton.innerText = 'Start Scanner';
                 roiOverlay.style.borderColor = '#00b4d8';
                 console.log('Scanning paused.');
-
-                // Note: Do not terminate workers or stop the camera
-            }
-
-            /* ------------------------------
-               Function to Capture Frame and Perform OCR
-            ------------------------------ */
-            async function captureFrameAndPerformOCR() {
-                if (!scanning) return;
-
-                console.log('Capturing frame for OCR.');
-
-                // **Call pauseScanning to pause the scanner without terminating workers**
-                await pauseScanning();
-
+    
                 // Capture the current frame from video
                 const videoWidth = video.videoWidth;
                 const videoHeight = video.videoHeight;
@@ -1379,34 +422,34 @@
                 const ctx = videoCanvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
                 console.log('Frame captured.');
-
+    
                 // Extract ROI
                 const overlayRect = roiOverlay.getBoundingClientRect();
                 const videoRect = video.getBoundingClientRect();
-
+    
                 const scaleX = videoWidth / videoRect.width;
                 const scaleY = videoHeight / videoRect.height;
-
+    
                 const roiX = (overlayRect.left - videoRect.left) * scaleX;
                 const roiY = (overlayRect.top - videoRect.top) * scaleY;
                 const roiWidth = overlayRect.width * scaleX;
                 const roiHeight = overlayRect.height * scaleY;
-
+    
                 console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
-
+    
                 // Validate ROI boundaries
                 if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
                     console.warn('ROI is out of video frame bounds.');
                     showError('ROI is out of video frame bounds.');
                     return;
                 }
-
+    
                 roiCanvas.width = roiWidth;
                 roiCanvas.height = roiHeight;
                 const roiCtx = roiCanvas.getContext('2d');
                 roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
                 console.log('ROI extracted.');
-
+    
                 // Scale ROI for better OCR accuracy
                 const scaleFactor = 1.5;
                 scaledCanvas.width = roiWidth * scaleFactor;
@@ -1416,14 +459,14 @@
                 scaledCtx.imageSmoothingQuality = 'high';
                 scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
                 console.log('ROI scaled.');
-
+    
                 // Update Debug Canvas
                 debugCanvas.width = scaledCanvas.width;
                 debugCanvas.height = scaledCanvas.height;
                 debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
                 debugCtx.drawImage(scaledCanvas, 0, 0);
                 console.log('Debugging canvas updated.');
-
+    
                 // Convert Canvas to Blob for OCR
                 scaledCanvas.toBlob(async (blob) => {
                     if (blob) {
@@ -1435,42 +478,127 @@
                     // Scanning remains paused; user can restart manually
                 }, 'image/png');
             }
-
+    
             /* ------------------------------
-               Function to Request Focus (Tap-to-Focus) - Repurposed
+               Function to Start Scanning
+            ------------------------------ */
+            async function startScanning() {
+                if (scanning) return;
+    
+                // Initialize the camera
+                startButton.disabled = true;
+                stopButton.disabled = true;
+                restartButton.style.display = 'none'; // Hide Restart button when starting
+                startButton.innerText = 'Starting...';
+                console.log('Initializing camera...');
+                try {
+                    // Get the selected camera device ID
+                    const selectedCameraId = cameraSelect.value || null;
+    
+                    // Get the selected resolution
+                    const selectedResolutionValue = resolutionSelect.value;
+                    let selectedResolution = null;
+                    if (selectedResolutionValue) {
+                        const [width, height] = selectedResolutionValue.split('x').map(Number);
+                        selectedResolution = { width, height };
+                    }
+    
+                    await initCamera(selectedResolution, selectedCameraId);
+                } catch (err) {
+                    startButton.disabled = false;
+                    stopButton.disabled = true;
+                    startButton.innerText = 'Start Scanner';
+                    return;
+                }
+    
+                // Initialize Tesseract.js workers based on selection
+                const workersCount = parseInt(workersSelect.value) || 1;
+                console.log(`Selected workers count: ${workersCount}`);
+                try {
+                    await initializeTesseract(workersCount);
+                } catch (err) {
+                    console.error('Failed to initialize Tesseract.js workers:', err);
+                    showError('Failed to initialize OCR workers.');
+                    startButton.disabled = false;
+                    stopButton.disabled = true;
+                    startButton.innerText = 'Start Scanner';
+                    return;
+                }
+    
+                scanning = true;
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                startButton.innerText = 'Scanning...';
+                output.value = '';
+                console.log('Scanning started.');
+    
+                requestAnimationFrame(processFrame);
+            }
+    
+            /* ------------------------------
+               Function to Stop Scanning
+            ------------------------------ */
+            async function stopScanning() {
+                if (!scanning) return;
+                scanning = false;
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                restartButton.style.display = 'block'; // Show Restart button when stopped
+                startButton.innerText = 'Start Scanner';
+                roiOverlay.style.borderColor = '#00b4d8';
+                console.log('Scanning stopped.');
+    
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+    
+                // Terminate Tesseract.js workers
+                if (workers.length > 0) {
+                    await Promise.all(workers.map(worker => worker.terminate()));
+                    workers = [];
+                    isTesseractInitialized = false;
+                    console.log('Tesseract.js workers terminated.');
+                }
+    
+                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                console.log('Camera stream stopped and debugging canvas cleared.');
+            }
+    
+            /* ------------------------------
+               Function to Request Focus (Tap-to-Focus)
             ------------------------------ */
             async function requestFocus() {
                 // Instead of attempting to focus, capture frame and perform OCR
                 await captureFrameAndPerformOCR();
             }
-
+    
             /* ------------------------------
                Function to Handle Resolution Changes
             ------------------------------ */
             function handleResolutionChange() {
                 const selectedResolution = getSelectedResolution();
                 if (!selectedResolution) return;
-
+    
                 console.log(`Selected resolution: ${selectedResolution.width}x${selectedResolution.height}`);
-
+    
                 // Store the current scanning state
                 const wasScanning = scanning;
-
+    
                 // Stop current scanning if active
                 if (wasScanning) {
                     stopScanning();
                 }
-
+    
                 // Stop current stream
                 if (stream) {
                     stream.getTracks().forEach(track => track.stop());
                     stream = null;
                 }
-
+    
                 // Get the selected camera device ID
-                const cameraSelect = document.getElementById('camera-select');
                 const selectedCameraId = cameraSelect.value || null;
-
+    
                 // Re-initialize camera with selected resolution and camera
                 initCamera(selectedResolution, selectedCameraId).then(() => {
                     console.log('Camera re-initialized with new resolution.');
@@ -1482,33 +610,33 @@
                     showError('Failed to set the selected resolution.');
                 });
             }
-
+    
             /* ------------------------------
                Function to Handle Camera Changes
             ------------------------------ */
             function handleCameraChange() {
-                const selectedCameraId = document.getElementById('camera-select').value;
+                const selectedCameraId = cameraSelect.value;
                 if (selectedCameraId === '') return; // Do nothing if default option is selected
-
+    
                 console.log(`Selected camera ID: ${selectedCameraId}`);
-
+    
                 // Store the current scanning state
                 const wasScanning = scanning;
-
+    
                 // Stop current scanning if active
                 if (wasScanning) {
                     stopScanning();
                 }
-
+    
                 // Stop current stream
                 if (stream) {
                     stream.getTracks().forEach(track => track.stop());
                     stream = null;
                 }
-
+    
                 // Get the selected resolution
                 const selectedResolution = getSelectedResolution();
-
+    
                 // Re-initialize camera with selected camera and resolution
                 initCamera(selectedResolution, selectedCameraId).then(() => {
                     console.log('Camera re-initialized with new camera.');
@@ -1520,36 +648,36 @@
                     showError('Failed to set the selected camera.');
                 });
             }
-
+    
             /* ------------------------------
                Function to Handle Workers Changes
             ------------------------------ */
             async function handleWorkersChange() {
                 const selectedWorkers = parseInt(workersSelect.value);
                 console.log(`Selected workers count: ${selectedWorkers}`);
-
+    
                 if (isTesseractInitialized) {
                     // Inform the user about the worker count change
                     showTemporaryMessage('Updating workers...', 2000);
                     console.log('Updating workers...');
-
+    
                     try {
                         // Store whether scanning was active
                         const wasScanning = scanning;
-
+    
                         // Stop scanning if active
                         if (wasScanning) {
                             await stopScanning();
                         }
-
+    
                         // Reinitialize workers with the new count
                         await initializeTesseract(selectedWorkers);
-
+    
                         // Restart scanning if it was active before
                         if (wasScanning) {
                             await startScanning();
                         }
-
+    
                         console.log(`Reinitialized Tesseract.js with ${selectedWorkers} workers.`);
                     } catch (err) {
                         console.error('Failed to reinitialize Tesseract.js workers:', err);
@@ -1566,7 +694,7 @@
                     }
                 }
             }
-
+    
             /* ------------------------------
                Function to Show Temporary Messages
             ------------------------------ */
@@ -1587,18 +715,17 @@
                     document.body.removeChild(tempMsg);
                 }, duration);
             }
-
+    
             /* ------------------------------
                Function to Get Selected Resolution
             ------------------------------ */
             function getSelectedResolution() {
-                const resolutionSelect = document.getElementById('resolution-select');
                 const selectedValue = resolutionSelect.value;
                 if (selectedValue === '') return null;
                 const [width, height] = selectedValue.split('x').map(Number);
                 return { width, height };
             }
-
+    
             /* ------------------------------
                Event Listeners
             ------------------------------ */
@@ -1606,22 +733,36 @@
             startButton.addEventListener('click', startScanning);
             stopButton.addEventListener('click', stopScanning);
             restartButton.addEventListener('click', startScanning); // Restart uses startScanning
-
-            document.getElementById('resolution-select').addEventListener('change', handleResolutionChange);
-            document.getElementById('camera-select').addEventListener('change', handleCameraChange);
+    
+            resolutionSelect.addEventListener('change', handleResolutionChange);
+            cameraSelect.addEventListener('change', handleCameraChange);
             workersSelect.addEventListener('change', handleWorkersChange);
-
+    
+            sideMenuToggle.addEventListener('click', () => {
+                sideMenu.classList.toggle('show');
+            });
+    
+            showDebugBtn.addEventListener('click', () => {
+                debugContainer.classList.add('show');
+                showDebugBtn.style.display = 'none';
+                hideDebugBtn.style.display = 'block';
+            });
+    
+            hideDebugBtn.addEventListener('click', () => {
+                debugContainer.classList.remove('show');
+                showDebugBtn.style.display = 'block';
+                hideDebugBtn.style.display = 'none';
+            });
+    
             /* ------------------------------
                Initial Population of Cameras
             ------------------------------ */
-            (async function populateInitialCameras() {
-                try {
-                    await populateCameras();
-                } catch (err) {
-                    console.error('Failed to populate cameras:', err);
-                }
-            })();
-
+            try {
+                await populateCameras();
+            } catch (err) {
+                console.error('Failed to populate cameras:', err);
+            }
+    
             /* ------------------------------
                Cleanup on Page Unload
             ------------------------------ */
