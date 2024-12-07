@@ -161,17 +161,17 @@
             const debugContainer = document.getElementById('debug-container');
             const debugCanvas = document.getElementById('debugCanvas');
             const debugCtx = debugCanvas.getContext('2d');
-    
+
             const videoCanvas = document.createElement('canvas');
             const roiCanvas = document.createElement('canvas');
             const scaledCanvas = document.createElement('canvas');
-    
+
             let stream = null;
             let scanning = false;
             let workers = [];
             let isTesseractInitialized = false;
             const MIN_CONFIDENCE = 20; // Threshold for OCR confidence
-    
+
             /* ------------------------------
                Utility Functions
             ------------------------------ */
@@ -182,7 +182,7 @@
                     errorMsg.innerText = '';
                 }, 5000);
             }
-    
+
             /* Function to Populate Available Cameras */
             async function populateCameras() {
                 try {
@@ -200,7 +200,7 @@
                     showError('Failed to access camera devices.');
                 }
             }
-    
+
             /* Function to Initialize the Camera */
             async function initCamera(selectedResolution = null, selectedCameraId = null) {
                 try {
@@ -220,7 +220,7 @@
                     throw err;
                 }
             }
-    
+
             /* Function to Initialize Tesseract.js Workers */
             async function initializeTesseract(workersCount) {
                 try {
@@ -230,23 +230,23 @@
                         workers = [];
                         console.log('Existing Tesseract.js workers terminated.');
                     }
-    
+
                     // Initialize new workers based on the selected count
                     for (let i = 0; i < workersCount; i++) {
                         const worker = await Tesseract.createWorker({
                             lang: 'eng', // Default language
                             logger: m => console.log(`[Tesseract.js Worker ${i + 1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
                         });
-    
+
                         console.log(`Initializing Tesseract.js Worker ${i + 1}...`);
-    
+
                         // Load language data without using the deprecated load method
                         await worker.loadLanguage('eng');
                         await worker.initialize('eng');
                         workers.push(worker);
                         console.log(`Tesseract.js Worker ${i + 1} initialized.`);
                     }
-    
+
                     isTesseractInitialized = true;
                     console.log(`Initialized ${workersCount} Tesseract.js workers.`);
                 } catch (err) {
@@ -255,19 +255,19 @@
                     throw err; // Re-throw to handle it in the caller if necessary
                 }
             }
-    
+
             /* ------------------------------
                Function to Perform OCR Using Workers
             ------------------------------ */
             let isPerformingOCR = false;
-    
+
             async function performOCR(blob) {
                 if (isPerformingOCR) {
                     console.warn('OCR is already in progress.');
                     return;
                 }
                 isPerformingOCR = true;
-    
+
                 console.log('Starting OCR process.');
                 if (!isTesseractInitialized || workers.length === 0) {
                     console.warn('Tesseract.js workers are not initialized.');
@@ -275,11 +275,11 @@
                     isPerformingOCR = false;
                     return;
                 }
-    
+
                 try {
                     const ocrPromises = workers.map(worker => worker.recognize(blob));
                     const results = await Promise.all(ocrPromises);
-    
+
                     // Aggregate results
                     let aggregatedText = '';
                     let totalConfidence = 0;
@@ -287,10 +287,10 @@
                         aggregatedText += result.data.text + '\n';
                         totalConfidence += result.data.confidence;
                     });
-    
+
                     const averageConfidence = totalConfidence / workers.length;
                     console.log(`OCR Average Confidence: ${averageConfidence}`);
-    
+
                     if (averageConfidence >= MIN_CONFIDENCE && aggregatedText.trim().length > 0) {
                         roiOverlay.style.borderColor = '#2cb67d';
                         if (!output.value.includes(aggregatedText.trim())) {
@@ -309,13 +309,13 @@
                     isPerformingOCR = false;
                 }
             }
-    
+
             /* ------------------------------
                Function to Process Frames
             ------------------------------ */
             async function processFrame() {
                 if (!scanning) return;
-    
+
                 // Draw the video frame to videoCanvas
                 const videoWidth = video.videoWidth;
                 const videoHeight = video.videoHeight;
@@ -324,7 +324,7 @@
                 const ctx = videoCanvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
                 console.log('Image drawn on videoCanvas.');
-    
+
                 // Image preprocessing (e.g., grayscale, contrast adjustment)
                 // Example: Convert to grayscale
                 const imageData = ctx.getImageData(0, 0, videoWidth, videoHeight);
@@ -338,21 +338,21 @@
                 }
                 ctx.putImageData(imageData, 0, 0);
                 console.log('Image preprocessing complete.');
-    
+
                 // Determine ROI (Region of Interest)
                 const overlayRect = roiOverlay.getBoundingClientRect();
                 const videoRect = video.getBoundingClientRect();
-    
+
                 const scaleX = videoWidth / videoRect.width;
                 const scaleY = videoHeight / videoRect.height;
-    
+
                 const roiX = (overlayRect.left - videoRect.left) * scaleX;
                 const roiY = (overlayRect.top - videoRect.top) * scaleY;
                 const roiWidth = overlayRect.width * scaleX;
                 const roiHeight = overlayRect.height * scaleY;
-    
+
                 console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
-    
+
                 // Validate ROI boundaries
                 if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
                     console.warn('ROI is out of video frame bounds.');
@@ -360,14 +360,14 @@
                     stopScanning();
                     return;
                 }
-    
+
                 // Extract ROI
                 roiCanvas.width = roiWidth;
                 roiCanvas.height = roiHeight;
                 const roiCtx = roiCanvas.getContext('2d');
                 roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
                 console.log('ROI extracted.');
-    
+
                 // Scale ROI for better OCR accuracy
                 const scaleFactor = 1.5;
                 scaledCanvas.width = roiWidth * scaleFactor;
@@ -377,14 +377,14 @@
                 scaledCtx.imageSmoothingQuality = 'high';
                 scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
                 console.log('ROI scaled.');
-    
+
                 // Update Debug Canvas
                 debugCanvas.width = scaledCanvas.width;
                 debugCanvas.height = scaledCanvas.height;
                 debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
                 debugCtx.drawImage(scaledCanvas, 0, 0);
                 console.log('Debugging canvas updated.');
-    
+
                 // Convert Canvas to Blob for OCR
                 scaledCanvas.toBlob(async (blob) => {
                     if (blob && scanning) {
@@ -396,15 +396,15 @@
                     if (scanning) requestAnimationFrame(processFrame);
                 }, 'image/png');
             }
-    
+
             /* ------------------------------
                Function to Capture Frame and Perform OCR (for Tap-to-Focus)
             ------------------------------ */
             async function captureFrameAndPerformOCR() {
                 if (!scanning) return;
-    
+
                 console.log('Capturing frame for OCR.');
-    
+
                 // Pause scanning to perform OCR
                 scanning = false;
                 startButton.disabled = true;
@@ -413,7 +413,7 @@
                 restartButton.style.display = 'block'; // Show Restart button when paused
                 roiOverlay.style.borderColor = '#00b4d8';
                 console.log('Scanning paused.');
-    
+
                 // Capture the current frame from video
                 const videoWidth = video.videoWidth;
                 const videoHeight = video.videoHeight;
@@ -422,34 +422,34 @@
                 const ctx = videoCanvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
                 console.log('Frame captured.');
-    
+
                 // Extract ROI
                 const overlayRect = roiOverlay.getBoundingClientRect();
                 const videoRect = video.getBoundingClientRect();
-    
+
                 const scaleX = videoWidth / videoRect.width;
                 const scaleY = videoHeight / videoRect.height;
-    
+
                 const roiX = (overlayRect.left - videoRect.left) * scaleX;
                 const roiY = (overlayRect.top - videoRect.top) * scaleY;
                 const roiWidth = overlayRect.width * scaleX;
                 const roiHeight = overlayRect.height * scaleY;
-    
+
                 console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
-    
+
                 // Validate ROI boundaries
                 if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
                     console.warn('ROI is out of video frame bounds.');
                     showError('ROI is out of video frame bounds.');
                     return;
                 }
-    
+
                 roiCanvas.width = roiWidth;
                 roiCanvas.height = roiHeight;
                 const roiCtx = roiCanvas.getContext('2d');
                 roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
                 console.log('ROI extracted.');
-    
+
                 // Scale ROI for better OCR accuracy
                 const scaleFactor = 1.5;
                 scaledCanvas.width = roiWidth * scaleFactor;
@@ -459,14 +459,14 @@
                 scaledCtx.imageSmoothingQuality = 'high';
                 scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
                 console.log('ROI scaled.');
-    
+
                 // Update Debug Canvas
                 debugCanvas.width = scaledCanvas.width;
                 debugCanvas.height = scaledCanvas.height;
                 debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
                 debugCtx.drawImage(scaledCanvas, 0, 0);
                 console.log('Debugging canvas updated.');
-    
+
                 // Convert Canvas to Blob for OCR
                 scaledCanvas.toBlob(async (blob) => {
                     if (blob) {
@@ -478,13 +478,13 @@
                     // Scanning remains paused; user can restart manually
                 }, 'image/png');
             }
-    
+
             /* ------------------------------
                Function to Start Scanning
             ------------------------------ */
             async function startScanning() {
                 if (scanning) return;
-    
+
                 // Initialize the camera
                 startButton.disabled = true;
                 stopButton.disabled = true;
@@ -494,7 +494,7 @@
                 try {
                     // Get the selected camera device ID
                     const selectedCameraId = cameraSelect.value || null;
-    
+
                     // Get the selected resolution
                     const selectedResolutionValue = resolutionSelect.value;
                     let selectedResolution = null;
@@ -502,7 +502,7 @@
                         const [width, height] = selectedResolutionValue.split('x').map(Number);
                         selectedResolution = { width, height };
                     }
-    
+
                     await initCamera(selectedResolution, selectedCameraId);
                 } catch (err) {
                     startButton.disabled = false;
@@ -510,7 +510,7 @@
                     startButton.innerText = 'Start Scanner';
                     return;
                 }
-    
+
                 // Initialize Tesseract.js workers based on selection
                 const workersCount = parseInt(workersSelect.value) || 1;
                 console.log(`Selected workers count: ${workersCount}`);
@@ -524,17 +524,17 @@
                     startButton.innerText = 'Start Scanner';
                     return;
                 }
-    
+
                 scanning = true;
                 startButton.disabled = true;
                 stopButton.disabled = false;
                 startButton.innerText = 'Scanning...';
                 output.value = '';
                 console.log('Scanning started.');
-    
+
                 requestAnimationFrame(processFrame);
             }
-    
+
             /* ------------------------------
                Function to Stop Scanning
             ------------------------------ */
@@ -547,12 +547,12 @@
                 startButton.innerText = 'Start Scanner';
                 roiOverlay.style.borderColor = '#00b4d8';
                 console.log('Scanning stopped.');
-    
+
                 if (stream) {
                     stream.getTracks().forEach(track => track.stop());
                     stream = null;
                 }
-    
+
                 // Terminate Tesseract.js workers
                 if (workers.length > 0) {
                     await Promise.all(workers.map(worker => worker.terminate()));
@@ -560,11 +560,11 @@
                     isTesseractInitialized = false;
                     console.log('Tesseract.js workers terminated.');
                 }
-    
+
                 debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
                 console.log('Camera stream stopped and debugging canvas cleared.');
             }
-    
+
             /* ------------------------------
                Function to Request Focus (Tap-to-Focus)
             ------------------------------ */
@@ -572,33 +572,33 @@
                 // Instead of attempting to focus, capture frame and perform OCR
                 await captureFrameAndPerformOCR();
             }
-    
+
             /* ------------------------------
                Function to Handle Resolution Changes
             ------------------------------ */
             function handleResolutionChange() {
                 const selectedResolution = getSelectedResolution();
                 if (!selectedResolution) return;
-    
+
                 console.log(`Selected resolution: ${selectedResolution.width}x${selectedResolution.height}`);
-    
+
                 // Store the current scanning state
                 const wasScanning = scanning;
-    
+
                 // Stop current scanning if active
                 if (wasScanning) {
                     stopScanning();
                 }
-    
+
                 // Stop current stream
                 if (stream) {
                     stream.getTracks().forEach(track => track.stop());
                     stream = null;
                 }
-    
+
                 // Get the selected camera device ID
                 const selectedCameraId = cameraSelect.value || null;
-    
+
                 // Re-initialize camera with selected resolution and camera
                 initCamera(selectedResolution, selectedCameraId).then(() => {
                     console.log('Camera re-initialized with new resolution.');
@@ -610,33 +610,33 @@
                     showError('Failed to set the selected resolution.');
                 });
             }
-    
+
             /* ------------------------------
                Function to Handle Camera Changes
             ------------------------------ */
             function handleCameraChange() {
                 const selectedCameraId = cameraSelect.value;
                 if (selectedCameraId === '') return; // Do nothing if default option is selected
-    
+
                 console.log(`Selected camera ID: ${selectedCameraId}`);
-    
+
                 // Store the current scanning state
                 const wasScanning = scanning;
-    
+
                 // Stop current scanning if active
                 if (wasScanning) {
                     stopScanning();
                 }
-    
+
                 // Stop current stream
                 if (stream) {
                     stream.getTracks().forEach(track => track.stop());
                     stream = null;
                 }
-    
+
                 // Get the selected resolution
                 const selectedResolution = getSelectedResolution();
-    
+
                 // Re-initialize camera with selected camera and resolution
                 initCamera(selectedResolution, selectedCameraId).then(() => {
                     console.log('Camera re-initialized with new camera.');
@@ -648,36 +648,36 @@
                     showError('Failed to set the selected camera.');
                 });
             }
-    
+
             /* ------------------------------
                Function to Handle Workers Changes
             ------------------------------ */
             async function handleWorkersChange() {
                 const selectedWorkers = parseInt(workersSelect.value);
                 console.log(`Selected workers count: ${selectedWorkers}`);
-    
+
                 if (isTesseractInitialized) {
                     // Inform the user about the worker count change
                     showTemporaryMessage('Updating workers...', 2000);
                     console.log('Updating workers...');
-    
+
                     try {
                         // Store whether scanning was active
                         const wasScanning = scanning;
-    
+
                         // Stop scanning if active
                         if (wasScanning) {
                             await stopScanning();
                         }
-    
+
                         // Reinitialize workers with the new count
                         await initializeTesseract(selectedWorkers);
-    
+
                         // Restart scanning if it was active before
                         if (wasScanning) {
                             await startScanning();
                         }
-    
+
                         console.log(`Reinitialized Tesseract.js with ${selectedWorkers} workers.`);
                     } catch (err) {
                         console.error('Failed to reinitialize Tesseract.js workers:', err);
@@ -694,7 +694,7 @@
                     }
                 }
             }
-    
+
             /* ------------------------------
                Function to Show Temporary Messages
             ------------------------------ */
@@ -715,7 +715,7 @@
                     document.body.removeChild(tempMsg);
                 }, duration);
             }
-    
+
             /* ------------------------------
                Function to Get Selected Resolution
             ------------------------------ */
@@ -725,7 +725,7 @@
                 const [width, height] = selectedValue.split('x').map(Number);
                 return { width, height };
             }
-    
+
             /* ------------------------------
                Event Listeners
             ------------------------------ */
@@ -733,27 +733,27 @@
             startButton.addEventListener('click', startScanning);
             stopButton.addEventListener('click', stopScanning);
             restartButton.addEventListener('click', startScanning); // Restart uses startScanning
-    
+
             resolutionSelect.addEventListener('change', handleResolutionChange);
             cameraSelect.addEventListener('change', handleCameraChange);
             workersSelect.addEventListener('change', handleWorkersChange);
-    
+
             sideMenuToggle.addEventListener('click', () => {
                 sideMenu.classList.toggle('show');
             });
-    
+
             showDebugBtn.addEventListener('click', () => {
                 debugContainer.classList.add('show');
                 showDebugBtn.style.display = 'none';
                 hideDebugBtn.style.display = 'block';
             });
-    
+
             hideDebugBtn.addEventListener('click', () => {
                 debugContainer.classList.remove('show');
                 showDebugBtn.style.display = 'block';
                 hideDebugBtn.style.display = 'none';
             });
-    
+
             /* ------------------------------
                Initial Population of Cameras
             ------------------------------ */
@@ -762,7 +762,7 @@
             } catch (err) {
                 console.error('Failed to populate cameras:', err);
             }
-    
+
             /* ------------------------------
                Cleanup on Page Unload
             ------------------------------ */
