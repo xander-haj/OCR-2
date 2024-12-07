@@ -596,8 +596,21 @@
         ------------------------------ -->
         <div style="margin-top: 20px;">
             <label for="resolution-select">Resolutions:</label>
-            <select id="resolution-select" disabled>
+            <select id="resolution-select">
                 <option value="">Select Resolution</option>
+                <!-- Pre-populated with common resolutions -->
+                <option value="320x240">320 x 240</option>
+                <option value="640x480">640 x 480</option>
+                <option value="800x600">800 x 600</option>
+                <option value="1024x768">1024 x 768</option>
+                <option value="1280x720">1280 x 720</option>
+                <option value="1280x800">1280 x 800</option>
+                <option value="1366x768">1366 x 768</option>
+                <option value="1440x900">1440 x 900</option>
+                <option value="1600x900">1600 x 900</option>
+                <option value="1920x1080">1920 x 1080</option>
+                <option value="2560x1440">2560 x 1440</option>
+                <option value="3840x2160">3840 x 2160</option>
             </select>
         </div>
         <!-- ------------------------------
@@ -605,12 +618,13 @@
         ------------------------------ -->
         <div style="margin-top: 20px;">
             <label for="camera-select">Cameras:</label>
-            <select id="camera-select" disabled>
+            <select id="camera-select">
                 <option value="">Select Camera</option>
+                <!-- Camera options will be populated on page load -->
             </select>
         </div>
         <!-- ------------------------------
-           Workers Dropdown (New Control)
+           Workers Dropdown (Always Enabled)
         ------------------------------ -->
         <div style="margin-top: 20px;">
             <label for="workers-select">Workers:</label>
@@ -926,27 +940,6 @@
             }
 
             /* ------------------------------
-               Function to Get Available Resolutions
-            ------------------------------ */
-            function getAvailableResolutions(track) {
-                const capabilities = track.getCapabilities();
-                const widthCaps = capabilities.width;
-                const heightCaps = capabilities.height;
-
-                if (!widthCaps || !heightCaps) {
-                    // Fallback to common resolutions
-                    return COMMON_RESOLUTIONS;
-                }
-
-                const availableResolutions = COMMON_RESOLUTIONS.filter(res => {
-                    return res.width >= widthCaps.min && res.width <= widthCaps.max &&
-                           res.height >= heightCaps.min && res.height <= heightCaps.max;
-                });
-
-                return availableResolutions;
-            }
-
-            /* ------------------------------
                Function to Get Available Cameras
             ------------------------------ */
             async function getAvailableCameras() {
@@ -962,33 +955,9 @@
             }
 
             /* ------------------------------
-               Function to Populate Resolutions Dropdown
-            ------------------------------ */
-            function populateResolutions(resolutions, currentResolution = null) {
-                const resolutionSelect = document.getElementById('resolution-select');
-                resolutionSelect.innerHTML = ''; // Clear existing options
-
-                // Add a default option
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.text = 'Select Resolution';
-                resolutionSelect.appendChild(defaultOption);
-
-                resolutions.forEach(res => {
-                    const option = document.createElement('option');
-                    option.value = `${res.width}x${res.height}`;
-                    option.text = `${res.width} x ${res.height}`;
-                    if (currentResolution && res.width === currentResolution.width && res.height === currentResolution.height) {
-                        option.selected = true;
-                    }
-                    resolutionSelect.appendChild(option);
-                });
-            }
-
-            /* ------------------------------
                Function to Populate Cameras Dropdown
             ------------------------------ */
-            async function populateCameras(currentCameraId = null) {
+            async function populateCameras() {
                 const cameraSelect = document.getElementById('camera-select');
                 cameraSelect.innerHTML = ''; // Clear existing options
 
@@ -1003,9 +972,6 @@
                     const option = document.createElement('option');
                     option.value = camera.deviceId;
                     option.text = camera.label || `Camera ${cameraSelect.length}`;
-                    if (currentCameraId && camera.deviceId === currentCameraId) {
-                        option.selected = true;
-                    }
                     cameraSelect.appendChild(option);
                 });
 
@@ -1015,6 +981,33 @@
                     option.text = 'No cameras found';
                     cameraSelect.appendChild(option);
                 }
+            }
+
+            /* ------------------------------
+               Function to Preprocess Image
+            ------------------------------ */
+            function preprocessImage(videoCanvas, width, height) {
+                const ctx = videoCanvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, width, height);
+                console.log('Image drawn on videoCanvas.');
+
+                let imageData = ctx.getImageData(0, 0, width, height);
+                let data = imageData.data;
+
+                // Apply contrast adjustment
+                const contrastFactor = 1.3;
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = ((data[i] - 128) * contrastFactor) + 128;     
+                    data[i+1] = ((data[i+1] - 128) * contrastFactor) + 128;
+                    data[i+2] = ((data[i+2] - 128) * contrastFactor) + 128;
+
+                    data[i] = Math.min(255, Math.max(0, data[i]));
+                    data[i+1] = Math.min(255, Math.max(0, data[i+1]));
+                    data[i+2] = Math.min(255, Math.max(0, data[i+2]));
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+                console.log('Image preprocessing complete.');
             }
 
             /* ------------------------------
@@ -1045,46 +1038,11 @@
                     stream = await navigator.mediaDevices.getUserMedia(constraints);
                     video.srcObject = stream;
                     console.log('Camera initialized successfully.');
-
-                    // After initializing camera, populate resolutions and cameras
-                    const track = stream.getVideoTracks()[0];
-                    const resolutions = getAvailableResolutions(track);
-                    populateResolutions(resolutions, resolution);
-
-                    const currentCameraId = track.getSettings().deviceId;
-                    populateCameras(currentCameraId);
                 } catch (err) {
                     console.error('Camera initialization failed:', err);
                     showError('Unable to access the selected camera. Please check permissions or try a different device.');
                     throw err;
                 }
-            }
-
-            /* ------------------------------
-               Function to Preprocess Image
-            ------------------------------ */
-            function preprocessImage(videoCanvas, width, height) {
-                const ctx = videoCanvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, width, height);
-                console.log('Image drawn on videoCanvas.');
-
-                let imageData = ctx.getImageData(0, 0, width, height);
-                let data = imageData.data;
-
-                // Apply contrast adjustment
-                const contrastFactor = 1.3;
-                for (let i = 0; i < data.length; i += 4) {
-                    data[i] = ((data[i] - 128) * contrastFactor) + 128;     
-                    data[i+1] = ((data[i+1] - 128) * contrastFactor) + 128;
-                    data[i+2] = ((data[i+2] - 128) * contrastFactor) + 128;
-
-                    data[i] = Math.min(255, Math.max(0, data[i]));
-                    data[i+1] = Math.min(255, Math.max(0, data[i+1]));
-                    data[i+2] = Math.min(255, Math.max(0, data[i+2]));
-                }
-
-                ctx.putImageData(imageData, 0, 0);
-                console.log('Image preprocessing complete.');
             }
 
             /* ------------------------------
@@ -1267,7 +1225,6 @@
                 startButton.disabled = true;
                 stopButton.disabled = true;
                 debugButton.disabled = true; // Disable debug button while starting
-                workersSelect.disabled = true; // Temporarily disable workers selection during initialization
                 startButton.innerText = 'Starting...';
                 console.log('Initializing camera...');
                 try {
@@ -1289,7 +1246,6 @@
                     startButton.disabled = false;
                     stopButton.disabled = true;
                     debugButton.disabled = false;
-                    workersSelect.disabled = false;
                     startButton.innerText = 'Start Scanner';
                     return;
                 }
@@ -1305,7 +1261,6 @@
                     startButton.disabled = false;
                     stopButton.disabled = true;
                     debugButton.disabled = false;
-                    workersSelect.disabled = false;
                     startButton.innerText = 'Start Scanner';
                     return;
                 }
@@ -1314,7 +1269,6 @@
                 startButton.disabled = true;
                 stopButton.disabled = false;
                 debugButton.disabled = false;
-                workersSelect.disabled = false; // Re-enable workers selection after initialization
                 startButton.innerText = 'Scanning...';
                 output.value = '';
                 console.log('Scanning started.');
@@ -1331,7 +1285,6 @@
                 startButton.disabled = false;
                 stopButton.disabled = true;
                 debugButton.disabled = false;
-                workersSelect.disabled = false; // Ensure workers selection is enabled after stopping
                 startButton.innerText = 'Start Scanner';
                 roiOverlay.style.borderColor = '#00b4d8';
                 console.log('Scanning stopped.');
@@ -1374,17 +1327,6 @@
                 } else {
                     console.log('Focus control not supported by this device/browser.');
                 }
-            }
-
-            /* ------------------------------
-               Function to Get Selected Resolution
-            ------------------------------ */
-            function getSelectedResolution() {
-                const resolutionSelect = document.getElementById('resolution-select');
-                const selectedValue = resolutionSelect.value;
-                if (selectedValue === '') return null;
-                const [width, height] = selectedValue.split('x').map(Number);
-                return { width, height };
             }
 
             /* ------------------------------
@@ -1477,8 +1419,11 @@
                     console.log('Updating workers...');
 
                     try {
+                        // Store whether scanning was active
+                        const wasScanning = scanning;
+
                         // Stop scanning if active
-                        if (scanning) {
+                        if (wasScanning) {
                             await stopScanning();
                         }
 
@@ -1486,7 +1431,7 @@
                         await initializeTesseract(selectedWorkers);
 
                         // Restart scanning if it was active before
-                        if (scanning) {
+                        if (wasScanning) {
                             await startScanning();
                         }
 
@@ -1529,10 +1474,14 @@
             }
 
             /* ------------------------------
-               Function to Add Logs to Debug Console
+               Function to Get Selected Resolution
             ------------------------------ */
-            async function handleWorkerUpdate() {
-                // Placeholder for any additional actions during worker updates
+            function getSelectedResolution() {
+                const resolutionSelect = document.getElementById('resolution-select');
+                const selectedValue = resolutionSelect.value;
+                if (selectedValue === '') return null;
+                const [width, height] = selectedValue.split('x').map(Number);
+                return { width, height };
             }
 
             /* ------------------------------
@@ -1547,10 +1496,15 @@
             workersSelect.addEventListener('change', handleWorkersChange);
 
             /* ------------------------------
-               Initial Population of Cameras and Resolutions
+               Initial Population of Cameras
             ------------------------------ */
-            // Removed automatic camera initialization on page load to prevent automatic video streaming
-            // Resolutions and cameras will be populated when the user clicks "Start Scanner"
+            (async function populateInitialCameras() {
+                try {
+                    await populateCameras();
+                } catch (err) {
+                    console.error('Failed to populate cameras:', err);
+                }
+            })();
 
             /* ------------------------------
                Cleanup on Page Unload
