@@ -342,6 +342,30 @@
             cursor: not-allowed;
         }
 
+        /* Restart Scanner Button */
+        #restart-button {
+            padding: 14px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            background-color: #f39c12;
+            color: #fff;
+            transition: background-color 0.3s ease, opacity 0.3s ease;
+            width: 150px;
+            margin-top: 20px;
+            display: none; /* Hidden by default */
+        }
+
+        #restart-button:hover:not(:disabled) {
+            background-color: #e67e22;
+        }
+        #restart-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* Output Textarea */
         #output {
             margin-top: 20px;
@@ -539,7 +563,7 @@
                 gap: 15px; /* Reduce gap on smaller screens */
             }
 
-            #start-button, #stop-button {
+            #start-button, #stop-button, #restart-button {
                 padding: 16px 28px;
                 font-size: 20px;
                 width: 160px; /* Adjusted width to maintain original size */
@@ -568,7 +592,7 @@
                 gap: 10px; /* Further reduce gap */
             }
 
-            #start-button, #stop-button {
+            #start-button, #stop-button, #restart-button {
                 padding: 14px 24px;
                 font-size: 18px;
                 width: 140px; /* Adjusted width to maintain original size */
@@ -709,6 +733,7 @@
                 <button id="start-button">Start Scanner</button>
                 <button id="stop-button" disabled>Stop Scanner</button>
             </div>
+            <button id="restart-button">Restart Scanner</button>
             <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
         </div>
 
@@ -899,6 +924,7 @@
             const roiOverlay = document.getElementById('overlay'); // ROI Bounding Box
             const startButton = document.getElementById('start-button');
             const stopButton = document.getElementById('stop-button');
+            const restartButton = document.getElementById('restart-button'); // New Restart Button
             const debugButton = document.getElementById('debug-button'); // Now in side menu
             const output = document.getElementById('output');
             const errorMsg = document.getElementById('errorMsg');
@@ -1237,6 +1263,7 @@
                 // Initialize the camera
                 startButton.disabled = true;
                 stopButton.disabled = true;
+                restartButton.style.display = 'none'; // Hide Restart button when starting
                 debugButton.disabled = true; // Disable debug button while starting
                 startButton.innerText = 'Starting...';
                 console.log('Initializing camera...');
@@ -1298,6 +1325,7 @@
                 startButton.disabled = false;
                 stopButton.disabled = true;
                 debugButton.disabled = false;
+                restartButton.style.display = 'block'; // Show Restart button when stopped
                 startButton.innerText = 'Start Scanner';
                 roiOverlay.style.borderColor = '#00b4d8';
                 console.log('Scanning stopped.');
@@ -1320,26 +1348,87 @@
             }
 
             /* ------------------------------
-               Function to Request Focus (Tap-to-Focus)
+               Function to Capture Frame and Perform OCR
+            ------------------------------ */
+            async function captureFrameAndPerformOCR() {
+                if (!scanning) return;
+
+                console.log('Capturing frame for OCR.');
+
+                // Capture the current frame from video
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+                videoCanvas.width = videoWidth;
+                videoCanvas.height = videoHeight;
+                const ctx = videoCanvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+                console.log('Frame captured.');
+
+                // Extract ROI
+                const overlayRect = roiOverlay.getBoundingClientRect();
+                const videoRect = video.getBoundingClientRect();
+
+                const scaleX = videoWidth / videoRect.width;
+                const scaleY = videoHeight / videoRect.height;
+
+                const roiX = (overlayRect.left - videoRect.left) * scaleX;
+                const roiY = (overlayRect.top - videoRect.top) * scaleY;
+                const roiWidth = overlayRect.width * scaleX;
+                const roiHeight = overlayRect.height * scaleY;
+
+                console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
+
+                // Validate ROI boundaries
+                if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
+                    console.warn('ROI is out of video frame bounds.');
+                    showError('ROI is out of video frame bounds.');
+                    stopScanning();
+                    return;
+                }
+
+                roiCanvas.width = roiWidth;
+                roiCanvas.height = roiHeight;
+                const roiCtx = roiCanvas.getContext('2d');
+                roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
+                console.log('ROI extracted.');
+
+                // Scale ROI for better OCR accuracy
+                const scaleFactor = 1.5;
+                scaledCanvas.width = roiWidth * scaleFactor;
+                scaledCanvas.height = roiHeight * scaleFactor;
+                const scaledCtx = scaledCanvas.getContext('2d');
+                scaledCtx.imageSmoothingEnabled = true;
+                scaledCtx.imageSmoothingQuality = 'high';
+                scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+                console.log('ROI scaled.');
+
+                // Update Debug Canvas
+                debugCanvas.width = scaledCanvas.width;
+                debugCanvas.height = scaledCanvas.height;
+                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                debugCtx.drawImage(scaledCanvas, 0, 0);
+                console.log('Debugging canvas updated.');
+
+                // Convert Canvas to Blob for OCR
+                scaledCanvas.toBlob(async (blob) => {
+                    if (blob) {
+                        console.log('Blob created for OCR.');
+                        await performOCR(blob);
+                    } else {
+                        console.warn('Blob conversion failed.');
+                    }
+
+                    // Pause scanning
+                    await stopScanning();
+                }, 'image/png');
+            }
+
+            /* ------------------------------
+               Function to Request Focus (Tap-to-Focus) - Repurposed
             ------------------------------ */
             async function requestFocus() {
-                focusIndicator.style.display = 'block';
-                setTimeout(() => { focusIndicator.style.display = 'none'; }, 1000);
-
-                if (!stream) return; 
-                const track = stream.getVideoTracks()[0];
-                const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-
-                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-                    try {
-                        await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
-                        console.log('Requested camera to refocus using continuous mode.');
-                    } catch (err) {
-                        console.warn('Failed to set focusMode:', err);
-                    }
-                } else {
-                    console.log('Focus control not supported by this device/browser.');
-                }
+                // Instead of attempting to focus, capture frame and perform OCR
+                await captureFrameAndPerformOCR();
             }
 
             /* ------------------------------
@@ -1503,6 +1592,7 @@
             roiOverlay.addEventListener('click', requestFocus);
             startButton.addEventListener('click', startScanning);
             stopButton.addEventListener('click', stopScanning);
+            restartButton.addEventListener('click', startScanning); // Restart uses startScanning
 
             document.getElementById('resolution-select').addEventListener('change', handleResolutionChange);
             document.getElementById('camera-select').addEventListener('change', handleCameraChange);
