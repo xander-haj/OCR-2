@@ -1157,25 +1157,24 @@
             ------------------------------ */
             async function startScanning() {
                 if (scanning) return;
-                if (stream) {
-                    showError('Scanner is already running.');
-                    return;
-                }
 
-                // Disable buttons during initialization
-                startButton.disabled = true;
-                stopButton.disabled = true;
-                debugButton.disabled = true; // Disable debug button while starting
-                startButton.innerText = 'Starting...';
-                console.log('Initializing camera...');
-                try {
-                    await initCamera();
-                } catch (err) {
-                    startButton.disabled = false;
+                // If stream is not initialized, initialize it
+                if (!stream) {
+                    // Initialize the camera
+                    startButton.disabled = true;
                     stopButton.disabled = true;
-                    debugButton.disabled = false;
-                    startButton.innerText = 'Start Scanner';
-                    return;
+                    debugButton.disabled = true; // Disable debug button while starting
+                    startButton.innerText = 'Starting...';
+                    console.log('Initializing camera...');
+                    try {
+                        await initCamera();
+                    } catch (err) {
+                        startButton.disabled = false;
+                        stopButton.disabled = true;
+                        debugButton.disabled = false;
+                        startButton.innerText = 'Start Scanner';
+                        return;
+                    }
                 }
 
                 scanning = true;
