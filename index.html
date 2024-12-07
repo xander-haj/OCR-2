@@ -147,6 +147,9 @@
             z-index: 1001; /* Above other elements */
             padding: 20px;
             box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* To push Debug button to bottom */
         }
 
         .side-menu.active {
@@ -287,22 +290,27 @@
             width: 90%;
             max-width: 500px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            justify-content: center; /* Center the buttons horizontally */
+            gap: 20px; /* Space between buttons */
+        }
+
+        /* Buttons Container */
+        .buttons-container {
+            display: flex;
+            gap: 20px; /* Space between Start and Stop buttons */
         }
 
         /* Buttons */
-        #start-button, #stop-button, #debug-button {
+        #start-button, #stop-button {
             padding: 14px 24px;
             font-size: 18px;
             cursor: pointer;
             border: none;
             border-radius: 8px;
             font-weight: 600;
-            margin: 0 5px 15px 5px; /* Adjusted margin for spacing */
             transition: background-color 0.3s ease, opacity 0.3s ease;
-            width: 100%;
-            max-width: 280px;
+            flex: 1; /* Make buttons take equal width */
+            max-width: 140px; /* Optional: limit max width */
         }
 
         #start-button {
@@ -329,18 +337,25 @@
             cursor: not-allowed;
         }
 
-        /* Debug Button Styling */
-        #debug-button {
+        /* Debug Button Styling (Moved to Side Menu) */
+        .side-menu .debug-button {
             background-color: #0d6efd; /* Bootstrap primary color */
             color: #fff;
+            width: 100%;
+            padding: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
-        #debug-button:hover:not(:disabled) {
+        .side-menu .debug-button:hover:not(:disabled) {
             background-color: #0b5ed7;
         }
-        #debug-button:active {
+        .side-menu .debug-button:active {
             background-color: #0a58ca;
         }
-        #debug-button:focus {
+        .side-menu .debug-button:focus {
             outline: none;
             box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.5);
         }
@@ -470,33 +485,6 @@
         }
 
         /* ------------------------------
-           Resolutions, Cameras, and Workers Dropdown Styles
-        ------------------------------ */
-        #side-menu label {
-            font-size: 18px;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        #resolution-select, #camera-select, #workers-select {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            background-color: #fff;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        body.dark-theme #resolution-select,
-        body.dark-theme #camera-select,
-        body.dark-theme #workers-select {
-            background-color: #1e1e1e;
-            border: 1px solid #555;
-            color: #e0e0e0;
-        }
-
-        /* ------------------------------
            Responsive Adjustments
         ------------------------------ */
         @media (max-width: 768px) {
@@ -516,10 +504,9 @@
             }
 
             /* Adjust Debug Button for Mobile */
-            #debug-button {
-                padding: 10px 16px;
+            .side-menu .debug-button {
+                padding: 10px 0;
                 font-size: 16px;
-                margin: 0 5px 12px 5px;
             }
 
             /* Adjust Debug Canvas and Console for Mobile */
@@ -537,7 +524,11 @@
             }
 
             /* Increase button sizes for better touch targets */
-            #start-button, #stop-button, #debug-button {
+            .buttons-container {
+                gap: 15px; /* Reduce gap on smaller screens */
+            }
+
+            #start-button, #stop-button {
                 padding: 16px 28px;
                 font-size: 20px;
                 max-width: 300px;
@@ -562,7 +553,11 @@
 
         @media (max-width: 480px) {
             /* Further adjustments for very small screens */
-            #start-button, #stop-button, #debug-button {
+            .buttons-container {
+                gap: 10px; /* Further reduce gap */
+            }
+
+            #start-button, #stop-button {
                 padding: 14px 24px;
                 font-size: 18px;
                 max-width: 280px;
@@ -590,52 +585,58 @@
        Side Menu Structure
     ------------------------------ -->
     <div class="side-menu" id="side-menu">
-        <h2>Settings</h2>
-        <!-- ------------------------------
-           Resolutions Dropdown
-        ------------------------------ -->
-        <div style="margin-top: 20px;">
-            <label for="resolution-select">Resolutions:</label>
-            <select id="resolution-select">
-                <option value="">Select Resolution</option>
-                <!-- Pre-populated with common resolutions -->
-                <option value="320x240">320 x 240</option>
-                <option value="640x480">640 x 480</option>
-                <option value="800x600">800 x 600</option>
-                <option value="1024x768">1024 x 768</option>
-                <option value="1280x720">1280 x 720</option>
-                <option value="1280x800">1280 x 800</option>
-                <option value="1366x768">1366 x 768</option>
-                <option value="1440x900">1440 x 900</option>
-                <option value="1600x900">1600 x 900</option>
-                <option value="1920x1080">1920 x 1080</option>
-                <option value="2560x1440">2560 x 1440</option>
-                <option value="3840x2160">3840 x 2160</option>
-            </select>
+        <div>
+            <h2>Settings</h2>
+            <!-- ------------------------------
+               Resolutions Dropdown
+            ------------------------------ -->
+            <div style="margin-top: 20px;">
+                <label for="resolution-select">Resolutions:</label>
+                <select id="resolution-select">
+                    <option value="">Select Resolution</option>
+                    <!-- Pre-populated with common resolutions -->
+                    <option value="320x240">320 x 240</option>
+                    <option value="640x480">640 x 480</option>
+                    <option value="800x600">800 x 600</option>
+                    <option value="1024x768">1024 x 768</option>
+                    <option value="1280x720">1280 x 720</option>
+                    <option value="1280x800">1280 x 800</option>
+                    <option value="1366x768">1366 x 768</option>
+                    <option value="1440x900">1440 x 900</option>
+                    <option value="1600x900">1600 x 900</option>
+                    <option value="1920x1080">1920 x 1080</option>
+                    <option value="2560x1440">2560 x 1440</option>
+                    <option value="3840x2160">3840 x 2160</option>
+                </select>
+            </div>
+            <!-- ------------------------------
+               Cameras Dropdown
+            ------------------------------ -->
+            <div style="margin-top: 20px;">
+                <label for="camera-select">Cameras:</label>
+                <select id="camera-select">
+                    <option value="">Select Camera</option>
+                    <!-- Camera options will be populated on page load -->
+                </select>
+            </div>
+            <!-- ------------------------------
+               Workers Dropdown (Always Enabled)
+            ------------------------------ -->
+            <div style="margin-top: 20px;">
+                <label for="workers-select">Workers:</label>
+                <select id="workers-select">
+                    <option value="1">1 Worker</option>
+                    <option value="2">2 Workers</option>
+                    <option value="4">4 Workers</option>
+                    <option value="6">6 Workers</option>
+                    <option value="8">8 Workers</option>
+                </select>
+            </div>
         </div>
         <!-- ------------------------------
-           Cameras Dropdown
+           Debug Show Button (Moved to Side Menu)
         ------------------------------ -->
-        <div style="margin-top: 20px;">
-            <label for="camera-select">Cameras:</label>
-            <select id="camera-select">
-                <option value="">Select Camera</option>
-                <!-- Camera options will be populated on page load -->
-            </select>
-        </div>
-        <!-- ------------------------------
-           Workers Dropdown (Always Enabled)
-        ------------------------------ -->
-        <div style="margin-top: 20px;">
-            <label for="workers-select">Workers:</label>
-            <select id="workers-select">
-                <option value="1">1 Worker</option>
-                <option value="2">2 Workers</option>
-                <option value="4">4 Workers</option>
-                <option value="6">6 Workers</option>
-                <option value="8">8 Workers</option>
-            </select>
-        </div>
+        <button id="debug-button" class="debug-button">Show Debug</button>
     </div>
 
     <!-- ------------------------------
@@ -693,9 +694,10 @@
            Controls Section
         ------------------------------ -->
         <div id="controls">
-            <button id="start-button">Start Scanner</button>
-            <button id="stop-button" disabled>Stop Scanner</button>
-            <button id="debug-button">Show Debug</button>
+            <div class="buttons-container">
+                <button id="start-button">Start Scanner</button>
+                <button id="stop-button" disabled>Stop Scanner</button>
+            </div>
             <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
         </div>
 
@@ -846,7 +848,7 @@
         document.getElementById('save-logs-button').addEventListener('click', saveLogs);
 
         /* ------------------------------
-           Debug Button Functionality
+           Debug Button Functionality (Moved to Side Menu)
         ------------------------------ */
         (function() {
             const debugButton = document.getElementById('debug-button');
@@ -886,7 +888,7 @@
             const roiOverlay = document.getElementById('overlay'); // ROI Bounding Box
             const startButton = document.getElementById('start-button');
             const stopButton = document.getElementById('stop-button');
-            const debugButton = document.getElementById('debug-button');
+            const debugButton = document.getElementById('debug-button'); // Now in side menu
             const output = document.getElementById('output');
             const errorMsg = document.getElementById('errorMsg');
             const debugCanvas = document.getElementById('debugCanvas');
