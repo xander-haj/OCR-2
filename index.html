@@ -1269,6 +1269,7 @@
                     startButton.disabled = true;
                     stopButton.disabled = true;
                     debugButton.disabled = true; // Disable debug button while starting
+                    workersSelect.disabled = true; // Disable workers selection during initialization
                     startButton.innerText = 'Starting...';
                     console.log('Initializing camera...');
                     try {
@@ -1281,6 +1282,7 @@
                         startButton.disabled = false;
                         stopButton.disabled = true;
                         debugButton.disabled = false;
+                        workersSelect.disabled = false;
                         startButton.innerText = 'Start Scanner';
                         return;
                     }
@@ -1297,6 +1299,7 @@
                     startButton.disabled = false;
                     stopButton.disabled = true;
                     debugButton.disabled = false;
+                    workersSelect.disabled = false;
                     startButton.innerText = 'Start Scanner';
                     return;
                 }
@@ -1305,6 +1308,7 @@
                 startButton.disabled = true;
                 stopButton.disabled = false;
                 debugButton.disabled = false;
+                workersSelect.disabled = true; // Disable workers selection while scanning
                 startButton.innerText = 'Scanning...';
                 output.value = '';
                 console.log('Scanning started.');
@@ -1321,6 +1325,7 @@
                 startButton.disabled = false;
                 stopButton.disabled = true;
                 debugButton.disabled = false;
+                workersSelect.disabled = false; // Enable workers selection after stopping
                 startButton.innerText = 'Start Scanner';
                 roiOverlay.style.borderColor = '#00b4d8';
                 console.log('Scanning stopped.');
@@ -1461,15 +1466,67 @@
                 console.log(`Selected workers count: ${selectedWorkers}`);
 
                 if (isTesseractInitialized) {
+                    // Inform the user about the worker count change
+                    showTemporaryMessage('Updating workers...', 2000);
+                    console.log('Updating workers...');
+
                     try {
-                        // Reinitialize Tesseract.js workers with the new count
+                        // Stop scanning if active
+                        if (scanning) {
+                            await stopScanning();
+                        }
+
+                        // Reinitialize workers with the new count
                         await initializeTesseract(selectedWorkers);
+
+                        // Restart scanning if it was active before
+                        if (scanning) {
+                            await startScanning();
+                        }
+
                         console.log(`Reinitialized Tesseract.js with ${selectedWorkers} workers.`);
                     } catch (err) {
                         console.error('Failed to reinitialize Tesseract.js workers:', err);
                         showError('Failed to reinitialize OCR workers.');
                     }
+                } else {
+                    // If workers are not initialized yet, simply initialize them
+                    try {
+                        await initializeTesseract(selectedWorkers);
+                        console.log(`Initialized Tesseract.js with ${selectedWorkers} workers.`);
+                    } catch (err) {
+                        console.error('Failed to initialize Tesseract.js workers:', err);
+                        showError('Failed to initialize OCR workers.');
+                    }
                 }
+            }
+
+            /* ------------------------------
+               Function to Show Temporary Messages
+            ------------------------------ */
+            function showTemporaryMessage(message, duration) {
+                const tempMsg = document.createElement('div');
+                tempMsg.innerText = message;
+                tempMsg.style.position = 'fixed';
+                tempMsg.style.bottom = '220px';
+                tempMsg.style.left = '50%';
+                tempMsg.style.transform = 'translateX(-50%)';
+                tempMsg.style.backgroundColor = 'rgba(0,0,0,0.75)';
+                tempMsg.style.color = '#fff';
+                tempMsg.style.padding = '8px 16px';
+                tempMsg.style.borderRadius = '4px';
+                tempMsg.style.zIndex = '1004';
+                document.body.appendChild(tempMsg);
+                setTimeout(() => {
+                    document.body.removeChild(tempMsg);
+                }, duration);
+            }
+
+            /* ------------------------------
+               Function to Add Logs to Debug Console
+            ------------------------------ */
+            async function handleWorkerUpdate() {
+                // Placeholder for any additional actions during worker updates
             }
 
             /* ------------------------------
