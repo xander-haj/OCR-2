@@ -1107,7 +1107,7 @@
 
                         console.log(`Initializing Tesseract.js Worker ${i + 1}...`);
 
-                        await worker.load();
+                        await worker.load(); // Depending on Tesseract.js version, this might be deprecated
                         await worker.loadLanguage('eng');
                         await worker.initialize('eng');
                         workers.push(worker);
@@ -1313,7 +1313,7 @@
             }
 
             /* ------------------------------
-               Function to Stop Scanning
+               Function to Stop Scanning (Full Stop)
             ------------------------------ */
             async function stopScanning() {
                 if (!scanning) return;
@@ -1344,6 +1344,23 @@
             }
 
             /* ------------------------------
+               Function to Pause Scanning (For OCR Capture)
+            ------------------------------ */
+            async function pauseScanning() {
+                if (!scanning) return;
+                scanning = false;
+                startButton.disabled = true;
+                stopButton.disabled = true;
+                debugButton.disabled = true;
+                restartButton.style.display = 'block'; // Show Restart button when paused
+                startButton.innerText = 'Start Scanner';
+                roiOverlay.style.borderColor = '#00b4d8';
+                console.log('Scanning paused.');
+
+                // Note: Do not terminate workers or stop the camera
+            }
+
+            /* ------------------------------
                Function to Capture Frame and Perform OCR
             ------------------------------ */
             async function captureFrameAndPerformOCR() {
@@ -1351,8 +1368,8 @@
 
                 console.log('Capturing frame for OCR.');
 
-                // **Call stopScanning immediately to pause the scanner**
-                await stopScanning();
+                // **Call pauseScanning to pause the scanner without terminating workers**
+                await pauseScanning();
 
                 // Capture the current frame from video
                 const videoWidth = video.videoWidth;
@@ -1415,7 +1432,7 @@
                     } else {
                         console.warn('Blob conversion failed.');
                     }
-                    // No need to call requestAnimationFrame since scanning is paused
+                    // Scanning remains paused; user can restart manually
                 }, 'image/png');
             }
 
