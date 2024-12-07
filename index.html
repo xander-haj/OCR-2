@@ -311,10 +311,6 @@
             border-radius: 8px;
             font-weight: 600;
             transition: background-color 0.3s ease, opacity 0.3s ease;
-            /* Remove Flex properties to maintain original size and shape */
-            /* flex: 1; */
-            /* max-width: 140px; */
-            /* Optionally, set a consistent width if desired */
             width: 150px;
         }
 
@@ -722,7 +718,7 @@
         <div id="videoWrapper">
             <video id="video" autoplay playsinline></video>
             <div id="overlay"></div> <!-- ROI Bounding Box -->
-            <div id="focusIndicator">Focusing...</div>
+            <div id="focusIndicator">Processing...</div>
         </div>
 
         <!-- ------------------------------
@@ -1355,6 +1351,9 @@
 
                 console.log('Capturing frame for OCR.');
 
+                // **Call stopScanning immediately to pause the scanner**
+                await stopScanning();
+
                 // Capture the current frame from video
                 const videoWidth = video.videoWidth;
                 const videoHeight = video.videoHeight;
@@ -1382,7 +1381,6 @@
                 if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
                     console.warn('ROI is out of video frame bounds.');
                     showError('ROI is out of video frame bounds.');
-                    stopScanning();
                     return;
                 }
 
@@ -1417,9 +1415,7 @@
                     } else {
                         console.warn('Blob conversion failed.');
                     }
-
-                    // Pause scanning
-                    await stopScanning();
+                    // No need to call requestAnimationFrame since scanning is paused
                 }, 'image/png');
             }
 
