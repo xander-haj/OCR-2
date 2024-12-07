@@ -83,10 +83,12 @@
 
         /* Toggle Switch Label */
         .toggle-label {
+            position: relative;
             display: flex;
             align-items: center;
             cursor: pointer;
             user-select: none;
+            width: 80px; /* Adjust as needed */
         }
 
         /* Toggle Switch Styles */
@@ -113,11 +115,11 @@
         }
 
         /* Checked State */
-        input:checked + .toggle-label .toggle-switch {
+        input:checked ~ .toggle-switch {
             background-color: #4f46e5;
         }
 
-        input:checked + .toggle-label .toggle-switch::after {
+        input:checked ~ .toggle-switch::after {
             transform: translateX(26px);
         }
 
@@ -127,15 +129,28 @@
             height: 20px;
             transition: opacity 0.3s ease;
             flex-shrink: 0;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
-        /* Optional: Adjust icon colors based on theme */
-        .sun-icon path {
+        .sun-icon {
+            left: -30px; /* Position to the left of the switch */
             fill: #FDB813;
         }
 
-        .moon-icon path {
+        .moon-icon {
+            right: -30px; /* Position to the right of the switch */
             fill: #FFD700;
+        }
+
+        /* Icon Visibility */
+        input:checked ~ .sun-icon {
+            opacity: 0;
+        }
+
+        input:not(:checked) ~ .moon-icon {
+            opacity: 0;
         }
 
         /* Body Transition */
@@ -372,6 +387,10 @@
                 right: 10px;
             }
 
+            .toggle-label {
+                width: 70px;
+            }
+
             .toggle-switch {
                 width: 40px;
                 height: 20px;
@@ -385,13 +404,21 @@
                 top: 2px;
             }
 
-            input:checked + .toggle-label .toggle-switch::after {
+            input:checked ~ .toggle-switch::after {
                 transform: translateX(20px);
             }
 
             .toggle-icon {
                 width: 16px;
                 height: 16px;
+            }
+
+            .sun-icon {
+                left: -25px;
+            }
+
+            .moon-icon {
+                right: -25px;
             }
         }
     </style>
@@ -400,13 +427,13 @@
     <!-- Theme Toggle Switch -->
     <div class="theme-toggle">
         <label class="toggle-label">
+            <!-- Toggle Switch -->
+            <input type="checkbox" id="theme-checkbox">
+            <div class="toggle-switch"></div>
             <!-- Sun Icon -->
             <svg class="toggle-icon sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M6.76 4.84l-1.8-1.79-1.42 1.42 1.79 1.8 1.43-1.43zm10.48 0l1.43 1.43 1.8-1.8-1.42-1.42-1.81 1.79zM12 5a7 7 0 100 14 7 7 0 000-14zm0 12a5 5 0 110-10 5 5 0 010 10zm6 2h2v2h-2v-2zm-12 0H4v2h2v-2zm12-12h2V3h-2v2zm-12 0H4V3h2v2zm12.36 3.64l1.79-1.8-1.42-1.42-1.8 1.79 1.43 1.43zm-10.48 0l-1.43-1.43-1.8 1.8 1.42 1.42 1.81-1.79z"/>
             </svg>
-            <!-- Toggle Switch -->
-            <input type="checkbox" id="theme-checkbox">
-            <div class="toggle-switch"></div>
             <!-- Moon Icon -->
             <svg class="toggle-icon moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M21.752 15.002A9 9 0 0112 3a9 9 0 000 18 9 9 0 009.752-6.998z"/>
