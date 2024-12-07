@@ -507,7 +507,7 @@
         }
 
         /* ------------------------------
-           Resolutions Dropdown Styles
+           Resolutions and Cameras Dropdown Styles
         ------------------------------ */
         #side-menu label {
             font-size: 18px;
@@ -515,7 +515,7 @@
             display: block;
         }
 
-        #resolution-select {
+        #resolution-select, #camera-select {
             width: 100%;
             padding: 12px;
             font-size: 16px;
@@ -525,7 +525,8 @@
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
-        body.dark-theme #resolution-select {
+        body.dark-theme #resolution-select,
+        body.dark-theme #camera-select {
             background-color: #1e1e1e;
             border: 1px solid #555;
             color: #e0e0e0;
@@ -589,7 +590,7 @@
                 padding: 14px 28px;
             }
 
-            #resolution-select {
+            #resolution-select, #camera-select {
                 font-size: 18px;
                 padding: 12px;
             }
@@ -613,7 +614,7 @@
                 padding: 12px 24px;
             }
 
-            #resolution-select {
+            #resolution-select, #camera-select {
                 font-size: 16px;
                 padding: 10px;
             }
@@ -633,6 +634,15 @@
         <div style="margin-top: 20px;">
             <label for="resolution-select">Resolutions:</label>
             <select id="resolution-select">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <!-- ------------------------------
+           Cameras Dropdown (New Control)
+        ------------------------------ -->
+        <div style="margin-top: 20px;">
+            <label for="camera-select">Cameras:</label>
+            <select id="camera-select">
                 <option value="">Loading...</option>
             </select>
         </div>
@@ -956,6 +966,21 @@
             }
 
             /* ------------------------------
+               Function to Get Available Cameras
+            ------------------------------ */
+            async function getAvailableCameras() {
+                try {
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    return videoDevices;
+                } catch (err) {
+                    console.error('Error enumerating devices:', err);
+                    showError('Unable to access camera devices.');
+                    return [];
+                }
+            }
+
+            /* ------------------------------
                Function to Populate Resolutions Dropdown
             ------------------------------ */
             function populateResolutions(resolutions, currentResolution = null) {
@@ -980,12 +1005,45 @@
             }
 
             /* ------------------------------
+               Function to Populate Cameras Dropdown
+            ------------------------------ */
+            async function populateCameras(currentCameraId = null) {
+                const cameraSelect = document.getElementById('camera-select');
+                cameraSelect.innerHTML = ''; // Clear existing options
+
+                // Add a default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.text = 'Select Camera';
+                cameraSelect.appendChild(defaultOption);
+
+                const cameras = await getAvailableCameras();
+                cameras.forEach(camera => {
+                    const option = document.createElement('option');
+                    option.value = camera.deviceId;
+                    option.text = camera.label || `Camera ${cameraSelect.length}`;
+                    if (currentCameraId && camera.deviceId === currentCameraId) {
+                        option.selected = true;
+                    }
+                    cameraSelect.appendChild(option);
+                });
+
+                if (cameras.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.text = 'No cameras found';
+                    cameraSelect.appendChild(option);
+                }
+            }
+
+            /* ------------------------------
                Function to Initialize Camera
             ------------------------------ */
-            async function initCamera(resolution = null) {
+            async function initCamera(resolution = null, cameraId = null) {
                 try {
                     const constraints = {
                         video: {
+                            ...(cameraId && { deviceId: { exact: cameraId } }),
                             facingMode: { exact: "environment" },
                             ...(resolution && {
                                 width: { exact: resolution.width },
@@ -998,13 +1056,16 @@
                     video.srcObject = stream;
                     console.log('Camera initialized successfully.');
                     
-                    // After initializing camera, populate resolutions
+                    // After initializing camera, populate resolutions and cameras
                     const track = stream.getVideoTracks()[0];
                     const resolutions = getAvailableResolutions(track);
                     populateResolutions(resolutions, resolution);
+
+                    const currentCameraId = track.getSettings().deviceId;
+                    populateCameras(currentCameraId);
                 } catch (err) {
                     console.error('Camera initialization failed:', err);
-                    showError('Unable to access the rear camera. Please check permissions or try a different device.');
+                    showError('Unable to access the selected camera. Please check permissions or try a different device.');
                     throw err;
                 }
             }
@@ -1167,7 +1228,11 @@
                     startButton.innerText = 'Starting...';
                     console.log('Initializing camera...');
                     try {
-                        await initCamera();
+                        // Get the selected camera device ID
+                        const cameraSelect = document.getElementById('camera-select');
+                        const selectedCameraId = cameraSelect.value || null;
+
+                        await initCamera(null, selectedCameraId);
                     } catch (err) {
                         startButton.disabled = false;
                         stopButton.disabled = true;
@@ -1267,8 +1332,12 @@
                     stream = null;
                 }
 
-                // Re-initialize camera with selected resolution
-                initCamera(selectedResolution).then(() => {
+                // Get the selected camera device ID
+                const cameraSelect = document.getElementById('camera-select');
+                const selectedCameraId = cameraSelect.value || null;
+
+                // Re-initialize camera with selected resolution and camera
+                initCamera(selectedResolution, selectedCameraId).then(() => {
                     console.log('Camera re-initialized with new resolution.');
                     if (wasScanning) {
                         startScanning();
@@ -1280,6 +1349,44 @@
             }
 
             /* ------------------------------
+               Function to Handle Camera Changes
+            ------------------------------ */
+            function handleCameraChange() {
+                const selectedCameraId = document.getElementById('camera-select').value;
+                if (selectedCameraId === '') return; // Do nothing if default option is selected
+
+                console.log(`Selected camera ID: ${selectedCameraId}`);
+
+                // Store the current scanning state
+                const wasScanning = scanning;
+
+                // Stop current scanning if active
+                if (wasScanning) {
+                    stopScanning();
+                }
+
+                // Stop current stream
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+
+                // Get the selected resolution
+                const selectedResolution = getSelectedResolution();
+
+                // Re-initialize camera with selected camera and resolution
+                initCamera(selectedResolution, selectedCameraId).then(() => {
+                    console.log('Camera re-initialized with new camera.');
+                    if (wasScanning) {
+                        startScanning();
+                    }
+                }).catch(err => {
+                    console.error('Failed to re-initialize camera with selected camera:', err);
+                    showError('Failed to set the selected camera.');
+                });
+            }
+
+            /* ------------------------------
                Event Listeners
             ------------------------------ */
             roiOverlay.addEventListener('click', requestFocus);
@@ -1287,6 +1394,15 @@
             stopButton.addEventListener('click', stopScanning);
 
             document.getElementById('resolution-select').addEventListener('change', handleResolutionChange);
+            document.getElementById('camera-select').addEventListener('change', handleCameraChange);
+
+            /* ------------------------------
+               Initial Population of Cameras
+            ------------------------------ */
+            (async function populateInitialCameras() {
+                // Wait for user to grant camera permissions by clicking "Start Scanner"
+                // Cameras will be populated after camera initialization
+            })();
 
             /* ------------------------------
                Cleanup on Page Unload
