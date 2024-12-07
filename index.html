@@ -1041,17 +1041,26 @@
             ------------------------------ */
             async function initCamera(resolution = null, cameraId = null) {
                 try {
+                    const videoConstraints = {};
+
+                    if (cameraId) {
+                        // If a specific camera is selected, set deviceId only
+                        videoConstraints.deviceId = { exact: cameraId };
+                    } else {
+                        // If no specific camera is selected, default to environment-facing camera
+                        videoConstraints.facingMode = { exact: "environment" };
+                    }
+
+                    if (resolution) {
+                        videoConstraints.width = { exact: resolution.width };
+                        videoConstraints.height = { exact: resolution.height };
+                    }
+
                     const constraints = {
-                        video: {
-                            ...(cameraId && { deviceId: { exact: cameraId } }),
-                            facingMode: { exact: "environment" },
-                            ...(resolution && {
-                                width: { exact: resolution.width },
-                                height: { exact: resolution.height },
-                            })
-                        },
+                        video: videoConstraints,
                         audio: false
                     };
+
                     stream = await navigator.mediaDevices.getUserMedia(constraints);
                     video.srcObject = stream;
                     console.log('Camera initialized successfully.');
