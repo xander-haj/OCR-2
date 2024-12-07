@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Centered Rectangular OCR Scanner with Tap-to-Focus & Sharpness Check</title>
+    <title>Centered Rectangular OCR Scanner with Tap-to-Focus</title>
     <!-- Tesseract.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v4.0.2/dist/tesseract.min.js"></script>
     <!-- Google Font -->
@@ -232,14 +232,14 @@
         }
 
         /* Buttons */
-        #start-button, #stop-button {
+        #start-button, #stop-button, #debug-button {
             padding: 12px 20px;
             font-size: 16px;
             cursor: pointer;
             border: none;
             border-radius: 8px;
             font-weight: 600;
-            margin: 0 5px;
+            margin: 0 5px 10px 5px; /* Adjusted margin for spacing */
             transition: background-color 0.3s ease, opacity 0.3s ease;
             width: 100%;
             max-width: 250px;
@@ -260,7 +260,7 @@
         #stop-button {
             background-color: #d00000;
             color: #fff;
-            margin-top: 10px;
+            /* Removed top margin since already handled in the combined margin above */
         }
         #stop-button:hover:not(:disabled) {
             background-color: #b20000;
@@ -268,6 +268,22 @@
         #stop-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        /* Debug Button Styling */
+        #debug-button {
+            background-color: #0d6efd; /* Bootstrap primary color */
+            color: #fff;
+        }
+        #debug-button:hover {
+            background-color: #0b5ed7;
+        }
+        #debug-button:active {
+            background-color: #0a58ca;
+        }
+        #debug-button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.5);
         }
 
         /* Output Textarea */
@@ -319,6 +335,7 @@
             border-radius: 8px;
             background: #fff;
             transition: background-color 0.3s ease, border-color 0.3s ease;
+            display: none; /* Initially hidden */
         }
 
         body.dark-theme #debugCanvas {
@@ -341,6 +358,7 @@
             padding: 10px;
             box-sizing: border-box;
             border-top: 2px solid #111;
+            display: none; /* Initially hidden */
         }
 
         .log-entry {
@@ -420,6 +438,22 @@
             .moon-icon {
                 right: -25px;
             }
+
+            /* Adjust Debug Button for Mobile */
+            #debug-button {
+                padding: 10px 16px;
+                font-size: 14px;
+                margin: 0 5px 8px 5px;
+            }
+
+            /* Adjust Debug Canvas and Console for Mobile */
+            #debugCanvas {
+                height: 150px;
+            }
+
+            #debugConsole {
+                height: 150px;
+            }
         }
     </style>
 </head>
@@ -451,6 +485,8 @@
         <div id="controls">
             <button id="start-button">Start Scanner</button>
             <button id="stop-button" disabled>Stop Scanner</button>
+            <!-- New Debug Button -->
+            <button id="debug-button">Show Debug</button>
             <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
         </div>
         <canvas id="debugCanvas"></canvas>
@@ -526,6 +562,32 @@
 
         document.getElementById('save-logs-button').addEventListener('click', saveLogs);
 
+        // Debug Button Functionality
+        (function() {
+            const debugButton = document.getElementById('debug-button');
+            const debugCanvas = document.getElementById('debugCanvas');
+            const debugConsole = document.getElementById('debugConsole');
+
+            // Initially hide the debug elements
+            debugCanvas.style.display = 'none';
+            debugConsole.style.display = 'none';
+
+            let isDebugVisible = false;
+
+            debugButton.addEventListener('click', function() {
+                isDebugVisible = !isDebugVisible;
+                if (isDebugVisible) {
+                    debugCanvas.style.display = 'block';
+                    debugConsole.style.display = 'block';
+                    debugButton.innerText = 'Hide Debug';
+                } else {
+                    debugCanvas.style.display = 'none';
+                    debugConsole.style.display = 'none';
+                    debugButton.innerText = 'Show Debug';
+                }
+            });
+        })();
+
         // References to DOM elements
         const video = document.getElementById('video');
         const overlay = document.getElementById('overlay');
@@ -541,7 +603,6 @@
         let lastScanTime = 0;
         const MIN_INTERVAL = 1000; // 1 second between scans
         const MIN_CONFIDENCE = 60; // Minimum confidence for OCR
-        // Removed: const SHARPNESS_THRESHOLD = 200; // Adjust this threshold as needed
 
         const videoCanvas = document.createElement('canvas');
         const roiCanvas = document.createElement('canvas');
@@ -594,8 +655,6 @@
             ctx.putImageData(imageData, 0, 0);
             console.log('Image preprocessing complete.');
         }
-
-        // Removed: function measureSharpness(canvas) { ... }
 
         async function performOCR(blob) {
             console.log('Starting OCR process.');
@@ -691,9 +750,6 @@
             debugCtx.drawImage(scaledCanvas, 0, 0);
             console.log('Debugging canvas updated.');
 
-            // Removed: const sharpness = measureSharpness(scaledCanvas);
-            // Removed: if (sharpness < SHARPNESS_THRESHOLD) { ... }
-
             scaledCanvas.toBlob(async (blob) => {
                 if (blob && scanning) {
                     console.log('Blob created for OCR.');
@@ -714,12 +770,15 @@
 
             startButton.disabled = true;
             stopButton.disabled = true;
+            debugButton.disabled = true; // Disable debug button while starting
             startButton.innerText = 'Starting...';
             console.log('Initializing camera...');
             try {
                 await initCamera();
             } catch (err) {
                 startButton.disabled = false;
+                stopButton.disabled = true;
+                debugButton.disabled = false;
                 startButton.innerText = 'Start Scanner';
                 return;
             }
@@ -727,6 +786,7 @@
             scanning = true;
             startButton.disabled = true;
             stopButton.disabled = false;
+            debugButton.disabled = false;
             startButton.innerText = 'Scanning...';
             output.value = '';
             console.log('Scanning started.');
@@ -739,6 +799,7 @@
             scanning = false;
             startButton.disabled = false;
             stopButton.disabled = true;
+            debugButton.disabled = false;
             startButton.innerText = 'Start Scanner';
             overlay.style.borderColor = '#00b4d8';
             console.log('Scanning stopped.');
