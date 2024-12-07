@@ -6,7 +6,7 @@
     <!-- Viewport Meta Tag for Mobile Responsiveness -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Tesseract.js CDN (Ensure using a compatible version) -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v4.0.2/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -334,7 +334,7 @@
             background-color: #0d6efd; /* Bootstrap primary color */
             color: #fff;
         }
-        #debug-button:hover {
+        #debug-button:hover:not(:disabled) {
             background-color: #0b5ed7;
         }
         #debug-button:active {
@@ -403,7 +403,7 @@
         }
 
         body.dark-theme #debugCanvas {
-            background: #1e1e1e;
+            background-color: #1e1e1e;
             border: 1px solid #555;
         }
 
@@ -590,14 +590,14 @@
        Side Menu Structure
     ------------------------------ -->
     <div class="side-menu" id="side-menu">
-        <h2>Side Menu</h2>
+        <h2>Settings</h2>
         <!-- ------------------------------
            Resolutions Dropdown
         ------------------------------ -->
         <div style="margin-top: 20px;">
             <label for="resolution-select">Resolutions:</label>
             <select id="resolution-select">
-                <option value="">Loading...</option>
+                <option value="">Select Resolution</option>
             </select>
         </div>
         <!-- ------------------------------
@@ -606,7 +606,7 @@
         <div style="margin-top: 20px;">
             <label for="camera-select">Cameras:</label>
             <select id="camera-select">
-                <option value="">Loading...</option>
+                <option value="">Select Camera</option>
             </select>
         </div>
         <!-- ------------------------------
@@ -1106,11 +1106,12 @@
                             throw new TypeError('Tesseract.createWorker is not a function. Check the Tesseract.js version and script loading.');
                         }
 
-                        const worker = Tesseract.createWorker({
+                        // Create worker with appropriate options
+                        const worker = await Tesseract.createWorker({
+                            lang: 'eng', // Default language
                             logger: m => console.log(`[Tesseract.js Worker ${i + 1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
                         });
 
-                        // Additional logging
                         console.log(`Initializing Tesseract.js Worker ${i + 1}...`);
 
                         await worker.load();
@@ -1483,11 +1484,15 @@
             workersSelect.addEventListener('change', handleWorkersChange);
 
             /* ------------------------------
-               Initial Population of Cameras
+               Initial Population of Cameras and Resolutions
             ------------------------------ */
-            (async function populateInitialCameras() {
-                // Wait for user to grant camera permissions by clicking "Start Scanner"
-                // Cameras will be populated after camera initialization
+            (async function populateInitialCamerasAndResolutions() {
+                try {
+                    // Initialize camera with default settings to populate cameras and resolutions
+                    await initCamera();
+                } catch (err) {
+                    console.error('Failed to populate cameras and resolutions:', err);
+                }
             })();
 
             /* ------------------------------
