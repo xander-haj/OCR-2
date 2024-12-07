@@ -290,14 +290,16 @@
             width: 90%;
             max-width: 500px;
             display: flex;
-            justify-content: center; /* Center the buttons horizontally */
-            gap: 20px; /* Space between buttons */
+            flex-direction: column;
+            align-items: center;
         }
 
         /* Buttons Container */
         .buttons-container {
             display: flex;
             gap: 20px; /* Space between Start and Stop buttons */
+            width: 100%; /* Ensure buttons-container takes full width */
+            justify-content: center; /* Center the buttons horizontally */
         }
 
         /* Buttons */
@@ -309,8 +311,11 @@
             border-radius: 8px;
             font-weight: 600;
             transition: background-color 0.3s ease, opacity 0.3s ease;
-            flex: 1; /* Make buttons take equal width */
-            max-width: 140px; /* Optional: limit max width */
+            /* Remove Flex properties to maintain original size and shape */
+            /* flex: 1; */
+            /* max-width: 140px; */
+            /* Optionally, set a consistent width if desired */
+            width: 150px;
         }
 
         #start-button {
@@ -335,29 +340,6 @@
         #stop-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-        }
-
-        /* Debug Button Styling (Moved to Side Menu) */
-        .side-menu .debug-button {
-            background-color: #0d6efd; /* Bootstrap primary color */
-            color: #fff;
-            width: 100%;
-            padding: 10px 0;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        .side-menu .debug-button:hover:not(:disabled) {
-            background-color: #0b5ed7;
-        }
-        .side-menu .debug-button:active {
-            background-color: #0a58ca;
-        }
-        .side-menu .debug-button:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.5);
         }
 
         /* Output Textarea */
@@ -485,6 +467,35 @@
         }
 
         /* ------------------------------
+           Resolutions, Cameras, and Workers Dropdown Styles
+        ------------------------------ */
+        #side-menu label {
+            font-size: 18px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        #resolution-select, #camera-select, #workers-select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            display: block; /* Ensure dropdowns are on a new line */
+            margin-bottom: 20px; /* Add spacing between dropdowns */
+        }
+
+        body.dark-theme #resolution-select,
+        body.dark-theme #camera-select,
+        body.dark-theme #workers-select {
+            background-color: #1e1e1e;
+            border: 1px solid #555;
+            color: #e0e0e0;
+        }
+
+        /* ------------------------------
            Responsive Adjustments
         ------------------------------ */
         @media (max-width: 768px) {
@@ -531,7 +542,7 @@
             #start-button, #stop-button {
                 padding: 16px 28px;
                 font-size: 20px;
-                max-width: 300px;
+                width: 160px; /* Adjusted width to maintain original size */
             }
 
             /* Increase font sizes for better readability */
@@ -560,7 +571,7 @@
             #start-button, #stop-button {
                 padding: 14px 24px;
                 font-size: 18px;
-                max-width: 280px;
+                width: 140px; /* Adjusted width to maintain original size */
             }
 
             #output {
