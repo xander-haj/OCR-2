@@ -552,7 +552,15 @@
     <div class="side-menu" id="side-menu">
         <h2>Side Menu</h2>
         <p>This is a blank side menu. Add your controls here.</p>
-        <!-- Future controls can be added here -->
+        <!-- ------------------------------
+           Resolutions Dropdown
+        ------------------------------ -->
+        <div style="margin-top: 20px;">
+            <label for="resolution-select">Resolutions:</label>
+            <select id="resolution-select">
+                <option value="">Loading...</option>
+            </select>
+        </div>
     </div>
 
     <!-- ------------------------------
@@ -819,6 +827,24 @@
             const debugCtx = debugCanvas.getContext('2d');
 
             /* ------------------------------
+               Common Resolutions
+            ------------------------------ */
+            const COMMON_RESOLUTIONS = [
+                { width: 320, height: 240 },
+                { width: 640, height: 480 },
+                { width: 800, height: 600 },
+                { width: 1024, height: 768 },
+                { width: 1280, height: 720 },
+                { width: 1280, height: 800 },
+                { width: 1366, height: 768 },
+                { width: 1440, height: 900 },
+                { width: 1600, height: 900 },
+                { width: 1920, height: 1080 },
+                { width: 2560, height: 1440 },
+                { width: 3840, height: 2160 },
+            ];
+
+            /* ------------------------------
                Function to Show Error Messages
             ------------------------------ */
             function showError(message) {
@@ -831,16 +857,73 @@
             }
 
             /* ------------------------------
+               Function to Get Available Resolutions
+            ------------------------------ */
+            function getAvailableResolutions(track) {
+                const capabilities = track.getCapabilities();
+                const widthCaps = capabilities.width;
+                const heightCaps = capabilities.height;
+
+                if (!widthCaps || !heightCaps) {
+                    // Fallback to common resolutions
+                    return COMMON_RESOLUTIONS;
+                }
+
+                const availableResolutions = COMMON_RESOLUTIONS.filter(res => {
+                    return res.width >= widthCaps.min && res.width <= widthCaps.max &&
+                           res.height >= heightCaps.min && res.height <= heightCaps.max;
+                });
+
+                return availableResolutions;
+            }
+
+            /* ------------------------------
+               Function to Populate Resolutions Dropdown
+            ------------------------------ */
+            function populateResolutions(resolutions, currentResolution = null) {
+                const resolutionSelect = document.getElementById('resolution-select');
+                resolutionSelect.innerHTML = ''; // Clear existing options
+
+                // Add a default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.text = 'Select Resolution';
+                resolutionSelect.appendChild(defaultOption);
+
+                resolutions.forEach(res => {
+                    const option = document.createElement('option');
+                    option.value = `${res.width}x${res.height}`;
+                    option.text = `${res.width} x ${res.height}`;
+                    if (currentResolution && res.width === currentResolution.width && res.height === currentResolution.height) {
+                        option.selected = true;
+                    }
+                    resolutionSelect.appendChild(option);
+                });
+            }
+
+            /* ------------------------------
                Function to Initialize Camera
             ------------------------------ */
-            async function initCamera() {
+            async function initCamera(resolution = null) {
                 try {
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: { exact: "environment" } },
+                    const constraints = {
+                        video: {
+                            facingMode: { exact: "environment" },
+                            ...(resolution && {
+                                width: { exact: resolution.width },
+                                height: { exact: resolution.height },
+                            })
+                        },
                         audio: false
-                    });
+                    };
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
                     video.srcObject = stream;
                     console.log('Camera initialized successfully.');
+                    
+                    // After initializing camera, populate resolutions
+                    const track = stream.getVideoTracks()[0];
+                    const resolutions = getAvailableResolutions(track);
+                    populateResolutions(resolutions, resolution);
                 } catch (err) {
                     console.error('Camera initialization failed:', err);
                     showError('Unable to access the rear camera. Please check permissions or try a different device.');
@@ -1074,11 +1157,56 @@
             }
 
             /* ------------------------------
+               Function to Get Selected Resolution
+            ------------------------------ */
+            function getSelectedResolution() {
+                const resolutionSelect = document.getElementById('resolution-select');
+                const selectedValue = resolutionSelect.value;
+                if (selectedValue === '') return null;
+                const [width, height] = selectedValue.split('x').map(Number);
+                return { width, height };
+            }
+
+            /* ------------------------------
+               Function to Populate Resolutions Dropdown
+            ------------------------------ */
+            function handleResolutionChange() {
+                const selectedResolution = getSelectedResolution();
+                if (!selectedResolution) return;
+
+                console.log(`Selected resolution: ${selectedResolution.width}x${selectedResolution.height}`);
+
+                // Stop current scanning if active
+                if (scanning) {
+                    stopScanning();
+                }
+
+                // Stop current stream
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+
+                // Re-initialize camera with selected resolution
+                initCamera(selectedResolution).then(() => {
+                    console.log('Camera re-initialized with new resolution.');
+                    if (scanning) {
+                        startScanning();
+                    }
+                }).catch(err => {
+                    console.error('Failed to re-initialize camera with selected resolution:', err);
+                    showError('Failed to set the selected resolution.');
+                });
+            }
+
+            /* ------------------------------
                Event Listeners
             ------------------------------ */
             roiOverlay.addEventListener('click', requestFocus);
             startButton.addEventListener('click', startScanning);
             stopButton.addEventListener('click', stopScanning);
+
+            document.getElementById('resolution-select').addEventListener('change', handleResolutionChange);
 
             /* ------------------------------
                Cleanup on Page Unload
