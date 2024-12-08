@@ -786,6 +786,16 @@
     ------------------------------ -->
     <script>
         /* ------------------------------
+           Initial Check for Reload Flag
+        ------------------------------ */
+        (function() {
+            if (sessionStorage.getItem('cameraPermissionsGranted')) {
+                // Remove the flag after reload
+                sessionStorage.removeItem('cameraPermissionsGranted');
+            }
+        })();
+
+        /* ------------------------------
            Side Menu Functionality
         ------------------------------ */
         (function() {
@@ -1106,6 +1116,13 @@
                     video.srcObject = stream;
                     await video.play();
                     console.log('Camera initialized successfully.');
+
+                    // After successful camera initialization, check and set reload flag
+                    if (!sessionStorage.getItem('cameraPermissionsGranted')) {
+                        sessionStorage.setItem('cameraPermissionsGranted', 'true');
+                        location.reload();
+                        return;
+                    }
                 } catch (err) {
                     console.error('Camera initialization failed:', err);
                     showError('Unable to access the selected camera. Please check permissions or try a different device.');
@@ -1304,7 +1321,7 @@
                 startButton.disabled = true;
                 stopButton.disabled = true;
                 restartButton.style.display = 'none'; // Hide Restart button when starting
-                debugButton.disabled = true; // Disable debug button while starting
+                // Removed: debugButton.disabled = true; // Disable debug button while starting
                 startButton.innerText = 'Starting...';
                 console.log('Initializing camera...');
                 try {
@@ -1325,9 +1342,15 @@
                 } catch (err) {
                     startButton.disabled = false;
                     stopButton.disabled = true;
-                    debugButton.disabled = false;
+                    // Removed: debugButton.disabled = false;
                     startButton.innerText = 'Start Scanner';
                     return;
+                }
+
+                // Check if the page was just reloaded after granting camera permissions
+                if (sessionStorage.getItem('cameraPermissionsGranted')) {
+                    // Remove the flag to prevent multiple reloads
+                    sessionStorage.removeItem('cameraPermissionsGranted');
                 }
 
                 // Initialize Tesseract.js workers based on selection
@@ -1340,7 +1363,7 @@
                     showError('Failed to initialize OCR workers.');
                     startButton.disabled = false;
                     stopButton.disabled = true;
-                    debugButton.disabled = false;
+                    // Removed: debugButton.disabled = false;
                     startButton.innerText = 'Start Scanner';
                     return;
                 }
@@ -1348,7 +1371,7 @@
                 scanning = true;
                 startButton.disabled = true;
                 stopButton.disabled = false;
-                debugButton.disabled = false;
+                // Removed: debugButton.disabled = false;
                 startButton.innerText = 'Scanning...';
                 output.value = '';
                 console.log('Scanning started.');
@@ -1364,7 +1387,7 @@
                 scanning = false;
                 startButton.disabled = false;
                 stopButton.disabled = true;
-                debugButton.disabled = false;
+                // Removed: debugButton.disabled = false;
                 restartButton.style.display = 'block'; // Show Restart button when stopped
                 startButton.innerText = 'Start Scanner';
                 roiOverlay.style.borderColor = '#00b4d8';
@@ -1395,7 +1418,7 @@
                 scanning = false;
                 startButton.disabled = true;
                 stopButton.disabled = true;
-                debugButton.disabled = true;
+                // Removed: debugButton.disabled = true;
                 restartButton.style.display = 'block'; // Show Restart button when paused
                 startButton.innerText = 'Start Scanner';
                 roiOverlay.style.borderColor = '#00b4d8';
