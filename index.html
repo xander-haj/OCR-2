@@ -523,7 +523,7 @@
             transition: background-color 0.3s ease;
         }
 
-        .debug-button:hover:not(:disabled) {
+        .debug-button:hover {
             background-color: #5a0bad; /* Darker purple on hover */
         }
 
@@ -790,7 +790,9 @@
         ------------------------------ */
         (function() {
             if (sessionStorage.getItem('cameraPermissionsGranted')) {
-                // Remove the flag after reload
+                // Set a flag to indicate that the page has just reloaded after granting permissions
+                sessionStorage.setItem('cameraReloaded', 'true');
+                // Remove the flag to prevent further reloads
                 sessionStorage.removeItem('cameraPermissionsGranted');
             }
         })();
@@ -1118,7 +1120,7 @@
                     console.log('Camera initialized successfully.');
 
                     // After successful camera initialization, check and set reload flag
-                    if (!sessionStorage.getItem('cameraPermissionsGranted')) {
+                    if (!sessionStorage.getItem('cameraPermissionsGranted') && !sessionStorage.getItem('cameraReloaded')) {
                         sessionStorage.setItem('cameraPermissionsGranted', 'true');
                         location.reload();
                         return;
@@ -1321,7 +1323,7 @@
                 startButton.disabled = true;
                 stopButton.disabled = true;
                 restartButton.style.display = 'none'; // Hide Restart button when starting
-                // Removed: debugButton.disabled = true; // Disable debug button while starting
+                // Removed: debugButton.disabled = true; // Ensure Debug button remains always enabled
                 startButton.innerText = 'Starting...';
                 console.log('Initializing camera...');
                 try {
@@ -1348,9 +1350,9 @@
                 }
 
                 // Check if the page was just reloaded after granting camera permissions
-                if (sessionStorage.getItem('cameraPermissionsGranted')) {
+                if (sessionStorage.getItem('cameraReloaded')) {
                     // Remove the flag to prevent multiple reloads
-                    sessionStorage.removeItem('cameraPermissionsGranted');
+                    sessionStorage.removeItem('cameraReloaded');
                 }
 
                 // Initialize Tesseract.js workers based on selection
