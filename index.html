@@ -7,8 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Tesseract.js CDN (Ensure using a compatible version) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-    <!-- dat.GUI CDN for WebGL-based GUI -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
     <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -124,8 +122,8 @@
         .side-menu {
             position: fixed;
             top: 0;
-            left: -250px; /* Hidden by default */
-            width: 250px;
+            left: -300px; /* Hidden by default */
+            width: 300px;
             height: 100%;
             background-color: #2c3e50;
             color: #ecf0f1;
@@ -188,7 +186,7 @@
 
         /* Adjust main content when side menu is open (for desktop) */
         #container.side-menu-open {
-            margin-left: 250px;
+            margin-left: 300px;
             transition: margin-left 0.3s ease;
         }
 
@@ -497,10 +495,15 @@
         }
 
         /* ------------------------------
-           GUI Container Styles
+           WebGL Canvas Styles within Side Menu
         ------------------------------ */
-        #gui-container {
+        #webglCanvas {
+            width: 100%;
+            height: 200px;
+            background-color: #000;
+            border-radius: 8px;
             margin-top: 20px;
+            display: none; /* Initially hidden */
         }
 
         /* ------------------------------
@@ -652,9 +655,13 @@
                 </select>
             </div>
             <!-- ------------------------------
-               dat.GUI Container
+               WebGL Canvas Integration
             ------------------------------ -->
-            <div id="gui-container"></div>
+            <div>
+                <label for="webglCanvas">WebGL Visualization:</label>
+                <canvas id="webglCanvas"></canvas>
+                <button id="toggleWebglButton">Show WebGL</button>
+            </div>
         </div>
         <!-- ------------------------------
            Debug Show Button (Moved to Side Menu)
@@ -914,6 +921,8 @@
             const debugCanvas = document.getElementById('debugCanvas');
             const focusIndicator = document.getElementById('focusIndicator');
             const workersSelect = document.getElementById('workers-select');
+            const webglCanvas = document.getElementById('webglCanvas');
+            const toggleWebglButton = document.getElementById('toggleWebglButton');
 
             let stream = null;
             let scanning = false;
@@ -1636,92 +1645,134 @@
             });
 
             /* ------------------------------
-               dat.GUI Integration
+               WebGL Integration within Side Menu
             ------------------------------ */
             (function() {
-                try {
-                    const guiContainer = document.getElementById('gui-container');
-                    const gui = new dat.GUI({ autoPlace: false });
-                    guiContainer.appendChild(gui.domElement);
+                const glCanvas = document.getElementById('webglCanvas');
+                const toggleButton = document.getElementById('toggleWebglButton');
+                let gl = null;
+                let shaderProgram = null;
+                let vertexBuffer = null;
 
-                    // Parameters object to hold GUI-controlled variables
-                    const params = {
-                        Theme: localStorage.getItem('theme') || 'light',
-                        Resolution: document.getElementById('resolution-select').value || 'Select Resolution',
-                        Camera: document.getElementById('camera-select').value || 'Select Camera',
-                        Workers: parseInt(document.getElementById('workers-select').value) || 1
-                    };
+                // Vertex Shader Source
+                const vertexShaderSource = `
+                    attribute vec3 coordinates;
+                    void main(void) {
+                        gl_Position = vec4(coordinates, 1.0);
+                    }
+                `;
 
-                    // Theme Control
-                    const themeController = gui.add(params, 'Theme', ['light', 'dark']).name('Theme');
-                    themeController.onChange(function(value) {
-                        try {
-                            const toggleCheckbox = document.getElementById('theme-checkbox');
-                            if (value === 'dark') {
-                                document.documentElement.classList.add('dark-theme');
-                                document.body.classList.add('dark-theme');
-                                toggleCheckbox.checked = true;
-                                localStorage.setItem('theme', 'dark');
-                                console.log('Theme set to dark via GUI.');
-                            } else {
-                                document.documentElement.classList.remove('dark-theme');
-                                document.body.classList.remove('dark-theme');
-                                toggleCheckbox.checked = false;
-                                localStorage.setItem('theme', 'light');
-                                console.log('Theme set to light via GUI.');
-                            }
-                        } catch (err) {
-                            console.error('Error changing theme via GUI:', err);
-                        }
-                    });
+                // Fragment Shader Source
+                const fragmentShaderSource = `
+                    void main(void) {
+                        gl_FragColor = vec4(0.0, 0.5, 1.0, 1.0);
+                    }
+                `;
 
-                    // Resolution Control
-                    const resolutionSelect = document.getElementById('resolution-select');
-                    const resolutionOptions = Array.from(resolutionSelect.options).map(option => option.value).filter(val => val);
-                    const resolutionController = gui.add(params, 'Resolution', resolutionOptions).name('Resolution');
-                    resolutionController.onChange(function(value) {
-                        try {
-                            resolutionSelect.value = value;
-                            handleResolutionChange();
-                            console.log(`Resolution set to ${value} via GUI.`);
-                        } catch (err) {
-                            console.error('Error changing resolution via GUI:', err);
-                        }
-                    });
+                // Function to initialize WebGL
+                function initWebGL() {
+                    gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
 
-                    // Camera Control
-                    const cameraSelect = document.getElementById('camera-select');
-                    const cameraOptions = Array.from(cameraSelect.options).map(option => ({ label: option.text, value: option.value })).filter(option => option.value);
-                    const cameraController = gui.add(params, 'Camera', cameraOptions.map(option => option.value)).name('Camera');
-                    cameraController.onChange(function(value) {
-                        try {
-                            cameraSelect.value = value;
-                            handleCameraChange();
-                            console.log(`Camera set to ${value} via GUI.`);
-                        } catch (err) {
-                            console.error('Error changing camera via GUI:', err);
-                        }
-                    });
+                    if (!gl) {
+                        console.error('Unable to initialize WebGL.');
+                        showError('WebGL is not supported by your browser.');
+                        return;
+                    }
 
-                    // Workers Control
-                    const workersSelectElement = document.getElementById('workers-select');
-                    const workersOptions = Array.from(workersSelectElement.options).map(option => parseInt(option.value)).filter(val => val);
-                    const workersController = gui.add(params, 'Workers', workersOptions).name('Workers');
-                    workersController.onChange(function(value) {
-                        try {
-                            workersSelectElement.value = value;
-                            handleWorkersChange();
-                            console.log(`Workers set to ${value} via GUI.`);
-                        } catch (err) {
-                            console.error('Error changing workers via GUI:', err);
-                        }
-                    });
+                    // Set clear color to black, fully opaque
+                    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                    // Clear the color buffer with specified clear color
+                    gl.clear(gl.COLOR_BUFFER_BIT);
 
-                    console.log('dat.GUI initialized successfully.');
-                } catch (err) {
-                    console.error('Failed to initialize dat.GUI:', err);
-                    showError('Failed to initialize GUI.');
+                    // Initialize shaders
+                    initShaders();
+
+                    // Initialize buffers
+                    initBuffers();
+
+                    // Draw the scene
+                    drawScene();
                 }
+
+                // Function to compile shader
+                function compileShader(source, type) {
+                    const shader = gl.createShader(type);
+                    gl.shaderSource(shader, source);
+                    gl.compileShader(shader);
+
+                    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                        const info = gl.getShaderInfoLog(shader);
+                        console.error('Could not compile WebGL shader. \n\n' + info);
+                        showError('Failed to compile WebGL shader.');
+                        gl.deleteShader(shader);
+                        return null;
+                    }
+                    return shader;
+                }
+
+                // Function to initialize shaders
+                function initShaders() {
+                    const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
+                    const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
+
+                    shaderProgram = gl.createProgram();
+                    gl.attachShader(shaderProgram, vertexShader);
+                    gl.attachShader(shaderProgram, fragmentShader);
+                    gl.linkProgram(shaderProgram);
+
+                    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                        const info = gl.getProgramInfoLog(shaderProgram);
+                        console.error('Could not initialize WebGL shader program. \n\n' + info);
+                        showError('Failed to initialize WebGL shader program.');
+                        return;
+                    }
+
+                    gl.useProgram(shaderProgram);
+
+                    shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, 'coordinates');
+                    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+                }
+
+                // Function to initialize buffers
+                function initBuffers() {
+                    vertexBuffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+                    // Define a triangle
+                    const vertices = [
+                        0.0,  1.0,  0.0,
+                       -1.0, -1.0,  0.0,
+                        1.0, -1.0,  0.0
+                    ];
+
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+                }
+
+                // Function to draw the scene
+                function drawScene() {
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+
+                    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+                    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
+                    gl.drawArrays(gl.TRIANGLES, 0, 3);
+                }
+
+                // Function to toggle WebGL canvas visibility
+                toggleButton.addEventListener('click', function() {
+                    if (glCanvas.style.display === 'none') {
+                        glCanvas.style.display = 'block';
+                        toggleButton.innerText = 'Hide WebGL';
+                        initWebGL();
+                    } else {
+                        glCanvas.style.display = 'none';
+                        toggleButton.innerText = 'Show WebGL';
+                    }
+                });
+
+                // Initialize WebGL on load if needed
+                // Uncomment the following line if you want to initialize WebGL by default
+                // initWebGL();
             })();
         })();
     </script>
