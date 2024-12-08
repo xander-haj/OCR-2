@@ -135,10 +135,24 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between; /* To push Debug button to bottom */
+            position: relative; /* Ensure positioning context for absolute elements */
         }
 
         .side-menu.active {
             left: 0;
+        }
+
+        /* FPS Counter Styles */
+        #fpsCounter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1005; /* Above other elements */
         }
 
         /* Toggle Button (Hamburger Icon) */
@@ -529,6 +543,10 @@
         }
 
         /* ------------------------------
+           FPS Counter Styles (Already added above)
+        ------------------------------ */
+
+        /* ------------------------------
            Responsive Adjustments
         ------------------------------ */
         @media (max-width: 768px) {
@@ -629,6 +647,9 @@
        Side Menu Structure
     ------------------------------ -->
     <div class="side-menu" id="side-menu">
+        <!-- FPS Counter -->
+        <div id="fpsCounter">FPS: 0</div>
+
         <div>
             <h2>Settings</h2>
             <!-- ------------------------------
@@ -1882,7 +1903,31 @@
                 // Uncomment the following line if you want to initialize WebGL by default
                 // initWebGL();
             })();
+
+            /* ------------------------------
+               FPS Counter Functionality
+            ------------------------------ */
+            (function() {
+                const fpsCounter = document.getElementById('fpsCounter');
+                let frameCount = 0;
+                let fps = 0;
+                let lastTime = performance.now();
+
+                function updateFPS() {
+                    const now = performance.now();
+                    frameCount++;
+                    if (now - lastTime >= 1000) {
+                        fps = frameCount;
+                        frameCount = 0;
+                        lastTime = now;
+                        fpsCounter.innerText = `FPS: ${fps}`;
+                    }
+                    requestAnimationFrame(updateFPS);
+                }
+
+                requestAnimationFrame(updateFPS);
+            })();
         })();
     </script>
 </body>
-</html>
+    </html>
