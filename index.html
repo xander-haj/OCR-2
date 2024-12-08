@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Tesseract.js CDN (Ensure using a compatible version) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <!-- dat.GUI CDN for WebGL-based GUI -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
     <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -1621,6 +1623,92 @@
                     workers = [];
                 }
             });
+
+            /* ------------------------------
+               GUI.js (dat.GUI) Integration
+            ------------------------------ */
+            (function() {
+                try {
+                    const gui = new dat.GUI();
+
+                    // Parameters object to hold GUI-controlled variables
+                    const params = {
+                        Theme: localStorage.getItem('theme') || 'light',
+                        Resolution: document.getElementById('resolution-select').value || 'Select Resolution',
+                        Camera: document.getElementById('camera-select').value || 'Select Camera',
+                        Workers: parseInt(document.getElementById('workers-select').value) || 1
+                    };
+
+                    // Theme Control
+                    const themeController = gui.add(params, 'Theme', ['light', 'dark']).name('Theme');
+                    themeController.onChange(function(value) {
+                        try {
+                            const toggleCheckbox = document.getElementById('theme-checkbox');
+                            if (value === 'dark') {
+                                document.documentElement.classList.add('dark-theme');
+                                document.body.classList.add('dark-theme');
+                                toggleCheckbox.checked = true;
+                                localStorage.setItem('theme', 'dark');
+                                console.log('Theme set to dark via GUI.');
+                            } else {
+                                document.documentElement.classList.remove('dark-theme');
+                                document.body.classList.remove('dark-theme');
+                                toggleCheckbox.checked = false;
+                                localStorage.setItem('theme', 'light');
+                                console.log('Theme set to light via GUI.');
+                            }
+                        } catch (err) {
+                            console.error('Error changing theme via GUI:', err);
+                        }
+                    });
+
+                    // Resolution Control
+                    const resolutionOptions = Array.from(document.getElementById('resolution-select').options).map(option => option.value).filter(val => val);
+                    const resolutionController = gui.add(params, 'Resolution', resolutionOptions).name('Resolution');
+                    resolutionController.onChange(function(value) {
+                        try {
+                            const resolutionSelect = document.getElementById('resolution-select');
+                            resolutionSelect.value = value;
+                            handleResolutionChange();
+                            console.log(`Resolution set to ${value} via GUI.`);
+                        } catch (err) {
+                            console.error('Error changing resolution via GUI:', err);
+                        }
+                    });
+
+                    // Camera Control
+                    const cameraSelect = document.getElementById('camera-select');
+                    const cameraOptions = Array.from(cameraSelect.options).map(option => ({ label: option.text, value: option.value })).filter(option => option.value);
+                    const cameraController = gui.add(params, 'Camera', cameraOptions.map(option => option.value)).name('Camera').listen();
+                    cameraController.onChange(function(value) {
+                        try {
+                            cameraSelect.value = value;
+                            handleCameraChange();
+                            console.log(`Camera set to ${value} via GUI.`);
+                        } catch (err) {
+                            console.error('Error changing camera via GUI:', err);
+                        }
+                    });
+
+                    // Workers Control
+                    const workersOptions = Array.from(document.getElementById('workers-select').options).map(option => parseInt(option.value)).filter(val => val);
+                    const workersController = gui.add(params, 'Workers', workersOptions).name('Workers');
+                    workersController.onChange(function(value) {
+                        try {
+                            workersSelect.value = value;
+                            handleWorkersChange();
+                            console.log(`Workers set to ${value} via GUI.`);
+                        } catch (err) {
+                            console.error('Error changing workers via GUI:', err);
+                        }
+                    });
+
+                    console.log('dat.GUI initialized successfully.');
+                } catch (err) {
+                    console.error('Failed to initialize dat.GUI:', err);
+                    showError('Failed to initialize GUI.');
+                }
+            })();
         })();
     </script>
 </body>
