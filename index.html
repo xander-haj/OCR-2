@@ -282,7 +282,7 @@
         /* Buttons Container */
         .buttons-container {
             display: flex;
-            gap: 20px; /* Space between Start and Stop buttons */
+            gap: 30px; /* Increased from 20px to 30px */
             width: 100%; /* Ensure buttons-container takes full width */
             justify-content: center; /* Center the buttons horizontally */
         }
@@ -296,7 +296,8 @@
             border-radius: 4px; /* Smaller border-radius */
             font-weight: 600;
             transition: background-color 0.3s ease, opacity 0.3s ease;
-            width: 100px; /* Slightly reduced width */
+            width: 140px; /* Increased from 100px to 140px */
+            white-space: nowrap; /* Prevent text from wrapping */
         }
 
         #start-button {
@@ -328,9 +329,10 @@
             background-color: #f39c12;
             color: #fff;
             transition: background-color 0.3s ease, opacity 0.3s ease;
-            width: 100px; /* Slightly reduced width */
+            width: 140px; /* Increased from 100px to 140px */
             margin-top: 20px;
             display: none; /* Hidden by default */
+            white-space: nowrap; /* Prevent text from wrapping */
         }
 
         #restart-button:hover:not(:disabled) {
@@ -566,7 +568,7 @@
 
             /* Increase button sizes for better touch targets */
             .buttons-container {
-                gap: 15px; /* Reduce gap on smaller screens */
+                gap: 25px; /* Reduced gap on smaller screens */
             }
 
             #start-button, #stop-button, #restart-button {
@@ -595,7 +597,7 @@
         @media (max-width: 480px) {
             /* Further adjustments for very small screens */
             .buttons-container {
-                gap: 10px; /* Further reduce gap */
+                gap: 15px; /* Further reduce gap */
             }
 
             #start-button, #stop-button, #restart-button {
