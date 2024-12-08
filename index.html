@@ -746,7 +746,7 @@
            Video Wrapper
         ------------------------------ -->
         <div id="videoWrapper">
-            <video id="video" autoplay playsinline></video>
+            <video id="video" playsinline></video> <!-- Removed 'autoplay' attribute -->
             <div id="overlay"></div> <!-- ROI Bounding Box -->
             <div id="focusIndicator">Processing...</div>
         </div>
@@ -1537,20 +1537,25 @@
                     stream = null;
                 }
 
-                // Get the selected camera device ID
-                const cameraSelect = document.getElementById('camera-select');
-                const selectedCameraId = cameraSelect.value || null;
+                if (wasScanning) {
+                    // Get the selected camera device ID
+                    const cameraSelect = document.getElementById('camera-select');
+                    const selectedCameraId = cameraSelect.value || null;
 
-                // Re-initialize camera with selected resolution and camera
-                initCamera(selectedResolution, selectedCameraId).then(() => {
-                    console.log('Camera re-initialized with new resolution.');
-                    if (wasScanning) {
-                        startScanning();
-                    }
-                }).catch(err => {
-                    console.error('Failed to re-initialize camera with selected resolution:', err);
-                    showError('Failed to set the selected resolution.');
-                });
+                    // Re-initialize camera with selected resolution and camera
+                    initCamera(selectedResolution, selectedCameraId).then(() => {
+                        console.log('Camera re-initialized with new resolution.');
+                        if (wasScanning) {
+                            startScanning();
+                        }
+                    }).catch(err => {
+                        console.error('Failed to re-initialize camera with selected resolution:', err);
+                        showError('Failed to set the selected resolution.');
+                    });
+                } else {
+                    // If not scanning, do not initialize camera
+                    console.log('Resolution changed, but scanning is not active. Camera not initialized.');
+                }
             }
 
             /* ------------------------------
@@ -1576,19 +1581,24 @@
                     stream = null;
                 }
 
-                // Get the selected resolution
-                const selectedResolution = getSelectedResolution();
+                if (wasScanning) {
+                    // Get the selected resolution
+                    const selectedResolution = getSelectedResolution();
 
-                // Re-initialize camera with selected camera and resolution
-                initCamera(selectedResolution, selectedCameraId).then(() => {
-                    console.log('Camera re-initialized with new camera.');
-                    if (wasScanning) {
-                        startScanning();
-                    }
-                }).catch(err => {
-                    console.error('Failed to re-initialize camera with selected camera:', err);
-                    showError('Failed to set the selected camera.');
-                });
+                    // Re-initialize camera with selected camera and resolution
+                    initCamera(selectedResolution, selectedCameraId).then(() => {
+                        console.log('Camera re-initialized with new camera.');
+                        if (wasScanning) {
+                            startScanning();
+                        }
+                    }).catch(err => {
+                        console.error('Failed to re-initialize camera with selected camera:', err);
+                        showError('Failed to set the selected camera.');
+                    });
+                } else {
+                    // If not scanning, do not initialize camera
+                    console.log('Camera changed, but scanning is not active. Camera not initialized.');
+                }
             }
 
             /* ------------------------------
