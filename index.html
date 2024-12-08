@@ -497,6 +497,13 @@
         }
 
         /* ------------------------------
+           GUI Container Styles
+        ------------------------------ */
+        #gui-container {
+            margin-top: 20px;
+        }
+
+        /* ------------------------------
            Responsive Adjustments
         ------------------------------ */
         @media (max-width: 768px) {
@@ -602,7 +609,7 @@
             <!-- ------------------------------
                Resolutions Dropdown
             ------------------------------ -->
-            <div style="margin-top: 20px;">
+            <div>
                 <label for="resolution-select">Resolutions:</label>
                 <select id="resolution-select">
                     <option value="">Select Resolution</option>
@@ -624,7 +631,7 @@
             <!-- ------------------------------
                Cameras Dropdown
             ------------------------------ -->
-            <div style="margin-top: 20px;">
+            <div>
                 <label for="camera-select">Cameras:</label>
                 <select id="camera-select">
                     <option value="">Select Camera</option>
@@ -634,7 +641,7 @@
             <!-- ------------------------------
                Workers Dropdown (Always Enabled)
             ------------------------------ -->
-            <div style="margin-top: 20px;">
+            <div>
                 <label for="workers-select">Workers:</label>
                 <select id="workers-select">
                     <option value="1">1 Worker</option>
@@ -644,6 +651,10 @@
                     <option value="8">8 Workers</option>
                 </select>
             </div>
+            <!-- ------------------------------
+               dat.GUI Container
+            ------------------------------ -->
+            <div id="gui-container"></div>
         </div>
         <!-- ------------------------------
            Debug Show Button (Moved to Side Menu)
@@ -1625,11 +1636,13 @@
             });
 
             /* ------------------------------
-               GUI.js (dat.GUI) Integration
+               dat.GUI Integration
             ------------------------------ */
             (function() {
                 try {
-                    const gui = new dat.GUI();
+                    const guiContainer = document.getElementById('gui-container');
+                    const gui = new dat.GUI({ autoPlace: false });
+                    guiContainer.appendChild(gui.domElement);
 
                     // Parameters object to hold GUI-controlled variables
                     const params = {
@@ -1663,11 +1676,11 @@
                     });
 
                     // Resolution Control
-                    const resolutionOptions = Array.from(document.getElementById('resolution-select').options).map(option => option.value).filter(val => val);
+                    const resolutionSelect = document.getElementById('resolution-select');
+                    const resolutionOptions = Array.from(resolutionSelect.options).map(option => option.value).filter(val => val);
                     const resolutionController = gui.add(params, 'Resolution', resolutionOptions).name('Resolution');
                     resolutionController.onChange(function(value) {
                         try {
-                            const resolutionSelect = document.getElementById('resolution-select');
                             resolutionSelect.value = value;
                             handleResolutionChange();
                             console.log(`Resolution set to ${value} via GUI.`);
@@ -1679,7 +1692,7 @@
                     // Camera Control
                     const cameraSelect = document.getElementById('camera-select');
                     const cameraOptions = Array.from(cameraSelect.options).map(option => ({ label: option.text, value: option.value })).filter(option => option.value);
-                    const cameraController = gui.add(params, 'Camera', cameraOptions.map(option => option.value)).name('Camera').listen();
+                    const cameraController = gui.add(params, 'Camera', cameraOptions.map(option => option.value)).name('Camera');
                     cameraController.onChange(function(value) {
                         try {
                             cameraSelect.value = value;
@@ -1691,11 +1704,12 @@
                     });
 
                     // Workers Control
-                    const workersOptions = Array.from(document.getElementById('workers-select').options).map(option => parseInt(option.value)).filter(val => val);
+                    const workersSelectElement = document.getElementById('workers-select');
+                    const workersOptions = Array.from(workersSelectElement.options).map(option => parseInt(option.value)).filter(val => val);
                     const workersController = gui.add(params, 'Workers', workersOptions).name('Workers');
                     workersController.onChange(function(value) {
                         try {
-                            workersSelect.value = value;
+                            workersSelectElement.value = value;
                             handleWorkersChange();
                             console.log(`Workers set to ${value} via GUI.`);
                         } catch (err) {
