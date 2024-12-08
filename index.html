@@ -289,14 +289,14 @@
 
         /* Buttons */
         #start-button, #stop-button, #restart-button {
-            padding: 10px 18px; /* Reduced padding */
-            font-size: 14px; /* Reduced font size */
+            padding: 6px 12px; /* Further reduced padding */
+            font-size: 12px; /* Further reduced font size */
             cursor: pointer;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px; /* Smaller border-radius */
             font-weight: 600;
             transition: background-color 0.3s ease, opacity 0.3s ease;
-            width: 112px; /* 75% of 150px */
+            width: 100px; /* Slightly reduced width */
         }
 
         #start-button {
@@ -328,7 +328,7 @@
             background-color: #f39c12;
             color: #fff;
             transition: background-color 0.3s ease, opacity 0.3s ease;
-            width: 112px; /* 75% of 150px */
+            width: 100px; /* Slightly reduced width */
             margin-top: 20px;
             display: none; /* Hidden by default */
         }
@@ -507,6 +507,25 @@
         }
 
         /* ------------------------------
+           Debug Button Styles
+        ------------------------------ */
+        .debug-button {
+            background-color: #6a0dad; /* Purple color */
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+
+        .debug-button:hover:not(:disabled) {
+            background-color: #5a0bad; /* Darker purple on hover */
+        }
+
+        /* ------------------------------
            Responsive Adjustments
         ------------------------------ */
         @media (max-width: 768px) {
@@ -551,9 +570,9 @@
             }
 
             #start-button, #stop-button, #restart-button {
-                padding: 16px 28px;
-                font-size: 20px;
-                width: 160px; /* Adjusted width to maintain original size */
+                padding: 12px 20px;
+                font-size: 16px;
+                width: 140px; /* Adjusted width */
             }
 
             /* Increase font sizes for better readability */
@@ -580,9 +599,9 @@
             }
 
             #start-button, #stop-button, #restart-button {
-                padding: 14px 24px;
-                font-size: 18px;
-                width: 140px; /* Adjusted width to maintain original size */
+                padding: 10px 18px;
+                font-size: 14px;
+                width: 120px; /* Adjusted width */
             }
 
             #output {
@@ -691,7 +710,7 @@
             <!-- Toggle Switch -->
             <input type="checkbox" id="theme-checkbox">
             <div class="toggle-switch">
-                <span class="toggle-icon sun-icon">&#65039;</span> <!-- Sun Unicode -->
+                <span class="toggle-icon sun-icon">&#9728;</span> <!-- Corrected Sun Unicode -->
                 <span class="toggle-icon moon-icon">&#127765;</span> <!-- Moon Unicode -->
             </div>
         </label>
