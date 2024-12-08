@@ -468,7 +468,7 @@
         }
 
         /* ------------------------------
-           Resolutions, Cameras, and Workers Dropdown Styles
+           Resolutions, Cameras, Workers, and ROI Filters Dropdown Styles
         ------------------------------ */
         #side-menu label {
             font-size: 18px;
@@ -476,7 +476,7 @@
             display: block;
         }
 
-        #resolution-select, #camera-select, #workers-select {
+        #resolution-select, #camera-select, #workers-select, #roi-filters-select {
             width: 100%;
             padding: 12px;
             font-size: 16px;
@@ -490,7 +490,8 @@
 
         body.dark-theme #resolution-select,
         body.dark-theme #camera-select,
-        body.dark-theme #workers-select {
+        body.dark-theme #workers-select,
+        body.dark-theme #roi-filters-select {
             background-color: #1e1e1e;
             border: 1px solid #555;
             color: #e0e0e0;
@@ -588,7 +589,7 @@
                 padding: 14px 28px;
             }
 
-            #resolution-select, #camera-select, #workers-select {
+            #resolution-select, #camera-select, #workers-select, #roi-filters-select {
                 font-size: 18px;
                 padding: 12px;
             }
@@ -616,7 +617,7 @@
                 padding: 12px 24px;
             }
 
-            #resolution-select, #camera-select, #workers-select {
+            #resolution-select, #camera-select, #workers-select, #roi-filters-select {
                 font-size: 16px;
                 padding: 10px;
             }
@@ -670,9 +671,20 @@
                 <select id="workers-select">
                     <option value="1">1 Worker</option>
                     <option value="2">2 Workers</option>
+                    <option value="3">3 Workers</option>
                     <option value="4">4 Workers</option>
-                    <option value="6">6 Workers</option>
-                    <option value="8">8 Workers</option>
+                </select>
+            </div>
+            <!-- ------------------------------
+               ROI Filters Dropdown
+            ------------------------------ -->
+            <div>
+                <label for="roi-filters-select">ROI Filters:</label>
+                <select id="roi-filters-select">
+                    <option value="none">None</option>
+                    <option value="grayscale">Grayscale</option>
+                    <option value="contrast">Contrast</option>
+                    <option value="brightness">Brightness</option>
                 </select>
             </div>
             <!-- ------------------------------
@@ -971,12 +983,14 @@
             const workersSelect = document.getElementById('workers-select');
             const webglCanvas = document.getElementById('webglCanvas');
             const toggleWebglButton = document.getElementById('toggleWebglButton');
+            const roiFiltersSelect = document.getElementById('roi-filters-select'); // New ROI Filters Select
 
             let stream = null;
             let scanning = false;
             let lastScanTime = 0;
-            const MIN_INTERVAL = 1000; // 1 second between scans
+            const MIN_INTERVAL = 2000; // 2 seconds between scans
             const MIN_CONFIDENCE = 60; // Minimum confidence for OCR
+            let selectedFilter = 'none'; // Default filter
 
             // Create off-screen canvases
             const videoCanvas = document.createElement('canvas');
@@ -1063,30 +1077,14 @@
             }
 
             /* ------------------------------
-               Function to Preprocess Image
+               Function to Preprocess Image with ROI Filters
             ------------------------------ */
-            function preprocessImage(videoCanvas, width, height) {
+            function preprocessImage(videoCanvas, width, height, filter) {
                 const ctx = videoCanvas.getContext('2d');
+                ctx.filter = filterMap[filter] || 'none'; // Apply selected filter
                 ctx.drawImage(video, 0, 0, width, height);
-                console.log('Image drawn on videoCanvas.');
-
-                let imageData = ctx.getImageData(0, 0, width, height);
-                let data = imageData.data;
-
-                // Apply contrast adjustment
-                const contrastFactor = 1.3;
-                for (let i = 0; i < data.length; i += 4) {
-                    data[i] = ((data[i] - 128) * contrastFactor) + 128;     
-                    data[i+1] = ((data[i+1] - 128) * contrastFactor) + 128;
-                    data[i+2] = ((data[i+2] - 128) * contrastFactor) + 128;
-
-                    data[i] = Math.min(255, Math.max(0, data[i]));
-                    data[i+1] = Math.min(255, Math.max(0, data[i+1]));
-                    data[i+2] = Math.min(255, Math.max(0, data[i+2]));
-                }
-
-                ctx.putImageData(imageData, 0, 0);
-                console.log('Image preprocessing complete.');
+                ctx.filter = 'none'; // Reset filter for future operations
+                console.log(`Image drawn on videoCanvas with filter: ${filter}`);
             }
 
             /* ------------------------------
@@ -1107,7 +1105,14 @@
                     if (resolution) {
                         videoConstraints.width = { exact: resolution.width };
                         videoConstraints.height = { exact: resolution.height };
+                    } else {
+                        // Set a default resolution if none selected
+                        videoConstraints.width = { ideal: 1280 };
+                        videoConstraints.height = { ideal: 720 };
                     }
+
+                    // Limit frame rate for performance
+                    videoConstraints.frameRate = { ideal: 15, max: 30 };
 
                     const constraints = {
                         video: videoConstraints,
@@ -1133,8 +1138,28 @@
             }
 
             /* ------------------------------
-               Function to Initialize Tesseract.js Workers
+               Function to Initialize Tesseract.js Workers with Dynamic Count
             ------------------------------ */
+            function isMobileDevice() {
+                return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            }
+
+            function getOptimalWorkerCount() {
+                const cores = navigator.hardwareConcurrency || 2; // Default to 2 if not available
+                if (isMobileDevice()) {
+                    return Math.min(cores, 1); // Limit to 1 worker on mobile
+                } else {
+                    return Math.min(cores, 3); // Allow up to 3 workers on desktops
+                }
+            }
+
+            const filterMap = {
+                'none': 'none',
+                'grayscale': 'grayscale(100%)',
+                'contrast': 'contrast(1.3)',
+                'brightness': 'brightness(1.2)'
+            };
+
             async function initializeTesseract(workersCount) {
                 try {
                     // Terminate existing workers if any
@@ -1254,7 +1279,9 @@
                 const videoHeight = video.videoHeight;
                 videoCanvas.width = videoWidth;
                 videoCanvas.height = videoHeight;
-                preprocessImage(videoCanvas, videoWidth, videoHeight);
+
+                // Apply selected ROI filter
+                preprocessImage(videoCanvas, videoWidth, videoHeight, selectedFilter);
 
                 const overlayRect = roiOverlay.getBoundingClientRect();
                 const videoRect = video.getBoundingClientRect();
@@ -1323,7 +1350,6 @@
                 startButton.disabled = true;
                 stopButton.disabled = true;
                 restartButton.style.display = 'none'; // Hide Restart button when starting
-                // Removed: debugButton.disabled = true; // Ensure Debug button remains always enabled
                 startButton.innerText = 'Starting...';
                 console.log('Initializing camera...');
                 try {
@@ -1344,7 +1370,6 @@
                 } catch (err) {
                     startButton.disabled = false;
                     stopButton.disabled = true;
-                    // Removed: debugButton.disabled = false;
                     startButton.innerText = 'Start Scanner';
                     return;
                 }
@@ -1355,9 +1380,9 @@
                     sessionStorage.removeItem('cameraReloaded');
                 }
 
-                // Initialize Tesseract.js workers based on selection
-                const workersCount = parseInt(workersSelect.value) || 1;
-                console.log(`Selected workers count: ${workersCount}`);
+                // Determine optimal worker count based on device type
+                const workersCount = getOptimalWorkerCount();
+                console.log(`Determined workers count: ${workersCount}`);
                 try {
                     await initializeTesseract(workersCount);
                 } catch (err) {
@@ -1365,7 +1390,6 @@
                     showError('Failed to initialize OCR workers.');
                     startButton.disabled = false;
                     stopButton.disabled = true;
-                    // Removed: debugButton.disabled = false;
                     startButton.innerText = 'Start Scanner';
                     return;
                 }
@@ -1373,7 +1397,6 @@
                 scanning = true;
                 startButton.disabled = true;
                 stopButton.disabled = false;
-                // Removed: debugButton.disabled = false;
                 startButton.innerText = 'Scanning...';
                 output.value = '';
                 console.log('Scanning started.');
@@ -1389,7 +1412,6 @@
                 scanning = false;
                 startButton.disabled = false;
                 stopButton.disabled = true;
-                // Removed: debugButton.disabled = false;
                 restartButton.style.display = 'block'; // Show Restart button when stopped
                 startButton.innerText = 'Start Scanner';
                 roiOverlay.style.borderColor = '#00b4d8';
@@ -1420,7 +1442,6 @@
                 scanning = false;
                 startButton.disabled = true;
                 stopButton.disabled = true;
-                // Removed: debugButton.disabled = true;
                 restartButton.style.display = 'block'; // Show Restart button when paused
                 startButton.innerText = 'Start Scanner';
                 roiOverlay.style.borderColor = '#00b4d8';
@@ -1648,6 +1669,14 @@
             }
 
             /* ------------------------------
+               Function to Handle ROI Filters Changes
+            ------------------------------ */
+            function handleROIFiltersChange() {
+                selectedFilter = roiFiltersSelect.value;
+                console.log(`Selected ROI Filter: ${selectedFilter}`);
+            }
+
+            /* ------------------------------
                Function to Show Temporary Messages
             ------------------------------ */
             function showTemporaryMessage(message, duration) {
@@ -1690,6 +1719,7 @@
             document.getElementById('resolution-select').addEventListener('change', handleResolutionChange);
             document.getElementById('camera-select').addEventListener('change', handleCameraChange);
             workersSelect.addEventListener('change', handleWorkersChange);
+            roiFiltersSelect.addEventListener('change', handleROIFiltersChange);
 
             /* ------------------------------
                Initial Population of Cameras
@@ -1838,6 +1868,13 @@
                     } else {
                         glCanvas.style.display = 'none';
                         toggleButton.innerText = 'Show WebGL';
+                        // Optionally, release WebGL context to free resources
+                        if (gl) {
+                            gl.getExtension('WEBGL_lose_context')?.loseContext();
+                            gl = null;
+                            shaderProgram = null;
+                            vertexBuffer = null;
+                        }
                     }
                 });
 
