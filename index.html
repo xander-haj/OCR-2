@@ -155,6 +155,14 @@
             z-index: 1005; /* Above other elements */
         }
 
+        /* Settings Content Container */
+        .menu-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 60px; /* Space to prevent overlap with FPS counter */
+        }
+
         /* Toggle Button (Hamburger Icon) */
         .menu-toggle {
             position: fixed;
@@ -543,10 +551,6 @@
         }
 
         /* ------------------------------
-           FPS Counter Styles (Already added above)
-        ------------------------------ */
-
-        /* ------------------------------
            Responsive Adjustments
         ------------------------------ */
         @media (max-width: 768px) {
@@ -650,7 +654,8 @@
         <!-- FPS Counter -->
         <div id="fpsCounter">FPS: 0</div>
 
-        <div>
+        <!-- Settings Content Container -->
+        <div class="menu-content">
             <h2>Settings</h2>
             <!-- ------------------------------
                Resolutions Dropdown
@@ -717,6 +722,7 @@
                 <button id="toggleWebglButton">Show WebGL</button>
             </div>
         </div>
+
         <!-- ------------------------------
            Debug Show Button (Moved to Side Menu)
         ------------------------------ -->
@@ -1930,4 +1936,4 @@
         })();
     </script>
 </body>
-    </html>
+</html>
