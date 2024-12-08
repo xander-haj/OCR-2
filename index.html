@@ -163,6 +163,77 @@
             overflow-y: auto; /* Enables scrolling within the side menu */
         }
 
+        /* Collapsible Sections */
+        .collapsible {
+            border: 1px solid #444;
+            border-radius: 8px;
+            background-color: #34495e;
+            overflow: hidden;
+        }
+
+        .collapsible summary {
+            padding: 10px 15px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+            background-color: #2c3e50;
+        }
+
+        .collapsible summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .collapsible content {
+            padding: 10px 15px;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .collapsible[open] content {
+            display: flex;
+        }
+
+        /* Dropdown Styles */
+        #side-menu label {
+            font-size: 16px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            display: block; /* Ensure dropdowns are on a new line */
+            margin-bottom: 10px; /* Add spacing between dropdowns */
+        }
+
+        body.dark-theme #resolution-select,
+        body.dark-theme #camera-select,
+        body.dark-theme #workers-select,
+        body.dark-theme #roi-filters-select,
+        body.dark-theme #frame-skipping-select,
+        body.dark-theme #frequency-select {
+            background-color: #1e1e1e;
+            border: 1px solid #555;
+            color: #e0e0e0;
+        }
+
+        /* Dynamic OCR Info Text */
+        #ocr-info {
+            font-size: 14px;
+            color: #f1c40f;
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+
         /* Toggle Button (Hamburger Icon) */
         .menu-toggle {
             position: fixed;
@@ -490,38 +561,6 @@
         }
 
         /* ------------------------------
-           Resolutions, Cameras, Workers, ROI Filters, Frame Skipping, and Frequency Dropdown Styles
-        ------------------------------ */
-        #side-menu label {
-            font-size: 18px;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            background-color: #fff;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-            display: block; /* Ensure dropdowns are on a new line */
-            margin-bottom: 20px; /* Add spacing between dropdowns */
-        }
-
-        body.dark-theme #resolution-select,
-        body.dark-theme #camera-select,
-        body.dark-theme #workers-select,
-        body.dark-theme #roi-filters-select,
-        body.dark-theme #frame-skipping-select,
-        body.dark-theme #frequency-select {
-            background-color: #1e1e1e;
-            border: 1px solid #555;
-            color: #e0e0e0;
-        }
-
-        /* ------------------------------
            WebGL Canvas Styles within Side Menu
         ------------------------------ */
         #webglCanvas {
@@ -660,102 +699,101 @@
         <div class="menu-content">
             <h2>Settings</h2>
             <!-- ------------------------------
-               Resolutions Dropdown
+               Hardware Collapsible Section
             ------------------------------ -->
-            <div>
-                <label for="resolution-select">Resolutions:</label>
-                <select id="resolution-select">
-                    <option value="">Select Resolution</option>
-                    <!-- Pre-populated with common resolutions -->
-                    <option value="320x240">320 x 240</option>
-                    <option value="640x480">640 x 480</option>
-                    <option value="800x600">800 x 600</option>
-                    <option value="1024x768">1024 x 768</option>
-                    <option value="1280x720">1280 x 720</option>
-                    <option value="1280x800">1280 x 800</option>
-                    <option value="1366x768">1366 x 768</option>
-                    <option value="1440x900">1440 x 900</option>
-                    <option value="1600x900">1600 x 900</option>
-                    <option value="1920x1080">1920 x 1080</option>
-                    <option value="2560x1440">2560 x 1440</option>
-                    <option value="3840x2160">3840 x 2160</option>
-                </select>
-            </div>
+            <details class="collapsible">
+                <summary>Hardware</summary>
+                <div>
+                    <label for="resolution-select">Resolutions:</label>
+                    <select id="resolution-select">
+                        <option value="">Select Resolution</option>
+                        <!-- Pre-populated with common resolutions -->
+                        <option value="320x240">320 x 240</option>
+                        <option value="640x480">640 x 480</option>
+                        <option value="800x600">800 x 600</option>
+                        <option value="1024x768">1024 x 768</option>
+                        <option value="1280x720">1280 x 720</option>
+                        <option value="1280x800">1280 x 800</option>
+                        <option value="1366x768">1366 x 768</option>
+                        <option value="1440x900">1440 x 900</option>
+                        <option value="1600x900">1600 x 900</option>
+                        <option value="1920x1080">1920 x 1080</option>
+                        <option value="2560x1440">2560 x 1440</option>
+                        <option value="3840x2160">3840 x 2160</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="camera-select">Cameras:</label>
+                    <select id="camera-select">
+                        <option value="">Select Camera</option>
+                        <!-- Camera options will be populated on page load -->
+                    </select>
+                </div>
+                <div>
+                    <label for="workers-select">Workers:</label>
+                    <select id="workers-select">
+                        <option value="1">1 Worker</option>
+                        <option value="2">2 Workers</option>
+                        <option value="3">3 Workers</option>
+                        <option value="4">4 Workers</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="roi-filters-select">ROI Filters:</label>
+                    <select id="roi-filters-select">
+                        <option value="none">None</option>
+                        <option value="grayscale">Grayscale</option>
+                        <option value="contrast">Contrast</option>
+                        <option value="brightness">Brightness</option>
+                    </select>
+                </div>
+            </details>
+
             <!-- ------------------------------
-               Cameras Dropdown
+               Performance Collapsible Section
             ------------------------------ -->
-            <div>
-                <label for="camera-select">Cameras:</label>
-                <select id="camera-select">
-                    <option value="">Select Camera</option>
-                    <!-- Camera options will be populated on page load -->
-                </select>
-            </div>
-            <!-- ------------------------------
-               Workers Dropdown (Always Enabled)
-            ------------------------------ -->
-            <div>
-                <label for="workers-select">Workers:</label>
-                <select id="workers-select">
-                    <option value="1">1 Worker</option>
-                    <option value="2">2 Workers</option>
-                    <option value="3">3 Workers</option>
-                    <option value="4">4 Workers</option>
-                </select>
-            </div>
-            <!-- ------------------------------
-               ROI Filters Dropdown
-            ------------------------------ -->
-            <div>
-                <label for="roi-filters-select">ROI Filters:</label>
-                <select id="roi-filters-select">
-                    <option value="none">None</option>
-                    <option value="grayscale">Grayscale</option>
-                    <option value="contrast">Contrast</option>
-                    <option value="brightness">Brightness</option>
-                </select>
-            </div>
-            <!-- ------------------------------
-               Frame Skipping Dropdown
-            ------------------------------ -->
-            <div>
-                <label for="frame-skipping-select">Frame Skipping:</label>
-                <select id="frame-skipping-select">
-                    <option value="1">Every Frame (1/1)</option>
-                    <option value="2">Every 2 Frames (1/2)</option>
-                    <option value="3">Every 3 Frames (1/3)</option>
-                    <option value="4">Every 4 Frames (1/4)</option>
-                    <option value="5">Every 5 Frames (1/5)</option>
-                    <option value="10">Every 10 Frames (1/10)</option>
-                    <option value="15">Every 15 Frames (1/15)</option>
-                    <option value="20">Every 20 Frames (1/20)</option>
-                    <option value="30">Every 30 Frames (1/30)</option>
-                    <option value="60">Every 60 Frames (1/60)</option>
-                </select>
-            </div>
-            <!-- ------------------------------
-               Frequency Dropdown
-            ------------------------------ -->
-            <div>
-                <label for="frequency-select">OCR Frequency (Hz):</label>
-                <select id="frequency-select">
-                    <option value="1">1 Hz</option>
-                    <option value="2">2 Hz</option>
-                    <option value="3">3 Hz</option>
-                    <option value="4">4 Hz</option>
-                    <option value="5">5 Hz</option>
-                    <option value="6">6 Hz</option>
-                    <option value="10">10 Hz</option>
-                </select>
-            </div>
+            <details class="collapsible">
+                <summary>Performance</summary>
+                <div>
+                    <label for="frame-skipping-select">Frame Skipping:</label>
+                    <select id="frame-skipping-select">
+                        <option value="1">Every Frame (1/1)</option>
+                        <option value="2">Every 2 Frames (1/2)</option>
+                        <option value="3">Every 3 Frames (1/3)</option>
+                        <option value="4">Every 4 Frames (1/4)</option>
+                        <option value="5">Every 5 Frames (1/5)</option>
+                        <option value="10">Every 10 Frames (1/10)</option>
+                        <option value="15">Every 15 Frames (1/15)</option>
+                        <option value="20">Every 20 Frames (1/20)</option>
+                        <option value="30">Every 30 Frames (1/30)</option>
+                        <option value="60">Every 60 Frames (1/60)</option>
+                    </select>
+                    <p id="ocr-info">Effective OCR Scans per Second: N/A</p>
+                </div>
+                <div>
+                    <label for="frequency-select">OCR Frequency (Hz):</label>
+                    <select id="frequency-select">
+                        <option value="1">1 Hz</option>
+                        <option value="2">2 Hz</option>
+                        <option value="3">3 Hz</option>
+                        <option value="4">4 Hz</option>
+                        <option value="5">5 Hz</option>
+                        <option value="6">6 Hz</option>
+                        <option value="10">10 Hz</option>
+                    </select>
+                </div>
+            </details>
+
             <!-- ------------------------------
                WebGL Canvas Integration
             ------------------------------ -->
-            <div>
-                <label for="webglCanvas">WebGL Visualization:</label>
-                <canvas id="webglCanvas"></canvas>
-                <button id="toggleWebglButton">Show WebGL</button>
-            </div>
+            <details class="collapsible">
+                <summary>WebGL Visualization</summary>
+                <div>
+                    <canvas id="webglCanvas"></canvas>
+                    <button id="toggleWebglButton">Show WebGL</button>
+                </div>
+            </details>
         </div>
 
         <!-- ------------------------------
@@ -1048,6 +1086,7 @@
             const roiFiltersSelect = document.getElementById('roi-filters-select'); // New ROI Filters Select
             const frameSkippingSelect = document.getElementById('frame-skipping-select'); // New Frame Skipping Select
             const frequencySelect = document.getElementById('frequency-select'); // New Frequency Select
+            const ocrInfo = document.getElementById('ocr-info'); // New OCR Info Text
 
             let stream = null;
             let scanning = false;
@@ -1056,7 +1095,8 @@
             let selectedFilter = 'none'; // Default filter
             let frameSkipping = 1; // Default: scan every frame
             let ocrFrequency = 1; // Default: 1 Hz
-            let lastOcrTime = 0;
+            let frameCounter = 0; // Initialize frame counter
+            let lastOcrTime = 0; // Initialize last OCR time
 
             // Create off-screen canvases
             const videoCanvas = document.createElement('canvas');
@@ -1330,6 +1370,13 @@
                 const timeSinceLastOcr = now - lastOcrTime;
                 const desiredInterval = 1000 / ocrFrequency; // in milliseconds
 
+                frameCounter++;
+                if (frameCounter < frameSkipping) {
+                    if (scanning) requestAnimationFrame(processFrame);
+                    return;
+                }
+                frameCounter = 0; // Reset frame counter after skipping
+
                 if (timeSinceLastOcr < desiredInterval) {
                     if (scanning) requestAnimationFrame(processFrame);
                     return;
@@ -1469,6 +1516,9 @@
                 ocrFrequency = parseFloat(frequencySelect.value);
                 console.log(`Frame Skipping set to: Every ${frameSkipping} frame(s)`);
                 console.log(`OCR Frequency set to: ${ocrFrequency} Hz`);
+
+                // Update OCR Info Text
+                updateOcrInfo();
 
                 scanning = true;
                 startButton.disabled = true;
@@ -1758,6 +1808,7 @@
             function handleFrameSkippingChange() {
                 frameSkipping = parseInt(frameSkippingSelect.value);
                 console.log(`Frame Skipping set to: Every ${frameSkipping} frame(s)`);
+                updateOcrInfo();
             }
 
             /* ------------------------------
@@ -1766,6 +1817,7 @@
             function handleFrequencyChange() {
                 ocrFrequency = parseFloat(frequencySelect.value);
                 console.log(`OCR Frequency set to: ${ocrFrequency} Hz`);
+                updateOcrInfo();
             }
 
             /* ------------------------------
@@ -1798,6 +1850,17 @@
                 if (selectedValue === '') return null;
                 const [width, height] = selectedValue.split('x').map(Number);
                 return { width, height };
+            }
+
+            /* ------------------------------
+               Function to Update OCR Info Text
+            ------------------------------ */
+            function updateOcrInfo() {
+                // Assume approximate FPS of 60
+                const approximateFPS = 60;
+                const frameBasedFrequency = approximateFPS / frameSkipping;
+                const effectiveFrequency = Math.min(frameBasedFrequency, ocrFrequency);
+                ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
             }
 
             /* ------------------------------
