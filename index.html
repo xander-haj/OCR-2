@@ -227,20 +227,6 @@
             color: #e0e0e0;
         }
 
-        /* Checkbox Styles */
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-
         /* Dynamic OCR Info Text */
         #ocr-info {
             font-size: 14px;
@@ -671,10 +657,6 @@
                 font-size: 18px;
                 padding: 12px;
             }
-
-            .checkbox-group label {
-                font-size: 16px;
-            }
         }
 
         @media (max-width: 480px) {
@@ -702,10 +684,6 @@
             #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select, #confidence-threshold {
                 font-size: 16px;
                 padding: 10px;
-            }
-
-            .checkbox-group label {
-                font-size: 14px;
             }
         }
     </style>
@@ -1110,6 +1088,7 @@
                 const startButton = document.getElementById('start-button');
                 const stopButton = document.getElementById('stop-button');
                 const restartButton = document.getElementById('restart-button'); // New Restart Button
+                const debugButton = document.getElementById('debug-button'); // Now in side menu
                 const output = document.getElementById('output');
                 const errorMsg = document.getElementById('errorMsg');
                 const debugCanvas = document.getElementById('debugCanvas');
@@ -2180,11 +2159,7 @@
 
                     requestAnimationFrame(updateFPS);
                 })();
-
-                /* ------------------------------
-                   OCR Scanning Functionality End
-                ------------------------------ */
             })();
         </script>
     </body>
-    </html>
+</html>
