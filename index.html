@@ -826,6 +826,7 @@
         <div class="side-menu-footer">
             <button id="debug-button" class="debug-button">Show Debug</button>
         </div>
+
     </div>
 
     <!-- ------------------------------
@@ -976,6 +977,17 @@
                     closeMenu();
                 }
             });
+
+            // Allow scrolling on main content when side menu is open
+            menuOverlay.addEventListener('wheel', function(e) {
+                // Prevent default behavior to allow main content to scroll
+                e.stopPropagation();
+            }, { passive: true });
+
+            menuOverlay.addEventListener('touchmove', function(e) {
+                // Prevent default behavior to allow main content to scroll
+                e.stopPropagation();
+            }, { passive: true });
 
             // Optional: Close the menu with the Escape key
             document.addEventListener('keydown', function(e) {
