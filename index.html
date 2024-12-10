@@ -320,7 +320,8 @@
             align-items: center;
             justify-content: flex-start;
             padding-bottom: 240px; /* Space for fixed debug console */
-            overflow: visible; /* Allow content to overflow for scrolling */
+            overflow-y: auto; /* Enable vertical scrolling */
+            overflow-x: hidden; /* Prevent horizontal scrolling */
             transition: margin-left 0.3s ease;
             min-height: 100vh; /* Ensure container covers at least full viewport height */
             width: 100%; /* Use full width */
@@ -817,11 +818,6 @@
                 </div>
             </details>
         </div>
-
-        <!-- ------------------------------
-           Debug Show Button (Moved to Side Menu)
-        ------------------------------ -->
-        <button id="debug-button" class="debug-button">Show Debug</button>
 
         <!-- ------------------------------
            Overlay to cover the main content when side menu is open
@@ -2100,4 +2096,4 @@
             })();
         </script>
     </body>
-</html>
+            </html>
