@@ -127,14 +127,12 @@
             height: 100%;
             background-color: #2c3e50;
             color: #ecf0f1;
-            overflow: hidden; /* Prevent scrolling of the entire side menu */
             transition: left 0.3s ease;
             z-index: 1001; /* Above other elements */
             padding: 20px;
             box-shadow: 2px 0 5px rgba(0,0,0,0.3);
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* To push Debug button to bottom */
         }
 
         .side-menu.active {
@@ -142,10 +140,23 @@
         }
 
         /* FPS Counter Styles */
+        /* Moved to header to integrate with flow */
+        
+        /* Header Styles */
+        .side-menu-header {
+            flex: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .side-menu-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
         #fpsCounter {
-            position: absolute;
-            top: 20px;
-            right: 20px;
             background-color: rgba(0, 0, 0, 0.7);
             color: #fff;
             padding: 5px 10px;
@@ -156,12 +167,11 @@
 
         /* Settings Content Container */
         .menu-content {
+            flex: 1; /* Allows the container to take available space */
+            overflow-y: auto; /* Enables scrolling within the side menu */
             display: flex;
             flex-direction: column;
             gap: 20px;
-            flex: 1; /* Allows the container to take available space */
-            min-height: 0; /* Allows the content to shrink below its content size */
-            overflow-y: auto; /* Enables scrolling within the side menu */
         }
 
         /* Collapsible Sections */
@@ -696,12 +706,14 @@
        Side Menu Structure
     ------------------------------ -->
     <div class="side-menu" id="side-menu">
-        <!-- FPS Counter -->
-        <div id="fpsCounter">FPS: 0</div>
+        <!-- Header Section -->
+        <div class="side-menu-header">
+            <h2>Settings</h2>
+            <div id="fpsCounter">FPS: 0</div>
+        </div>
 
         <!-- Settings Content Container -->
         <div class="menu-content">
-            <h2>Settings</h2>
             <!-- ------------------------------
                Hardware Collapsible Section
             ------------------------------ -->
@@ -805,9 +817,11 @@
         </div>
 
         <!-- ------------------------------
-           Debug Show Button (Moved to Side Menu)
+           Footer Section (Debug Button)
         ------------------------------ -->
-        <button id="debug-button" class="debug-button">Show Debug</button>
+        <div class="side-menu-footer">
+            <button id="debug-button" class="debug-button">Show Debug</button>
+        </div>
     </div>
 
     <!-- ------------------------------
