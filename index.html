@@ -281,20 +281,6 @@
             display: block;
         }
 
-        /* Adjust main content when side menu is open (for desktop) */
-        #container.side-menu-open {
-            margin-left: 300px;
-            transition: margin-left 0.3s ease;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            /* On smaller screens, the side menu overlays the content */
-            #container.side-menu-open {
-                margin-left: 0;
-            }
-        }
-
         /* ------------------------------
            Container and Video Styles
         ------------------------------ */
@@ -805,11 +791,6 @@
         </div>
 
         <!-- ------------------------------
-           Overlay to cover the main content when side menu is open
-        ------------------------------ -->
-        <div class="overlay" id="menu-overlay"></div>
-
-        <!-- ------------------------------
            Menu Toggle Button (Hamburger Icon)
         ------------------------------ -->
         <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
@@ -1039,7 +1020,12 @@
                Debug Button Functionality (Moved to Side Menu)
             ------------------------------ */
             (function() {
-                const debugButton = document.getElementById('debug-button');
+                const debugButton = document.createElement('button');
+                debugButton.id = 'debug-button';
+                debugButton.className = 'debug-button';
+                debugButton.innerText = 'Show Debug';
+                document.querySelector('.side-menu').appendChild(debugButton);
+
                 const debugCanvas = document.getElementById('debugCanvas');
                 const debugConsole = document.getElementById('debugConsole');
                 const debugControls = document.getElementById('debugControls');
@@ -1077,7 +1063,6 @@
                 const startButton = document.getElementById('start-button');
                 const stopButton = document.getElementById('stop-button');
                 const restartButton = document.getElementById('restart-button'); // New Restart Button
-                const debugButton = document.getElementById('debug-button'); // Now in side menu
                 const output = document.getElementById('output');
                 const errorMsg = document.getElementById('errorMsg');
                 const debugCanvas = document.getElementById('debugCanvas');
@@ -1370,7 +1355,7 @@
                     if (!scanning) return;
 
                     const now = Date.now();
-                    const timeSinceLastOcr = now - lastOcrTime;
+                    const timeSinceLastOcr = now - lastScanTime;
                     const desiredInterval = 1000 / ocrFrequency; // in milliseconds
 
                     frameCounter++;
@@ -1385,7 +1370,7 @@
                         return;
                     }
 
-                    lastOcrTime = now;
+                    lastScanTime = now;
 
                     if (video.readyState !== video.HAVE_ENOUGH_DATA) {
                         console.warn('Video not ready');
