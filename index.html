@@ -149,25 +149,6 @@
             margin-bottom: 20px;
         }
 
-        /* Adjust Menu Toggle Inside Side Menu */
-        .side-menu .menu-toggle {
-            position: relative;
-            width: 30px;
-            height: 25px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .side-menu .menu-toggle span {
-            background-color: #ecf0f1;
-            height: 4px;
-            border-radius: 2px;
-            transition: background-color 0.3s ease;
-        }
-
         /* Settings Text */
         .side-menu-header h2 {
             margin: 0 0 10px 0;
@@ -729,12 +710,6 @@
     ------------------------------ -->
     <div class="side-menu" id="side-menu">
         <div class="side-menu-header">
-            <!-- Menu Toggle Button -->
-            <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
             <!-- Settings Title -->
             <h2>Settings</h2>
             <!-- FPS Counter -->
@@ -857,6 +832,15 @@
        Overlay to cover the main content when side menu is open
     ------------------------------ -->
     <div class="overlay" id="menu-overlay"></div>
+
+    <!-- ------------------------------
+       Menu Toggle Button (Hamburger Icon)
+    ------------------------------ -->
+    <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
 
     <!-- ------------------------------
        Theme Toggle Switch
@@ -1410,7 +1394,7 @@
                 if (!scanning) return;
 
                 const now = Date.now();
-                const timeSinceLastOcr = now - lastOcrTime;
+                const timeSinceLastOcr = now - lastScanTime;
                 const desiredInterval = 1000 / ocrFrequency; // in milliseconds
 
                 frameCounter++;
