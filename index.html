@@ -185,14 +185,15 @@
             display: none;
         }
 
-        .collapsible content {
+        /* Updated selectors to target child divs */
+        .collapsible > div {
             padding: 10px 15px;
             display: none;
             flex-direction: column;
             gap: 15px;
         }
 
-        .collapsible[open] content {
+        .collapsible[open] > div {
             display: flex;
         }
 
