@@ -127,9 +127,9 @@
             height: 100%;
             background-color: #2c3e50;
             color: #ecf0f1;
-            overflow: hidden; /* Prevent scrolling of the entire side menu */
+            /* overflow: hidden; */ /* Removed to allow scrolling */
             transition: left 0.3s ease;
-            z-index: 1001; /* Above other elements */
+            z-index: 1001; /* Above the overlay */
             padding: 20px;
             box-shadow: 2px 0 5px rgba(0,0,0,0.3);
             display: flex;
@@ -165,10 +165,11 @@
             z-index: 1005; /* Above other elements */
         }
 
-        /* Settings Content Container */
+        /* Side Menu Content Container */
         .side-menu-content {
-            flex: 1; /* Allows the container to take available space */
-            overflow-y: scroll; /* Enables scrolling within the side menu */
+            flex: 1; /* Takes up remaining space */
+            overflow-y: auto; /* Enables scrolling within the side menu */
+            padding-right: 10px; /* Optional: Adds space for scrollbar */
         }
 
         .menu-content {
@@ -205,6 +206,8 @@
             display: none;
             flex-direction: column;
             gap: 15px;
+            /* Removed max-height and overflow-y to allow side-menu to handle scrolling */
+            padding-right: 0; /* Adjust padding if necessary */
         }
 
         .collapsible[open] > div {
@@ -278,7 +281,7 @@
             background-color: #ecf0f1;
         }
 
-        /* Overlay to cover the main content when side menu is open (for mobile) */
+        /* Overlay to cover the main content when side menu is open */
         .overlay {
             position: fixed;
             top: 0;
@@ -294,7 +297,7 @@
             display: block;
         }
 
-        /* Adjust main content when side menu is open (for desktop) */
+        /* Adjust main content when side menu is open */
         #container.side-menu-open {
             margin-left: 300px;
             transition: margin-left 0.3s ease;
@@ -821,12 +824,11 @@
         </div>
 
         <!-- ------------------------------
-           Debug Show Button (Moved to Side Menu Footer)
+           Side Menu Footer
         ------------------------------ -->
         <div class="side-menu-footer">
             <button id="debug-button" class="debug-button">Show Debug</button>
         </div>
-
     </div>
 
     <!-- ------------------------------
@@ -977,17 +979,6 @@
                     closeMenu();
                 }
             });
-
-            // Allow scrolling on main content when side menu is open
-            menuOverlay.addEventListener('wheel', function(e) {
-                // Prevent default behavior to allow main content to scroll
-                e.stopPropagation();
-            }, { passive: true });
-
-            menuOverlay.addEventListener('touchmove', function(e) {
-                // Prevent default behavior to allow main content to scroll
-                e.stopPropagation();
-            }, { passive: true });
 
             // Optional: Close the menu with the Escape key
             document.addEventListener('keydown', function(e) {
@@ -1421,7 +1412,7 @@
                     return;
                 }
 
-                lastOcrTime = now;
+                lastScanTime = now;
 
                 if (video.readyState !== video.HAVE_ENOUGH_DATA) {
                     console.warn('Video not ready');
