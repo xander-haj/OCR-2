@@ -196,14 +196,14 @@
             display: flex;
         }
 
-        /* Dropdown Styles */
+        /* Dropdown and Input Styles */
         #side-menu label {
             font-size: 16px;
             margin-bottom: 4px;
             display: block;
         }
 
-        #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select {
+        #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input {
             width: 100%;
             padding: 8px;
             font-size: 14px;
@@ -211,16 +211,18 @@
             border: 1px solid #ccc;
             background-color: #fff;
             transition: background-color 0.3s ease, border-color 0.3s ease;
-            display: block; /* Ensure dropdowns are on a new line */
-            margin-bottom: 10px; /* Add spacing between dropdowns */
+            display: block; /* Ensure elements are on a new line */
+            margin-bottom: 10px; /* Add spacing between elements */
         }
 
+        /* Dark Theme Adjustments for Selects and Inputs */
         body.dark-theme #resolution-select,
         body.dark-theme #camera-select,
         body.dark-theme #workers-select,
         body.dark-theme #roi-filters-select,
         body.dark-theme #frame-skipping-select,
-        body.dark-theme #frequency-select {
+        body.dark-theme #frequency-select,
+        body.dark-theme #confidence-threshold-input {
             background-color: #1e1e1e;
             border: 1px solid #555;
             color: #e0e0e0;
@@ -652,7 +654,7 @@
                 padding: 14px 28px;
             }
 
-            #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select {
+            #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input {
                 font-size: 18px;
                 padding: 12px;
             }
@@ -680,7 +682,7 @@
                 padding: 12px 24px;
             }
 
-            #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select {
+            #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input {
                 font-size: 16px;
                 padding: 10px;
             }
@@ -781,6 +783,10 @@
                         <option value="6">6 Hz</option>
                         <option value="10">10 Hz</option>
                     </select>
+                </div>
+                <div>
+                    <label for="confidence-threshold-input">Worker Confidence Threshold:</label>
+                    <input type="number" id="confidence-threshold-input" min="1" max="100" value="60">
                 </div>
             </details>
 
@@ -1087,11 +1093,12 @@
             const frameSkippingSelect = document.getElementById('frame-skipping-select'); // New Frame Skipping Select
             const frequencySelect = document.getElementById('frequency-select'); // New Frequency Select
             const ocrInfo = document.getElementById('ocr-info'); // New OCR Info Text
+            const confidenceThresholdInput = document.getElementById('confidence-threshold-input'); // New Confidence Threshold Input
 
             let stream = null;
             let scanning = false;
             let lastScanTime = 0;
-            const MIN_CONFIDENCE = 60; // Minimum confidence for OCR
+            let confidenceThreshold = parseInt(confidenceThresholdInput.value, 10) || 60; // Dynamic Confidence Threshold
             let selectedFilter = 'none'; // Default filter
             let frameSkipping = 1; // Default: scan every frame
             let ocrFrequency = 1; // Default: 1 Hz
@@ -1341,7 +1348,7 @@
                     const averageConfidence = totalConfidence / workers.length;
                     console.log(`OCR Average Confidence: ${averageConfidence}`);
 
-                    if (averageConfidence >= MIN_CONFIDENCE && aggregatedText.trim().length > 0) {
+                    if (averageConfidence >= confidenceThreshold && aggregatedText.trim().length > 0) {
                         roiOverlay.style.borderColor = '#2cb67d';
                         if (!output.value.includes(aggregatedText.trim())) {
                             output.value += aggregatedText.trim() + '\n';
@@ -1819,6 +1826,18 @@
                 console.log(`OCR Frequency set to: ${ocrFrequency} Hz`);
                 updateOcrInfo();
             }
+
+            /* ------------------------------
+               Function to Handle Confidence Threshold Changes
+            ------------------------------ */
+            confidenceThresholdInput.addEventListener('change', function() {
+                let value = parseInt(this.value, 10);
+                if (isNaN(value) || value < 1) value = 1;
+                if (value > 100) value = 100;
+                this.value = value;
+                confidenceThreshold = value;
+                console.log(`Confidence threshold set to: ${confidenceThreshold}`);
+            });
 
             /* ------------------------------
                Function to Show Temporary Messages
