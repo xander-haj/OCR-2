@@ -29,6 +29,7 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             transition: background-color 0.3s ease, color 0.3s ease;
+            display: flex; /* Enable Flexbox */
         }
 
         /* Apply dark theme to html and body */
@@ -114,6 +115,10 @@
         /* Body Transition */
         body {
             transition: background-color 0.3s ease, color 0.3s ease;
+            flex: 1; /* Allow main content to grow */
+            display: flex;
+            flex-direction: row; /* Side menu and main content side by side */
+            overflow: hidden; /* Prevent body from scrolling */
         }
 
         /* ------------------------------
@@ -297,6 +302,8 @@
         #container.side-menu-open {
             margin-left: 300px;
             transition: margin-left 0.3s ease;
+            flex: 1; /* Allow main content to take remaining space */
+            overflow-y: auto; /* Enable vertical scrolling */
         }
 
         /* Responsive Adjustments */
