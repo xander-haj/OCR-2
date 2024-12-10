@@ -127,9 +127,9 @@
             height: 100%;
             background-color: #2c3e50;
             color: #ecf0f1;
-            /* overflow: hidden; */ /* Removed to allow scrolling */
+            /* overflow: hidden; */ /* Removed to allow independent scrolling */
             transition: left 0.3s ease;
-            z-index: 1001; /* Above the overlay */
+            z-index: 1001; /* Above other elements */
             padding: 20px;
             box-shadow: 2px 0 5px rgba(0,0,0,0.3);
             display: flex;
@@ -141,22 +141,11 @@
             left: 0;
         }
 
-        /* Side Menu Header */
-        .side-menu-header {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            margin-bottom: 20px;
-        }
-
-        /* Settings Text */
-        .side-menu-header h2 {
-            margin: 0 0 10px 0;
-            font-size: 20px;
-        }
-
         /* FPS Counter Styles */
         #fpsCounter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
             background-color: rgba(0, 0, 0, 0.7);
             color: #fff;
             padding: 5px 10px;
@@ -165,17 +154,13 @@
             z-index: 1005; /* Above other elements */
         }
 
-        /* Side Menu Content Container */
-        .side-menu-content {
-            flex: 1; /* Takes up remaining space */
-            overflow-y: auto; /* Enables scrolling within the side menu */
-            padding-right: 10px; /* Optional: Adds space for scrollbar */
-        }
-
+        /* Settings Content Container */
         .menu-content {
             display: flex;
             flex-direction: column;
             gap: 20px;
+            flex: 1; /* Allows the container to take available space */
+            overflow-y: auto; /* Enables scrolling within the side menu */
         }
 
         /* Collapsible Sections */
@@ -183,8 +168,7 @@
             border: 1px solid #444;
             border-radius: 8px;
             background-color: #34495e;
-            overflow: hidden; /* Ensure content doesn't overflow */
-            margin-bottom: 20px;
+            overflow: hidden;
         }
 
         .collapsible summary {
@@ -201,16 +185,14 @@
             display: none;
         }
 
-        .collapsible > div {
+        .collapsible content {
             padding: 10px 15px;
             display: none;
             flex-direction: column;
             gap: 15px;
-            /* Removed max-height and overflow-y to allow side-menu to handle scrolling */
-            padding-right: 0; /* Adjust padding if necessary */
         }
 
-        .collapsible[open] > div {
+        .collapsible[open] content {
             display: flex;
         }
 
@@ -281,7 +263,7 @@
             background-color: #ecf0f1;
         }
 
-        /* Overlay to cover the main content when side menu is open */
+        /* Overlay to cover the main content when side menu is open (for mobile) */
         .overlay {
             position: fixed;
             top: 0;
@@ -297,7 +279,7 @@
             display: block;
         }
 
-        /* Adjust main content when side menu is open */
+        /* Adjust main content when side menu is open (for desktop) */
         #container.side-menu-open {
             margin-left: 300px;
             transition: margin-left 0.3s ease;
@@ -631,7 +613,7 @@
             }
 
             /* Adjust Debug Button for Mobile */
-            .side-menu-footer .debug-button {
+            .side-menu .debug-button {
                 padding: 10px 0;
                 font-size: 16px;
             }
@@ -712,15 +694,12 @@
        Side Menu Structure
     ------------------------------ -->
     <div class="side-menu" id="side-menu">
-        <div class="side-menu-header">
-            <!-- Settings Title -->
-            <h2>Settings</h2>
-            <!-- FPS Counter -->
-            <div id="fpsCounter">FPS: 0</div>
-        </div>
+        <!-- FPS Counter -->
+        <div id="fpsCounter">FPS: 0</div>
 
         <!-- Settings Content Container -->
-        <div class="side-menu-content menu-content">
+        <div class="menu-content">
+            <h2>Settings</h2>
             <!-- ------------------------------
                Hardware Collapsible Section
             ------------------------------ -->
@@ -824,11 +803,9 @@
         </div>
 
         <!-- ------------------------------
-           Side Menu Footer
+           Debug Show Button (Moved to Side Menu)
         ------------------------------ -->
-        <div class="side-menu-footer">
-            <button id="debug-button" class="debug-button">Show Debug</button>
-        </div>
+        <button id="debug-button" class="debug-button">Show Debug</button>
     </div>
 
     <!-- ------------------------------
@@ -1063,7 +1040,7 @@
         document.getElementById('save-logs-button').addEventListener('click', saveLogs);
 
         /* ------------------------------
-           Debug Button Functionality (Moved to Side Menu Footer)
+           Debug Button Functionality (Moved to Side Menu)
         ------------------------------ */
         (function() {
             const debugButton = document.getElementById('debug-button');
@@ -1397,7 +1374,7 @@
                 if (!scanning) return;
 
                 const now = Date.now();
-                const timeSinceLastOcr = now - lastScanTime;
+                const timeSinceLastOcr = now - lastOcrTime;
                 const desiredInterval = 1000 / ocrFrequency; // in milliseconds
 
                 frameCounter++;
@@ -1412,7 +1389,7 @@
                     return;
                 }
 
-                lastScanTime = now;
+                lastOcrTime = now;
 
                 if (video.readyState !== video.HAVE_ENOUGH_DATA) {
                     console.warn('Video not ready');
