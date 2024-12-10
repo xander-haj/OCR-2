@@ -274,10 +274,14 @@
             background: rgba(0,0,0,0.5);
             display: none;
             z-index: 1000;
+            /* Added to allow touch scrolling while overlay is active */
+            touch-action: pan-y;
         }
 
         .overlay.active {
             display: block;
+            /* Allow vertical scrolling on the main content while capturing click events */
+            touch-action: pan-y;
         }
 
         /* Adjust main content when side menu is open (for desktop) */
@@ -521,7 +525,6 @@
             display: none; /* Initially hidden */
             z-index: 999;
         }
-
         .log-entry {
             margin-bottom: 5px;
             white-space: pre-wrap;
@@ -1390,7 +1393,7 @@
                     return;
                 }
 
-                lastOcrTime = now;
+                lastScanTime = now;
 
                 if (video.readyState !== video.HAVE_ENOUGH_DATA) {
                     console.warn('Video not ready');
