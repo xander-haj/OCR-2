@@ -124,35 +124,57 @@
             top: 0;
             left: -300px; /* Hidden by default */
             width: 300px;
-            height: 100vh; /* Ensure it spans the full viewport height */
+            height: 100%;
             background-color: #2c3e50;
             color: #ecf0f1;
+            overflow: hidden; /* Prevent scrolling of the entire side menu */
             transition: left 0.3s ease;
             z-index: 1001; /* Above other elements */
             padding: 20px;
             box-shadow: 2px 0 5px rgba(0,0,0,0.3);
             display: flex;
             flex-direction: column;
+            justify-content: space-between; /* To push Debug button to bottom */
         }
 
         .side-menu.active {
             left: 0;
         }
 
-        /* Header Styles */
+        /* Side Menu Header */
         .side-menu-header {
-            flex: none;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
             margin-bottom: 20px;
         }
 
-        .side-menu-header h2 {
-            margin: 0;
-            font-size: 24px;
+        /* Adjust Menu Toggle Inside Side Menu */
+        .side-menu .menu-toggle {
+            position: relative;
+            width: 30px;
+            height: 25px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin-bottom: 10px;
         }
 
+        .side-menu .menu-toggle span {
+            background-color: #ecf0f1;
+            height: 4px;
+            border-radius: 2px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Settings Text */
+        .side-menu-header h2 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+        }
+
+        /* FPS Counter Styles */
         #fpsCounter {
             background-color: rgba(0, 0, 0, 0.7);
             color: #fff;
@@ -163,19 +185,15 @@
         }
 
         /* Settings Content Container */
-        .menu-content {
+        .side-menu-content {
             flex: 1; /* Allows the container to take available space */
-            overflow-y: auto; /* Enables scrolling within the side menu */
+            overflow-y: scroll; /* Enables scrolling within the side menu */
+        }
+
+        .menu-content {
             display: flex;
             flex-direction: column;
             gap: 20px;
-            min-height: 0; /* Allows the content to shrink below its content size */
-        }
-
-        /* Footer Styles */
-        .side-menu-footer {
-            flex: none;
-            margin-top: 20px;
         }
 
         /* Collapsible Sections */
@@ -183,7 +201,8 @@
             border: 1px solid #444;
             border-radius: 8px;
             background-color: #34495e;
-            overflow: hidden;
+            overflow: hidden; /* Ensure content doesn't overflow */
+            margin-bottom: 20px;
         }
 
         .collapsible summary {
@@ -200,7 +219,6 @@
             display: none;
         }
 
-        /* Updated selectors to target child divs */
         .collapsible > div {
             padding: 10px 15px;
             display: none;
@@ -629,7 +647,7 @@
             }
 
             /* Adjust Debug Button for Mobile */
-            .side-menu .debug-button {
+            .side-menu-footer .debug-button {
                 padding: 10px 0;
                 font-size: 16px;
             }
@@ -710,14 +728,21 @@
        Side Menu Structure
     ------------------------------ -->
     <div class="side-menu" id="side-menu">
-        <!-- Header Section -->
         <div class="side-menu-header">
+            <!-- Menu Toggle Button -->
+            <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <!-- Settings Title -->
             <h2>Settings</h2>
+            <!-- FPS Counter -->
             <div id="fpsCounter">FPS: 0</div>
         </div>
 
         <!-- Settings Content Container -->
-        <div class="menu-content">
+        <div class="side-menu-content menu-content">
             <!-- ------------------------------
                Hardware Collapsible Section
             ------------------------------ -->
@@ -820,7 +845,9 @@
             </details>
         </div>
 
-        <!-- Footer Section (Debug Button) -->
+        <!-- ------------------------------
+           Debug Show Button (Moved to Side Menu Footer)
+        ------------------------------ -->
         <div class="side-menu-footer">
             <button id="debug-button" class="debug-button">Show Debug</button>
         </div>
@@ -830,15 +857,6 @@
        Overlay to cover the main content when side menu is open
     ------------------------------ -->
     <div class="overlay" id="menu-overlay"></div>
-
-    <!-- ------------------------------
-       Menu Toggle Button (Hamburger Icon)
-    ------------------------------ -->
-    <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
 
     <!-- ------------------------------
        Theme Toggle Switch
@@ -1058,7 +1076,7 @@
         document.getElementById('save-logs-button').addEventListener('click', saveLogs);
 
         /* ------------------------------
-           Debug Button Functionality (Moved to Side Menu)
+           Debug Button Functionality (Moved to Side Menu Footer)
         ------------------------------ */
         (function() {
             const debugButton = document.getElementById('debug-button');
@@ -1392,7 +1410,7 @@
                 if (!scanning) return;
 
                 const now = Date.now();
-                const timeSinceLastOcr = now - lastScanTime;
+                const timeSinceLastOcr = now - lastOcrTime;
                 const desiredInterval = 1000 / ocrFrequency; // in milliseconds
 
                 frameCounter++;
