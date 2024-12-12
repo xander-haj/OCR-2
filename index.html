@@ -323,6 +323,11 @@
 
         /* Video Styling */
         #video {
+            display: none; /* Hide the original video element */
+        }
+
+        /* WebGL Video Canvas Styling */
+        #videoWebGLCanvas {
             width: 90%;
             max-width: 500px;
             border-radius: 12px;
@@ -577,22 +582,14 @@
         }
 
         /* ------------------------------
-           Debug Button Styles
+           WebGL Video Canvas Styles
         ------------------------------ */
-        .debug-button {
-            background-color: #6a0dad; /* Purple color */
-            color: #fff;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: background-color 0.3s ease;
-        }
-
-        .debug-button:hover {
-            background-color: #5a0bad; /* Darker purple on hover */
+        #videoWebGLCanvas {
+            width: 90%;
+            max-width: 500px;
+            border-radius: 12px;
+            background: #000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         /* ------------------------------
@@ -866,7 +863,8 @@
            Video Wrapper
         ------------------------------ -->
         <div id="videoWrapper">
-            <video id="video" playsinline></video> <!-- Removed 'autoplay' attribute -->
+            <video id="video" playsinline></video> <!-- Hidden video element for OCR processing -->
+            <canvas id="videoWebGLCanvas"></canvas> <!-- WebGL Canvas for Video Rendering -->
             <div id="overlay"></div> <!-- ROI Bounding Box -->
             <div id="focusIndicator">Processing...</div>
         </div>
@@ -1079,6 +1077,7 @@
         (function() {
             // References to DOM elements
             const video = document.getElementById('video');
+            const webglVideoCanvas = document.getElementById('videoWebGLCanvas'); // WebGL Canvas for Video Rendering
             const roiOverlay = document.getElementById('overlay'); // ROI Bounding Box
             const startButton = document.getElementById('start-button');
             const stopButton = document.getElementById('stop-button');
@@ -1245,6 +1244,9 @@
                         location.reload();
                         return;
                     }
+
+                    // Initialize WebGL Rendering for Video
+                    initializeWebGLRendering();
                 } catch (err) {
                     console.error('Camera initialization failed:', err);
                     showError('Unable to access the selected camera. Please check permissions or try a different device.');
@@ -1391,7 +1393,7 @@
                     return;
                 }
 
-                lastOcrTime = now;
+                lastScanTime = now;
 
                 if (video.readyState !== video.HAVE_ENOUGH_DATA) {
                     console.warn('Video not ready');
@@ -1410,7 +1412,7 @@
                 preprocessImage(videoCanvas, videoWidth, videoHeight, selectedFilter);
 
                 const overlayRect = roiOverlay.getBoundingClientRect();
-                const videoRect = video.getBoundingClientRect();
+                const videoRect = webglVideoCanvas.getBoundingClientRect(); // Use WebGL canvas for ROI alignment
 
                 const scaleX = videoWidth / videoRect.width;
                 const scaleY = videoHeight / videoRect.height;
@@ -1607,7 +1609,7 @@
 
                 // Extract ROI
                 const overlayRect = roiOverlay.getBoundingClientRect();
-                const videoRect = video.getBoundingClientRect();
+                const videoRect = webglVideoCanvas.getBoundingClientRect(); // Use WebGL canvas for ROI alignment
 
                 const scaleX = videoWidth / videoRect.width;
                 const scaleY = videoHeight / videoRect.height;
@@ -1883,6 +1885,162 @@
                 const effectiveFrequency = Math.min(frameBasedFrequency, ocrFrequency);
                 ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
             }
+
+            /* ------------------------------
+               Function to Initialize WebGL Rendering for Video
+            ------------------------------ */
+            function initializeWebGLRendering() {
+                if (!webglVideoCanvas) {
+                    console.error('WebGL Video Canvas not found.');
+                    showError('WebGL Video Canvas not found.');
+                    return;
+                }
+
+                const gl = webglVideoCanvas.getContext('webgl') || webglVideoCanvas.getContext('experimental-webgl');
+
+                if (!gl) {
+                    console.error('Unable to initialize WebGL for video rendering.');
+                    showError('WebGL is not supported by your browser for video rendering.');
+                    return;
+                }
+
+                // Vertex Shader Source
+                const vertexShaderSource = `
+                    attribute vec2 a_position;
+                    attribute vec2 a_texCoord;
+                    varying vec2 v_texCoord;
+                    void main() {
+                        gl_Position = vec4(a_position, 0, 1);
+                        v_texCoord = a_texCoord;
+                    }
+                `;
+
+                // Fragment Shader Source
+                const fragmentShaderSource = `
+                    precision mediump float;
+                    varying vec2 v_texCoord;
+                    uniform sampler2D u_texture;
+                    void main() {
+                        gl_FragColor = texture2D(u_texture, v_texCoord);
+                    }
+                `;
+
+                // Function to compile shader
+                function compileShader(source, type) {
+                    const shader = gl.createShader(type);
+                    gl.shaderSource(shader, source);
+                    gl.compileShader(shader);
+
+                    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                        const info = gl.getShaderInfoLog(shader);
+                        console.error('Could not compile WebGL shader. \n\n' + info);
+                        showError('Failed to compile WebGL shader.');
+                        gl.deleteShader(shader);
+                        return null;
+                    }
+                    return shader;
+                }
+
+                // Compile shaders
+                const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
+                const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
+
+                // Create shader program
+                const shaderProgram = gl.createProgram();
+                gl.attachShader(shaderProgram, vertexShader);
+                gl.attachShader(shaderProgram, fragmentShader);
+                gl.linkProgram(shaderProgram);
+
+                if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                    const info = gl.getProgramInfoLog(shaderProgram);
+                    console.error('Could not initialize WebGL shader program. \n\n' + info);
+                    showError('Failed to initialize WebGL shader program.');
+                    return;
+                }
+
+                gl.useProgram(shaderProgram);
+
+                // Get attribute locations
+                const positionLocation = gl.getAttribLocation(shaderProgram, "a_position");
+                const texCoordLocation = gl.getAttribLocation(shaderProgram, "a_texCoord");
+
+                // Create buffers
+                const positionBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+                const positions = [
+                    -1, -1,
+                     1, -1,
+                    -1,  1,
+                    -1,  1,
+                     1, -1,
+                     1,  1,
+                ];
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+                const texCoordBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+                const texCoords = [
+                    0, 0,
+                    1, 0,
+                    0, 1,
+                    0, 1,
+                    1, 0,
+                    1, 1,
+                ];
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
+
+                // Create texture
+                const texture = gl.createTexture();
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+
+                // Set texture parameters
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+                // Set up uniforms
+                gl.uniform1i(gl.getUniformLocation(shaderProgram, "u_texture"), 0);
+
+                // Enable attributes and bind buffers
+                gl.enableVertexAttribArray(positionLocation);
+                gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+                gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+                gl.enableVertexAttribArray(texCoordLocation);
+                gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+                gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+
+                // Function to render video frame
+                function renderVideoFrame() {
+                    if (video.readyState >= video.HAVE_CURRENT_DATA) {
+                        gl.bindTexture(gl.TEXTURE_2D, texture);
+                        gl.texImage2D(
+                            gl.TEXTURE_2D,
+                            0,
+                            gl.RGBA,
+                            gl.RGBA,
+                            gl.UNSIGNED_BYTE,
+                            video
+                        );
+
+                        gl.clearColor(0, 0, 0, 1);
+                        gl.clear(gl.COLOR_BUFFER_BIT);
+
+                        gl.drawArrays(gl.TRIANGLES, 0, 6);
+                    }
+
+                    requestAnimationFrame(renderVideoFrame);
+                }
+
+                // Start rendering loop
+                requestAnimationFrame(renderVideoFrame);
+                console.log('WebGL rendering initialized.');
+            }
+
+            /* ------------------------------
+               Function to Perform WebGL Initialization
+            ------------------------------ */
+            /* Already integrated within initCamera */
 
             /* ------------------------------
                Event Listeners
