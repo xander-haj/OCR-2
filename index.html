@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Advanced OCR Scanner with WebGL</title>
+    <title>Advanced OCR Scanner with WebGL Preprocessing</title>
     <!-- Viewport Meta Tag for Mobile Responsiveness -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Tesseract.js CDN (Ensure using a compatible version) -->
@@ -24,7 +24,7 @@
             font-size: 16px;
             background: #f9f9f9;
             color: #333;
-            height: 100%;
+            height: 120%;
             width: 100%;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
@@ -41,7 +41,7 @@
            Theme Toggle Switch Styles
         ------------------------------ */
         .theme-toggle {
-            position: fixed;
+            position: relative;
             top: 20px;
             right: 20px;
             display: flex;
@@ -66,6 +66,9 @@
 
         /* Toggle Switch Styles */
         .toggle-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
             width: 50px;
             height: 24px;
             background-color: #ccc;
@@ -119,11 +122,11 @@
            Side Menu Styles
         ------------------------------ */
         .side-menu {
-            position: fixed; /* Changed from absolute to fixed for better overlay handling */
+            position: absolute; /* Ensure side menu can scroll never change */
             top: 0;
             left: -300px; /* Hidden by default */
             width: 300px;
-            height: 100%; /* Adjusted height to 100% */
+            height: 180vh;
             background-color: #2c3e50;
             color: #ecf0f1;
             overflow-y: auto; /* Allow overflow and ensure elements don't overlap */
@@ -142,9 +145,9 @@
 
         /* FPS Counter Styles */
         #fpsCounter {
-            position: fixed;
+            position: absolute;
             top: 20px;
-            left: 20px;
+            right: 20px;
             background-color: rgba(0, 0, 0, 0.7);
             color: #fff;
             padding: 5px 10px;
@@ -202,7 +205,7 @@
             display: block;
         }
 
-        #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input {
+        #resolution-select, #camera-select, #workers-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input {
             width: 100%;
             padding: 8px;
             font-size: 14px;
@@ -218,7 +221,6 @@
         body.dark-theme #resolution-select,
         body.dark-theme #camera-select,
         body.dark-theme #workers-select,
-        body.dark-theme #roi-filters-select,
         body.dark-theme #frame-skipping-select,
         body.dark-theme #frequency-select,
         body.dark-theme #confidence-threshold-input {
@@ -237,7 +239,7 @@
 
         /* Toggle Button (Hamburger Icon) */
         .menu-toggle {
-            position: fixed;
+            position: relative;
             top: 20px;
             left: 20px;
             width: 30px;
@@ -293,7 +295,7 @@
         }
 
         /* ------------------------------
-           Container and Canvas Styles
+           Container and Video Styles
         ------------------------------ */
         #container {
             flex: 1;
@@ -318,11 +320,10 @@
             justify-content: center;
         }
 
-        /* Canvas Styling */
-        #videoCanvas {
+        /* Video Styling */
+        #video {
             width: 90%;
             max-width: 500px;
-            height: auto; /* Allow height to adjust based on video aspect ratio */
             border-radius: 12px;
             background: #000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -341,10 +342,26 @@
             transform: translate(-50%, -50%);
             cursor: pointer;
             transition: border-color 0.3s ease;
+            /* Positioning to contain WebGL Canvas */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         #overlay:hover {
             border-color: #0077b6;
+        }
+
+        /* WebGL Canvas within ROI */
+        #webglCanvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            display: none; /* Initially hidden */
+            z-index: 2; /* Above the video but below debug elements */
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         /* Focus Indicator */
@@ -642,7 +659,7 @@
                 padding: 14px 28px;
             }
 
-            #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input {
+            #resolution-select, #camera-select, #workers-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input {
                 font-size: 18px;
                 padding: 12px;
             }
@@ -670,7 +687,7 @@
                 padding: 12px 24px;
             }
 
-            #resolution-select, #camera-select, #workers-select, #roi-filters-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input {
+            #resolution-select, #camera-select, #workers-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input {
                 font-size: 16px;
                 padding: 10px;
             }
@@ -728,15 +745,6 @@
                         <option value="4">4 Workers</option>
                     </select>
                 </div>
-                <div>
-                    <label for="roi-filters-select">ROI Filters:</label>
-                    <select id="roi-filters-select">
-                        <option value="none">None</option>
-                        <option value="grayscale">Grayscale</option>
-                        <option value="contrast">Contrast</option>
-                        <option value="brightness">Brightness</option>
-                    </select>
-                </div>
             </details>
 
             <!-- ------------------------------
@@ -775,6 +783,17 @@
                 <div>
                     <label for="confidence-threshold-input">Worker Confidence Threshold:</label>
                     <input type="number" id="confidence-threshold-input" min="1" max="100" value="60">
+                </div>
+            </details>
+
+            <!-- ------------------------------
+               WebGL Canvas Integration
+            ------------------------------ -->
+            <details class="collapsible">
+                <summary>WebGL Visualization</summary>
+                <div>
+                    <canvas id="webglCanvas"></canvas>
+                    <button id="toggleWebglButton">Show WebGL</button>
                 </div>
             </details>
         </div>
@@ -834,11 +853,6 @@
     <div id="errorMsg"></div>
 
     <!-- ------------------------------
-       Hidden Video Element for WebGL Source
-    ------------------------------ -->
-    <video id="hiddenVideo" playsinline style="display: none;"></video> <!-- Hidden video element -->
-
-    <!-- ------------------------------
        Main Container
     ------------------------------ -->
     <div id="container">
@@ -846,8 +860,10 @@
            Video Wrapper
         ------------------------------ -->
         <div id="videoWrapper">
-            <canvas id="videoCanvas"></canvas> <!-- WebGL-rendered video -->
-            <div id="overlay"></div> <!-- ROI Bounding Box -->
+            <video id="video" playsinline></video> <!-- Removed 'autoplay' attribute -->
+            <div id="overlay">
+                <canvas id="webglCanvas"></canvas> <!-- Moved WebGL Canvas inside ROI -->
+            </div> <!-- ROI Bounding Box -->
             <div id="focusIndicator">Processing...</div>
         </div>
 
@@ -1054,12 +1070,11 @@
         })();
 
         /* ------------------------------
-           OCR Scanning Functionality with WebGL Integration
+           OCR Scanning Functionality with WebGL Preprocessing
         ------------------------------ */
         (function() {
             // References to DOM elements
-            const videoCanvas = document.getElementById('videoCanvas');
-            const gl = videoCanvas.getContext('webgl') || videoCanvas.getContext('experimental-webgl');
+            const video = document.getElementById('video');
             const roiOverlay = document.getElementById('overlay'); // ROI Bounding Box
             const startButton = document.getElementById('start-button');
             const stopButton = document.getElementById('stop-button');
@@ -1069,7 +1084,8 @@
             const debugCanvas = document.getElementById('debugCanvas');
             const focusIndicator = document.getElementById('focusIndicator');
             const workersSelect = document.getElementById('workers-select');
-            const roiFiltersSelect = document.getElementById('roi-filters-select'); // New ROI Filters Select
+            const webglCanvas = document.getElementById('webglCanvas');
+            const toggleWebglButton = document.getElementById('toggleWebglButton');
             const frameSkippingSelect = document.getElementById('frame-skipping-select'); // New Frame Skipping Select
             const frequencySelect = document.getElementById('frequency-select'); // New Frequency Select
             const ocrInfo = document.getElementById('ocr-info'); // New OCR Info Text
@@ -1079,13 +1095,13 @@
             let scanning = false;
             let lastScanTime = 0;
             let confidenceThreshold = parseInt(confidenceThresholdInput.value, 10) || 60; // Dynamic Confidence Threshold
-            let selectedFilter = 'none'; // Default filter
             let frameSkipping = 1; // Default: scan every frame
             let ocrFrequency = 1; // Default: 1 Hz
             let frameCounter = 0; // Initialize frame counter
             let lastOcrTime = 0; // Initialize last OCR time
 
             // Create off-screen canvases
+            const videoCanvas = document.createElement('canvas');
             const roiCanvas = document.createElement('canvas');
             const scaledCanvas = document.createElement('canvas');
             const debugCtx = debugCanvas.getContext('2d');
@@ -1201,31 +1217,8 @@
                     };
 
                     stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    const hiddenVideo = document.getElementById('hiddenVideo');
-                    hiddenVideo.srcObject = stream;
-                    hiddenVideo.play();
-
-                    // Add event listeners to handle video readiness and errors
-                    hiddenVideo.addEventListener('loadedmetadata', () => {
-                        console.log('Hidden video metadata loaded.');
-                        videoCanvas.width = hiddenVideo.videoWidth;
-                        videoCanvas.height = hiddenVideo.videoHeight;
-                        if (gl) {
-                            gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-                        }
-                    });
-
-                    hiddenVideo.addEventListener('play', () => {
-                        console.log('Hidden video started playing.');
-                        // Start the rendering loop once the video is playing
-                        render();
-                    });
-
-                    hiddenVideo.addEventListener('error', (e) => {
-                        console.error('Hidden Video Error:', e);
-                        showError('An error occurred with the video stream.');
-                    });
-
+                    video.srcObject = stream;
+                    await video.play();
                     console.log('Camera initialized successfully.');
 
                     // After successful camera initialization, check and set reload flag
@@ -1234,150 +1227,11 @@
                         location.reload();
                         return;
                     }
-
-                    // Initialize WebGL video rendering
-                    initializeWebGL(hiddenVideo);
                 } catch (err) {
                     console.error('Camera initialization failed:', err);
                     showError('Unable to access the selected camera. Please check permissions or try a different device.');
                     throw err;
                 }
-            }
-
-            /* ------------------------------
-               Function to Initialize WebGL for Video Rendering
-            ------------------------------ */
-            function initializeWebGL(video) {
-                if (!gl) {
-                    console.error('WebGL is not supported by your browser.');
-                    showError('WebGL is not supported by your browser.');
-                    return;
-                }
-
-                // Define Vertex Shader Source
-                const vertexShaderSource = `
-                    attribute vec2 a_position;
-                    attribute vec2 a_texCoord;
-                    varying vec2 v_texCoord;
-
-                    void main(void) {
-                        gl_Position = vec4(a_position, 0.0, 1.0);
-                        v_texCoord = a_texCoord;
-                    }
-                `;
-
-                // Define Fragment Shader Source
-                const fragmentShaderSource = `
-                    precision mediump float;
-                    varying vec2 v_texCoord;
-                    uniform sampler2D u_texture;
-
-                    void main(void) {
-                        gl_FragColor = texture2D(u_texture, v_texCoord);
-                    }
-                `;
-
-                // Compile Shader Function
-                function compileShader(source, type) {
-                    const shader = gl.createShader(type);
-                    gl.shaderSource(shader, source);
-                    gl.compileShader(shader);
-
-                    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                        const info = gl.getShaderInfoLog(shader);
-                        console.error('Shader compile failed with: ' + info);
-                        showError('Shader compilation error.');
-                        gl.deleteShader(shader);
-                        return null;
-                    }
-                    return shader;
-                }
-
-                // Compile Vertex and Fragment Shaders
-                const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
-                const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
-
-                if (!vertexShader || !fragmentShader) {
-                    return;
-                }
-
-                // Create and Link Program
-                const program = gl.createProgram();
-                gl.attachShader(program, vertexShader);
-                gl.attachShader(program, fragmentShader);
-                gl.linkProgram(program);
-
-                if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                    const info = gl.getProgramInfoLog(program);
-                    console.error('Program link failed with: ' + info);
-                    showError('Shader program linking error.');
-                    return;
-                }
-
-                gl.useProgram(program);
-
-                // Locate Attributes and Uniforms
-                const positionAttribute = gl.getAttribLocation(program, 'a_position');
-                const texCoordAttribute = gl.getAttribLocation(program, 'a_texCoord');
-                const textureUniform = gl.getUniformLocation(program, 'u_texture');
-
-                // Define Vertices for Fullscreen Quad
-                const vertices = new Float32Array([
-                    -1.0, -1.0,  0.0, 0.0, // Bottom-left
-                     1.0, -1.0,  1.0, 0.0, // Bottom-right
-                    -1.0,  1.0,  0.0, 1.0, // Top-left
-                     1.0,  1.0,  1.0, 1.0  // Top-right
-                ]);
-
-                const buffer = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-                gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-                // Enable Vertex Attributes
-                gl.enableVertexAttribArray(positionAttribute);
-                gl.vertexAttribPointer(positionAttribute, 2, gl.FLOAT, false, 16, 0); // 4 floats * 4 bytes = 16 bytes
-
-                gl.enableVertexAttribArray(texCoordAttribute);
-                gl.vertexAttribPointer(texCoordAttribute, 2, gl.FLOAT, false, 16, 8); // Offset by 8 bytes for texCoord
-
-                // Create and Configure Texture
-                const videoTexture = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, videoTexture);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-                // Function to Update Texture with Current Frame
-                function updateTexture() {
-                    gl.bindTexture(gl.TEXTURE_2D, videoTexture);
-                    try {
-                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
-                        console.log('Texture updated successfully.');
-                    } catch (e) {
-                        console.warn('Unable to update texture:', e);
-                    }
-                }
-
-                // Define the Rendering Loop
-                function render() {
-                    if (!scanning) {
-                        console.log('Scanning is inactive. Rendering loop stopped.');
-                        return;
-                    }
-
-                    gl.clear(gl.COLOR_BUFFER_BIT);
-
-                    updateTexture(); // Upload the latest video frame as a texture
-
-                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // Render the fullscreen quad
-
-                    requestAnimationFrame(render);
-                    console.log('Rendered a frame.');
-                }
-
-                // Start the Rendering Loop
-                // The render function is called when the video starts playing
             }
 
             /* ------------------------------
@@ -1396,13 +1250,154 @@
                 }
             }
 
-            const filterMap = {
-                'none': 'none',
-                'grayscale': 'grayscale(100%)',
-                'contrast': 'contrast(1.3)',
-                'brightness': 'brightness(1.2)'
-            };
+            /* ------------------------------
+               Function to Initialize WebGL Preprocessing
+            ------------------------------ */
+            function initializeWebGLPreprocessing() {
+                const glCanvas = webglCanvas;
+                const gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
 
+                if (!gl) {
+                    console.error('Unable to initialize WebGL.');
+                    showError('WebGL is not supported by your browser.');
+                    return null;
+                }
+
+                // Vertex Shader Source
+                const vertexShaderSource = `
+                    attribute vec3 coordinates;
+                    varying vec2 v_texCoord;
+                    void main(void) {
+                        gl_Position = vec4(coordinates, 1.0);
+                        v_texCoord = coordinates.xy * 0.5 + 0.5;
+                    }
+                `;
+
+                // Fragment Shader Source for Grayscale Preprocessing
+                const fragmentShaderSource = `
+                    precision mediump float;
+                    varying vec2 v_texCoord;
+                    uniform sampler2D u_texture;
+
+                    void main(void) {
+                        vec4 color = texture2D(u_texture, v_texCoord);
+                        float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                        gl_FragColor = vec4(vec3(gray), color.a);
+                    }
+                `;
+
+                // Compile Shader Function
+                function compileShader(source, type) {
+                    const shader = gl.createShader(type);
+                    gl.shaderSource(shader, source);
+                    gl.compileShader(shader);
+
+                    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                        const info = gl.getShaderInfoLog(shader);
+                        console.error('Could not compile WebGL shader. \n\n' + info);
+                        showError('Failed to compile WebGL shader.');
+                        gl.deleteShader(shader);
+                        return null;
+                    }
+                    return shader;
+                }
+
+                // Initialize Shaders
+                const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
+                const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
+
+                if (!vertexShader || !fragmentShader) {
+                    return null;
+                }
+
+                // Create Shader Program
+                const shaderProgram = gl.createProgram();
+                gl.attachShader(shaderProgram, vertexShader);
+                gl.attachShader(shaderProgram, fragmentShader);
+                gl.linkProgram(shaderProgram);
+
+                if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                    const info = gl.getProgramInfoLog(shaderProgram);
+                    console.error('Could not initialize WebGL shader program. \n\n' + info);
+                    showError('Failed to initialize WebGL shader program.');
+                    return null;
+                }
+
+                gl.useProgram(shaderProgram);
+
+                // Set up vertices for a full-screen quad
+                const vertices = [
+                    -1.0,  1.0,  0.0,
+                    -1.0, -1.0,  0.0,
+                     1.0,  1.0,  0.0,
+                     1.0, -1.0,  0.0
+                ];
+
+                const vertexBufferWebGL = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, vertexBufferWebGL);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+                const coord = gl.getAttribLocation(shaderProgram, "coordinates");
+                gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(coord);
+
+                // Set up texture
+                const texture = gl.createTexture();
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+                shaderProgram.u_texture = gl.getUniformLocation(shaderProgram, "u_texture");
+
+                return { gl, shaderProgram, texture };
+            }
+
+            /* ------------------------------
+               Function to Preprocess Image with WebGL
+            ------------------------------ */
+            function preprocessWithWebGL(preprocessedData) {
+                const { gl, shaderProgram, texture } = preprocessedData;
+
+                // Bind texture and set image data
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, preprocessedData.image);
+
+                // Draw the scene
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+                // Read the pixels back
+                const pixels = new Uint8Array(preprocessedData.width * preprocessedData.height * 4);
+                gl.readPixels(0, 0, preprocessedData.width, preprocessedData.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+                // Create a canvas to convert pixels to Blob
+                const outputCanvas = document.createElement('canvas');
+                outputCanvas.width = preprocessedData.width;
+                outputCanvas.height = preprocessedData.height;
+                const ctx = outputCanvas.getContext('2d');
+                const imageData = ctx.createImageData(preprocessedData.width, preprocessedData.height);
+                imageData.data.set(pixels);
+                ctx.putImageData(imageData, 0, 0);
+
+                return outputCanvas;
+            }
+
+            /* ------------------------------
+               Function to Initialize WebGL Preprocessing
+            ------------------------------ */
+            let webglPreprocessedData = null;
+
+            function setupWebGLPreprocessing() {
+                webglPreprocessedData = initializeWebGLPreprocessing();
+                if (webglPreprocessedData) {
+                    console.log('WebGL Preprocessing initialized.');
+                }
+            }
+
+            /* ------------------------------
+               Function to Initialize Tesseract.js Workers with Dynamic Count
+            ------------------------------ */
             async function initializeTesseract(workersCount) {
                 try {
                     // Terminate existing workers if any
@@ -1498,13 +1493,13 @@
             }
 
             /* ------------------------------
-               Function to Process Each Video Frame
+               Function to Process Each Video Frame with WebGL Preprocessing
             ------------------------------ */
             async function processFrame() {
                 if (!scanning) return;
 
                 const now = Date.now();
-                const timeSinceLastOcr = now - lastScanTime;
+                const timeSinceLastOcr = now - lastOcrTime;
                 const desiredInterval = 1000 / ocrFrequency; // in milliseconds
 
                 frameCounter++;
@@ -1519,38 +1514,35 @@
                     return;
                 }
 
-                lastScanTime = now;
+                lastOcrTime = now;
 
-                // Since video is rendered on WebGL canvas, we need to capture from it
-                // Create an off-screen 2D canvas to extract image data
-                const offscreenCanvas = document.createElement('canvas');
-                const offscreenCtx = offscreenCanvas.getContext('2d');
-                offscreenCanvas.width = videoCanvas.width;
-                offscreenCanvas.height = videoCanvas.height;
-
-                // Draw the WebGL canvas onto the offscreen canvas
-                offscreenCtx.drawImage(videoCanvas, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+                    console.warn('Video not ready');
+                    if (scanning) requestAnimationFrame(processFrame);
+                    return;
+                }
 
                 console.log('Processing a new frame for OCR.');
 
-                const videoWidth = offscreenCanvas.width;
-                const videoHeight = offscreenCanvas.height;
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+                videoCanvas.width = videoWidth;
+                videoCanvas.height = videoHeight;
 
-                // Apply selected ROI filter
-                const ctx = offscreenCtx;
-                ctx.filter = filterMap[selectedFilter] || 'none';
-                ctx.drawImage(offscreenCanvas, 0, 0, videoWidth, videoHeight);
-                ctx.filter = 'none'; // Reset filter for future operations
-                console.log(`Image drawn on offscreenCanvas with filter: ${selectedFilter}`);
+                // Draw the current frame onto the videoCanvas
+                const ctx = videoCanvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+                console.log('Frame drawn on videoCanvas.');
 
+                // Extract ROI
                 const overlayRect = roiOverlay.getBoundingClientRect();
-                const containerRect = document.getElementById('videoWrapper').getBoundingClientRect();
+                const videoRect = video.getBoundingClientRect();
 
-                const scaleX = videoWidth / containerRect.width;
-                const scaleY = videoHeight / containerRect.height;
+                const scaleX = videoWidth / videoRect.width;
+                const scaleY = videoHeight / videoRect.height;
 
-                const roiX = (overlayRect.left - containerRect.left) * scaleX;
-                const roiY = (overlayRect.top - containerRect.top) * scaleY;
+                const roiX = (overlayRect.left - videoRect.left) * scaleX;
+                const roiY = (overlayRect.top - videoRect.top) * scaleY;
                 const roiWidth = overlayRect.width * scaleX;
                 const roiHeight = overlayRect.height * scaleY;
 
@@ -1564,40 +1556,57 @@
                     return;
                 }
 
-                // Extract ROI
+                // Extract ROI from videoCanvas
                 roiCanvas.width = roiWidth;
                 roiCanvas.height = roiHeight;
                 const roiCtx = roiCanvas.getContext('2d');
-                roiCtx.drawImage(offscreenCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
-                console.log('ROI extracted.');
+                roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
+                console.log('ROI extracted from videoCanvas.');
 
-                // Scale ROI for better OCR accuracy
-                const scaleFactor = 1.5;
-                scaledCanvas.width = roiWidth * scaleFactor;
-                scaledCanvas.height = roiHeight * scaleFactor;
-                const scaledCtx = scaledCanvas.getContext('2d');
-                scaledCtx.imageSmoothingEnabled = true;
-                scaledCtx.imageSmoothingQuality = 'high';
-                scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-                console.log('ROI scaled.');
+                // Preprocess ROI with WebGL
+                if (webglPreprocessedData) {
+                    // Draw the ROI onto the WebGL canvas
+                    webglCanvas.width = roiWidth;
+                    webglCanvas.height = roiHeight;
+                    const tempImage = new Image();
+                    tempImage.src = roiCanvas.toDataURL();
+                    await new Promise((resolve) => {
+                        tempImage.onload = resolve;
+                    });
+                    webglCanvas.getContext('2d').drawImage(tempImage, 0, 0, roiWidth, roiHeight);
+                    webglCanvas.style.display = 'block'; // Ensure WebGL canvas is visible
 
-                // Update Debug Canvas
-                debugCanvas.width = scaledCanvas.width;
-                debugCanvas.height = scaledCanvas.height;
-                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-                debugCtx.drawImage(scaledCanvas, 0, 0);
-                console.log('Debugging canvas updated.');
+                    // Perform WebGL preprocessing (e.g., grayscale)
+                    const preprocessedCanvas = preprocessWithWebGL({
+                        gl: webglPreprocessedData.gl,
+                        shaderProgram: webglPreprocessedData.shaderProgram,
+                        texture: webglPreprocessedData.texture,
+                        image: webglCanvas,
+                        width: roiWidth,
+                        height: roiHeight
+                    });
 
-                // Convert Canvas to Blob for OCR
-                scaledCanvas.toBlob(async (blob) => {
-                    if (blob && scanning) {
-                        console.log('Blob created for OCR.');
-                        await performOCR(blob);
-                    } else {
-                        console.warn('Blob conversion failed or scanning stopped.');
-                    }
+                    // Update Debug Canvas
+                    debugCanvas.width = preprocessedCanvas.width;
+                    debugCanvas.height = preprocessedCanvas.height;
+                    debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                    debugCtx.drawImage(preprocessedCanvas, 0, 0);
+                    console.log('Debugging canvas updated with preprocessed image.');
+
+                    // Convert Preprocessed Canvas to Blob for OCR
+                    preprocessedCanvas.toBlob(async (blob) => {
+                        if (blob && scanning) {
+                            console.log('Blob created for OCR.');
+                            await performOCR(blob);
+                        } else {
+                            console.warn('Blob conversion failed or scanning stopped.');
+                        }
+                        if (scanning) requestAnimationFrame(processFrame);
+                    }, 'image/png');
+                } else {
+                    console.warn('WebGL Preprocessing data is not initialized.');
                     if (scanning) requestAnimationFrame(processFrame);
-                }, 'image/png');
+                }
             }
 
             /* ------------------------------
@@ -1605,6 +1614,13 @@
             ------------------------------ */
             async function startScanning() {
                 if (scanning) return;
+
+                // Initialize WebGL Preprocessing
+                setupWebGLPreprocessing();
+                if (!webglPreprocessedData) {
+                    showError('WebGL preprocessing could not be initialized.');
+                    return;
+                }
 
                 // Initialize the camera
                 startButton.disabled = true;
@@ -1669,6 +1685,8 @@
                 startButton.innerText = 'Scanning...';
                 output.value = '';
                 console.log('Scanning started.');
+
+                requestAnimationFrame(processFrame);
             }
 
             /* ------------------------------
@@ -1697,8 +1715,104 @@
                     console.log('Tesseract.js workers terminated.');
                 }
 
+                // Hide WebGL Canvas
+                webglCanvas.style.display = 'none';
+
                 debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
                 console.log('Camera stream stopped and debugging canvas cleared.');
+            }
+
+            /* ------------------------------
+               Function to Capture Frame and Perform OCR
+            ------------------------------ */
+            async function captureFrameAndPerformOCR() {
+                if (!scanning) return;
+
+                console.log('Capturing frame for OCR.');
+
+                // **Call pauseScanning to pause the scanner without terminating workers**
+                await pauseScanning();
+
+                // Capture the current frame from video
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+                videoCanvas.width = videoWidth;
+                videoCanvas.height = videoHeight;
+                const ctx = videoCanvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+                console.log('Frame captured.');
+
+                // Extract ROI
+                const overlayRect = roiOverlay.getBoundingClientRect();
+                const videoRect = video.getBoundingClientRect();
+
+                const scaleX = videoWidth / videoRect.width;
+                const scaleY = videoHeight / videoRect.height;
+
+                const roiX = (overlayRect.left - videoRect.left) * scaleX;
+                const roiY = (overlayRect.top - videoRect.top) * scaleY;
+                const roiWidth = overlayRect.width * scaleX;
+                const roiHeight = overlayRect.height * scaleY;
+
+                console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
+
+                // Validate ROI boundaries
+                if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
+                    console.warn('ROI is out of video frame bounds.');
+                    showError('ROI is out of video frame bounds.');
+                    return;
+                }
+
+                // Extract ROI from videoCanvas
+                roiCanvas.width = roiWidth;
+                roiCanvas.height = roiHeight;
+                const roiCtx = roiCanvas.getContext('2d');
+                roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
+                console.log('ROI extracted from videoCanvas.');
+
+                // Preprocess ROI with WebGL
+                if (webglPreprocessedData) {
+                    // Draw the ROI onto the WebGL canvas
+                    webglCanvas.width = roiWidth;
+                    webglCanvas.height = roiHeight;
+                    const tempImage = new Image();
+                    tempImage.src = roiCanvas.toDataURL();
+                    await new Promise((resolve) => {
+                        tempImage.onload = resolve;
+                    });
+                    webglCanvas.getContext('2d').drawImage(tempImage, 0, 0, roiWidth, roiHeight);
+                    webglCanvas.style.display = 'block'; // Ensure WebGL canvas is visible
+
+                    // Perform WebGL preprocessing (e.g., grayscale)
+                    const preprocessedCanvas = preprocessWithWebGL({
+                        gl: webglPreprocessedData.gl,
+                        shaderProgram: webglPreprocessedData.shaderProgram,
+                        texture: webglPreprocessedData.texture,
+                        image: webglCanvas,
+                        width: roiWidth,
+                        height: roiHeight
+                    });
+
+                    // Update Debug Canvas
+                    debugCanvas.width = preprocessedCanvas.width;
+                    debugCanvas.height = preprocessedCanvas.height;
+                    debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                    debugCtx.drawImage(preprocessedCanvas, 0, 0);
+                    console.log('Debugging canvas updated with preprocessed image.');
+
+                    // Convert Preprocessed Canvas to Blob for OCR
+                    preprocessedCanvas.toBlob(async (blob) => {
+                        if (blob) {
+                            console.log('Blob created for OCR.');
+                            await performOCR(blob);
+                        } else {
+                            console.warn('Blob conversion failed.');
+                        }
+                        // Scanning remains paused; user can restart manually
+                    }, 'image/png');
+                } else {
+                    console.warn('WebGL Preprocessing data is not initialized.');
+                }
             }
 
             /* ------------------------------
@@ -1715,84 +1829,6 @@
                 console.log('Scanning paused.');
 
                 // Note: Do not terminate workers or stop the camera
-            }
-
-            /* ------------------------------
-               Function to Capture Frame and Perform OCR
-            ------------------------------ */
-            async function captureFrameAndPerformOCR() {
-                if (!scanning) return;
-
-                console.log('Capturing frame for OCR.');
-
-                // **Call pauseScanning to pause the scanner without terminating workers**
-                await pauseScanning();
-
-                // Capture the current frame from videoCanvas via offscreenCanvas
-                const offscreenCanvas = document.createElement('canvas');
-                const offscreenCtx = offscreenCanvas.getContext('2d');
-                offscreenCanvas.width = videoCanvas.width;
-                offscreenCanvas.height = videoCanvas.height;
-
-                // Draw the WebGL canvas onto the offscreen canvas
-                offscreenCtx.drawImage(videoCanvas, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
-                console.log('Frame captured.');
-
-                // Extract ROI
-                const overlayRect = roiOverlay.getBoundingClientRect();
-                const containerRect = document.getElementById('videoWrapper').getBoundingClientRect();
-
-                const scaleX = offscreenCanvas.width / containerRect.width;
-                const scaleY = offscreenCanvas.height / containerRect.height;
-
-                const roiX = (overlayRect.left - containerRect.left) * scaleX;
-                const roiY = (overlayRect.top - containerRect.top) * scaleY;
-                const roiWidth = overlayRect.width * scaleX;
-                const roiHeight = overlayRect.height * scaleY;
-
-                console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
-
-                // Validate ROI boundaries
-                if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > offscreenCanvas.width || (roiY + roiHeight) > offscreenCanvas.height) {
-                    console.warn('ROI is out of video frame bounds.');
-                    showError('ROI is out of video frame bounds.');
-                    return;
-                }
-
-                // Extract ROI
-                roiCanvas.width = roiWidth;
-                roiCanvas.height = roiHeight;
-                const roiCtx = roiCanvas.getContext('2d');
-                roiCtx.drawImage(offscreenCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
-                console.log('ROI extracted.');
-
-                // Scale ROI for better OCR accuracy
-                const scaleFactor = 1.5;
-                scaledCanvas.width = roiWidth * scaleFactor;
-                scaledCanvas.height = roiHeight * scaleFactor;
-                const scaledCtx = scaledCanvas.getContext('2d');
-                scaledCtx.imageSmoothingEnabled = true;
-                scaledCtx.imageSmoothingQuality = 'high';
-                scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-                console.log('ROI scaled.');
-
-                // Update Debug Canvas
-                debugCanvas.width = scaledCanvas.width;
-                debugCanvas.height = scaledCanvas.height;
-                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-                debugCtx.drawImage(scaledCanvas, 0, 0);
-                console.log('Debugging canvas updated.');
-
-                // Convert Canvas to Blob for OCR
-                scaledCanvas.toBlob(async (blob) => {
-                    if (blob) {
-                        console.log('Blob created for OCR.');
-                        await performOCR(blob);
-                    } else {
-                        console.warn('Blob conversion failed.');
-                    }
-                    // Scanning remains paused; user can restart manually
-                }, 'image/png');
             }
 
             /* ------------------------------
@@ -1937,44 +1973,6 @@
             }
 
             /* ------------------------------
-               Function to Handle ROI Filters Changes
-            ------------------------------ */
-            function handleROIFiltersChange() {
-                selectedFilter = roiFiltersSelect.value;
-                console.log(`Selected ROI Filter: ${selectedFilter}`);
-            }
-
-            /* ------------------------------
-               Function to Handle Frame Skipping Changes
-            ------------------------------ */
-            function handleFrameSkippingChange() {
-                frameSkipping = parseInt(frameSkippingSelect.value);
-                console.log(`Frame Skipping set to: Every ${frameSkipping} frame(s)`);
-                updateOcrInfo();
-            }
-
-            /* ------------------------------
-               Function to Handle Frequency Changes
-            ------------------------------ */
-            function handleFrequencyChange() {
-                ocrFrequency = parseFloat(frequencySelect.value);
-                console.log(`OCR Frequency set to: ${ocrFrequency} Hz`);
-                updateOcrInfo();
-            }
-
-            /* ------------------------------
-               Function to Handle Confidence Threshold Changes
-            ------------------------------ */
-            confidenceThresholdInput.addEventListener('change', function() {
-                let value = parseInt(this.value, 10);
-                if (isNaN(value) || value < 1) value = 1;
-                if (value > 100) value = 100;
-                this.value = value;
-                confidenceThreshold = value;
-                console.log(`Confidence threshold set to: ${confidenceThreshold}`);
-            });
-
-            /* ------------------------------
                Function to Show Temporary Messages
             ------------------------------ */
             function showTemporaryMessage(message, duration) {
@@ -2028,9 +2026,38 @@
             document.getElementById('resolution-select').addEventListener('change', handleResolutionChange);
             document.getElementById('camera-select').addEventListener('change', handleCameraChange);
             workersSelect.addEventListener('change', handleWorkersChange);
-            roiFiltersSelect.addEventListener('change', handleROIFiltersChange);
             frameSkippingSelect.addEventListener('change', handleFrameSkippingChange);
             frequencySelect.addEventListener('change', handleFrequencyChange);
+
+            /* ------------------------------
+               Function to Handle Frame Skipping Changes
+            ------------------------------ */
+            function handleFrameSkippingChange() {
+                frameSkipping = parseInt(frameSkippingSelect.value);
+                console.log(`Frame Skipping set to: Every ${frameSkipping} frame(s)`);
+                updateOcrInfo();
+            }
+
+            /* ------------------------------
+               Function to Handle Frequency Changes
+            ------------------------------ */
+            function handleFrequencyChange() {
+                ocrFrequency = parseFloat(frequencySelect.value);
+                console.log(`OCR Frequency set to: ${ocrFrequency} Hz`);
+                updateOcrInfo();
+            }
+
+            /* ------------------------------
+               Event Listener for Confidence Threshold Changes
+            ------------------------------ */
+            confidenceThresholdInput.addEventListener('change', function() {
+                let value = parseInt(this.value, 10);
+                if (isNaN(value) || value < 1) value = 1;
+                if (value > 100) value = 100;
+                this.value = value;
+                confidenceThreshold = value;
+                console.log(`Confidence threshold set to: ${confidenceThreshold}`);
+            });
 
             /* ------------------------------
                Initial Population of Cameras
@@ -2055,6 +2082,153 @@
                     workers = [];
                 }
             });
+
+            /* ------------------------------
+               WebGL Integration within Side Menu
+            ------------------------------ */
+            (function() {
+                const glCanvas = document.getElementById('webglCanvas');
+                const toggleButton = document.getElementById('toggleWebglButton');
+                let gl = null;
+                let shaderProgram = null;
+                let vertexBuffer = null;
+
+                // Vertex Shader Source
+                const vertexShaderSource = `
+                    attribute vec3 coordinates;
+                    varying vec2 v_texCoord;
+                    void main(void) {
+                        gl_Position = vec4(coordinates, 1.0);
+                        v_texCoord = coordinates.xy * 0.5 + 0.5;
+                    }
+                `;
+
+                // Fragment Shader Source for Grayscale Preprocessing
+                const fragmentShaderSource = `
+                    precision mediump float;
+                    varying vec2 v_texCoord;
+                    uniform sampler2D u_texture;
+
+                    void main(void) {
+                        vec4 color = texture2D(u_texture, v_texCoord);
+                        float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                        gl_FragColor = vec4(vec3(gray), color.a);
+                    }
+                `;
+
+                // Function to initialize WebGL
+                function initWebGL() {
+                    gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
+
+                    if (!gl) {
+                        console.error('Unable to initialize WebGL.');
+                        showError('WebGL is not supported by your browser.');
+                        return;
+                    }
+
+                    // Set clear color to black, fully opaque
+                    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                    // Clear the color buffer with specified clear color
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+
+                    // Initialize shaders
+                    initShaders();
+
+                    // Initialize buffers
+                    initBuffers();
+
+                    // Draw the scene
+                    drawScene();
+                }
+
+                // Function to compile shader
+                function compileShader(source, type) {
+                    const shader = gl.createShader(type);
+                    gl.shaderSource(shader, source);
+                    gl.compileShader(shader);
+
+                    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                        const info = gl.getShaderInfoLog(shader);
+                        console.error('Could not compile WebGL shader. \n\n' + info);
+                        showError('Failed to compile WebGL shader.');
+                        gl.deleteShader(shader);
+                        return null;
+                    }
+                    return shader;
+                }
+
+                // Function to initialize shaders
+                function initShaders() {
+                    const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
+                    const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
+
+                    shaderProgram = gl.createProgram();
+                    gl.attachShader(shaderProgram, vertexShader);
+                    gl.attachShader(shaderProgram, fragmentShader);
+                    gl.linkProgram(shaderProgram);
+
+                    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                        const info = gl.getProgramInfoLog(shaderProgram);
+                        console.error('Could not initialize WebGL shader program. \n\n' + info);
+                        showError('Failed to initialize WebGL shader program.');
+                        return;
+                    }
+
+                    gl.useProgram(shaderProgram);
+
+                    shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, 'coordinates');
+                    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+                }
+
+                // Function to initialize buffers
+                function initBuffers() {
+                    vertexBuffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+                    // Define a full-screen quad
+                    const vertices = [
+                        -1.0,  1.0,  0.0,
+                        -1.0, -1.0,  0.0,
+                         1.0,  1.0,  0.0,
+                         1.0, -1.0,  0.0
+                    ];
+
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+                }
+
+                // Function to draw the scene
+                function drawScene() {
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+
+                    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+                    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
+                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                }
+
+                // Function to toggle WebGL canvas visibility
+                toggleButton.addEventListener('click', function() {
+                    if (glCanvas.style.display === 'none' || glCanvas.style.display === '') {
+                        glCanvas.style.display = 'block';
+                        toggleButton.innerText = 'Hide WebGL';
+                        initWebGL();
+                    } else {
+                        glCanvas.style.display = 'none';
+                        toggleButton.innerText = 'Show WebGL';
+                        // Optionally, release WebGL context to free resources
+                        if (gl) {
+                            gl.getExtension('WEBGL_lose_context')?.loseContext();
+                            gl = null;
+                            shaderProgram = null;
+                            vertexBuffer = null;
+                        }
+                    }
+                });
+
+                // Initialize WebGL on load if needed
+                // Uncomment the following line if you want to initialize WebGL by default
+                // initWebGL();
+            })();
 
             /* ------------------------------
                FPS Counter Functionality
