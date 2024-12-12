@@ -1028,9 +1028,6 @@
             let glProgram = null;
             let glTexture = null;
             let glBuffer = null;
-            let glVertexPosition = null;
-            let glTexCoordLocation = null;
-            let glResolutionLocation = null;
             let glGrayscaleEnabledLoc = null;
             let glGrayscaleAmountLoc = null;
             let glDenoiseEnabledLoc = null;
@@ -1300,7 +1297,6 @@
                 const roiCtx = roiCanvas.getContext('2d');
                 roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
 
-                // Scale ROI
                 const scaleFactor = 1.5;
                 scaledCanvas.width = roiWidth * scaleFactor;
                 scaledCanvas.height = roiHeight * scaleFactor;
@@ -1309,17 +1305,25 @@
                 scaledCtx.imageSmoothingQuality = 'high';
                 scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
 
-                // Now pass scaledCanvas image through WebGL preprocessing
                 const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
 
-                // Update Debug Canvas with preprocessed frame
                 debugCanvas.width = scaledCanvas.width;
                 debugCanvas.height = scaledCanvas.height;
                 debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-                // Draw the final preprocessed frame onto debugCanvas
-                // We'll draw from the blob by creating an image
                 const img = await createImageBitmap(preprocessedBlob);
                 debugCtx.drawImage(img, 0, 0);
+
+                // Overlay text to show active preprocessing effects
+                debugCtx.font = '16px Arial';
+                debugCtx.fillStyle = 'yellow';
+                let yOffset = 20;
+                if (enableGrayscale.checked) {
+                    debugCtx.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset);
+                    yOffset += 20;
+                }
+                if (enableDenoise.checked) {
+                    debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset);
+                }
 
                 if (preprocessedBlob && scanning) {
                     await performOCR(preprocessedBlob);
@@ -1336,24 +1340,22 @@
                 const width = sourceCanvas.width;
                 const height = sourceCanvas.height;
 
+                webglCanvas.width = width;
+                webglCanvas.height = height;
+
                 gl.viewport(0, 0, width, height);
                 gl.clear(gl.COLOR_BUFFER_BIT);
 
-                // Upload image to texture
                 gl.bindTexture(gl.TEXTURE_2D, glTexture);
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
 
-                // Set uniform values
-                gl.uniform1i(gl.getUniformLocation(glProgram, "u_texture"), 0);
                 gl.uniform1f(glGrayscaleAmountLoc, parseFloat(grayscaleSlider.value) / 100.0);
                 gl.uniform1f(glDenoiseAmountLoc, parseFloat(denoiseSlider.value));
                 gl.uniform1i(glGrayscaleEnabledLoc, enableGrayscale.checked ? 1 : 0);
                 gl.uniform1i(glDenoiseEnabledLoc, enableDenoise.checked ? 1 : 0);
 
-                // Draw
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-                // Read pixels
                 const pixels = new Uint8ClampedArray(width * height * 4);
                 const fb = gl.createFramebuffer();
                 gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
@@ -1361,7 +1363,6 @@
                 gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-                // Create a canvas to put pixels into a blob
                 const offscreen = document.createElement('canvas');
                 offscreen.width = width;
                 offscreen.height = height;
@@ -1383,9 +1384,6 @@
                     showError('WebGL is not supported by your browser.');
                     return;
                 }
-
-                webglCanvas.width = 512; // temporary, resized dynamically during processing
-                webglCanvas.height = 512;
 
                 // Compile shaders
                 const vs = gl.createShader(gl.VERTEX_SHADER);
@@ -1413,7 +1411,6 @@
 
                 gl.useProgram(glProgram);
 
-                // Create buffer
                 glBuffer = gl.createBuffer();
                 gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
                 const vertices = new Float32Array([
@@ -1434,7 +1431,6 @@
                 gl.enableVertexAttribArray(aTexCoord);
                 gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
 
-                // Create texture
                 glTexture = gl.createTexture();
                 gl.bindTexture(gl.TEXTURE_2D, glTexture);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -1596,6 +1592,18 @@
                 debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
                 const img = await createImageBitmap(preprocessedBlob);
                 debugCtx.drawImage(img, 0, 0);
+
+                // Overlay text for preprocessing effects
+                debugCtx.font = '16px Arial';
+                debugCtx.fillStyle = 'yellow';
+                let yOffset = 20;
+                if (enableGrayscale.checked) {
+                    debugCtx.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset);
+                    yOffset += 20;
+                }
+                if (enableDenoise.checked) {
+                    debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset);
+                }
 
                 if (preprocessedBlob) {
                     await performOCR(preprocessedBlob);
