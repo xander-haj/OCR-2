@@ -308,8 +308,8 @@ body.dark-theme #confidence-threshold-input {
     justify-content: center;
 }
 
-/* WebGL Video Canvas Styling */
-#webglVideoCanvas {
+/* Video Styling */
+#video {
     width: 90%;
     max-width: 500px;
     border-radius: 12px;
@@ -561,18 +561,6 @@ body.dark-theme #debugCanvas {
     border-radius: 8px;
     margin-top: 20px;
     display: none; /* Initially hidden */
-}
-
-/* ------------------------------
-   WebGL Video Canvas Styles
------------------------------- */
-#webglVideoCanvas {
-    width: 90%;
-    max-width: 500px;
-    border-radius: 12px;
-    background: #000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    display: block; /* Ensure it's visible */
 }
 
 /* ------------------------------
