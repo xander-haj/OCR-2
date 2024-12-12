@@ -1175,7 +1175,7 @@
                         };
 
                         stream = await navigator.mediaDevices.getUserMedia(constraints);
-                        const video = document.createElement('video');
+                        const videoCanvas = document.createElement('videoCanvas');
                         video.srcObject = stream;
                         video.playsInline = true;
                         await video.play();
