@@ -296,7 +296,7 @@
         }
 
         /* ------------------------------
-           Container and Video Styles
+           Container and Canvas Styles
         ------------------------------ */
         #container {
             flex: 1;
@@ -321,7 +321,7 @@
             justify-content: center;
         }
 
-        /* Video Canvas Styling */
+        /* Canvas Styling */
         #videoCanvas {
             width: 90%;
             max-width: 500px;
@@ -600,7 +600,11 @@
                 font-size: 16px;
             }
 
-            /* Adjust Debug Console for Mobile */
+            /* Adjust Debug Canvas and Console for Mobile */
+            #webglCanvas {
+                height: 150px;
+            }
+
             #debugConsole {
                 height: 150px;
                 font-size: 13px;
@@ -833,10 +837,10 @@
         ------------------------------ -->
         <div id="container">
             <!-- ------------------------------
-               Video Wrapper
+               Video Wrapper with WebGL Canvas
             ------------------------------ -->
             <div id="videoWrapper">
-                <canvas id="videoCanvas"></canvas> <!-- Replaced Video with Canvas for WebGL Rendering -->
+                <canvas id="videoCanvas"></canvas> <!-- WebGL Canvas for Video Rendering -->
                 <div id="overlay"></div> <!-- ROI Bounding Box -->
                 <div id="focusIndicator">Processing...</div>
             </div>
@@ -1007,39 +1011,17 @@
             document.getElementById('save-logs-button').addEventListener('click', saveLogs);
 
             /* ------------------------------
-               Debug Button Functionality (Moved to Side Menu)
+               Debug Button Functionality (Removed)
             ------------------------------ */
-            (function() {
-                const debugButton = document.getElementById('debug-button');
-                const debugConsole = document.getElementById('debugConsole');
-                const debugControls = document.getElementById('debugControls');
-
-                // Initially hide the debug elements
-                debugConsole.style.display = 'none';
-                debugControls.style.display = 'none';
-
-                let isDebugVisible = false;
-
-                debugButton.addEventListener('click', function() {
-                    isDebugVisible = !isDebugVisible;
-                    if (isDebugVisible) {
-                        debugConsole.style.display = 'block';
-                        debugControls.style.display = 'block';
-                        debugButton.innerText = 'Hide Debug';
-                    } else {
-                        debugConsole.style.display = 'none';
-                        debugControls.style.display = 'none';
-                        debugButton.innerText = 'Show Debug';
-                    }
-                });
-            })();
+            // The debug-button and its functionality have been removed as per instructions.
 
             /* ------------------------------
-               OCR Scanning Functionality
+               OCR Scanning Functionality with WebGL Integration
             ------------------------------ */
             (function() {
                 // References to DOM elements
                 const videoCanvas = document.getElementById('videoCanvas');
+                const gl = videoCanvas.getContext('webgl') || videoCanvas.getContext('experimental-webgl');
                 const roiOverlay = document.getElementById('overlay'); // ROI Bounding Box
                 const startButton = document.getElementById('start-button');
                 const stopButton = document.getElementById('stop-button');
@@ -1048,7 +1030,7 @@
                 const errorMsg = document.getElementById('errorMsg');
                 const focusIndicator = document.getElementById('focusIndicator');
                 const workersSelect = document.getElementById('workers-select');
-                const webglCanvas = document.getElementById('webglCanvas');
+                const webglCanvas = document.getElementById('webglCanvas'); // Remains for visualization
                 const toggleWebglButton = document.getElementById('toggleWebglButton');
                 const roiFiltersSelect = document.getElementById('roi-filters-select'); // New ROI Filters Select
                 const frameSkippingSelect = document.getElementById('frame-skipping-select'); // New Frame Skipping Select
@@ -1067,12 +1049,6 @@
                 let lastOcrTime = 0; // Initialize last OCR time
 
                 // Create off-screen canvases
-                const hiddenVideo = document.createElement('video'); // Hidden video element
-                hiddenVideo.autoplay = true;
-                hiddenVideo.playsInline = true;
-                hiddenVideo.style.display = 'none'; // Hide the video element
-                document.body.appendChild(hiddenVideo);
-
                 const roiCanvas = document.createElement('canvas');
                 const scaledCanvas = document.createElement('canvas');
                 const debugCtx = null; // Removed debugCanvas
@@ -1161,7 +1137,7 @@
                 function preprocessImage(videoCanvas, width, height, filter) {
                     const ctx = videoCanvas.getContext('2d');
                     ctx.filter = filterMap[filter] || 'none'; // Apply selected filter
-                    ctx.drawImage(hiddenVideo, 0, 0, width, height);
+                    ctx.drawImage(video, 0, 0, width, height);
                     ctx.filter = 'none'; // Reset filter for future operations
                     console.log(`Image drawn on videoCanvas with filter: ${filter}`);
                 }
@@ -1199,8 +1175,10 @@
                         };
 
                         stream = await navigator.mediaDevices.getUserMedia(constraints);
-                        hiddenVideo.srcObject = stream;
-                        await hiddenVideo.play();
+                        const video = document.createElement('video');
+                        video.srcObject = stream;
+                        video.playsInline = true;
+                        await video.play();
                         console.log('Camera initialized successfully.');
 
                         // After successful camera initialization, check and set reload flag
@@ -1209,11 +1187,137 @@
                             location.reload();
                             return;
                         }
+
+                        // Initialize WebGL video rendering
+                        initializeWebGL(video);
                     } catch (err) {
                         console.error('Camera initialization failed:', err);
                         showError('Unable to access the selected camera. Please check permissions or try a different device.');
                         throw err;
                     }
+                }
+
+                /* ------------------------------
+                   Function to Initialize WebGL for Video Rendering
+                ------------------------------ */
+                function initializeWebGL(video) {
+                    if (!gl) {
+                        console.error('WebGL is not supported by your browser.');
+                        showError('WebGL is not supported by your browser.');
+                        return;
+                    }
+
+                    // Define Vertex Shader Source
+                    const vertexShaderSource = `
+                        attribute vec2 a_position;
+                        attribute vec2 a_texCoord;
+                        varying vec2 v_texCoord;
+
+                        void main(void) {
+                            gl_Position = vec4(a_position, 0.0, 1.0);
+                            v_texCoord = a_texCoord;
+                        }
+                    `;
+
+                    // Define Fragment Shader Source
+                    const fragmentShaderSource = `
+                        precision mediump float;
+                        varying vec2 v_texCoord;
+                        uniform sampler2D u_texture;
+
+                        void main(void) {
+                            gl_FragColor = texture2D(u_texture, v_texCoord);
+                        }
+                    `;
+
+                    // Compile Shader Function
+                    function compileShader(source, type) {
+                        const shader = gl.createShader(type);
+                        gl.shaderSource(shader, source);
+                        gl.compileShader(shader);
+
+                        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                            console.error('Error compiling shader:', gl.getShaderInfoLog(shader));
+                            showError('Failed to compile WebGL shader.');
+                            gl.deleteShader(shader);
+                            return null;
+                        }
+                        return shader;
+                    }
+
+                    // Compile Vertex and Fragment Shaders
+                    const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
+                    const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
+
+                    // Create and Link Program
+                    const program = gl.createProgram();
+                    gl.attachShader(program, vertexShader);
+                    gl.attachShader(program, fragmentShader);
+                    gl.linkProgram(program);
+
+                    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                        console.error('Error linking program:', gl.getProgramInfoLog(program));
+                        showError('Failed to initialize WebGL shader program.');
+                        return;
+                    }
+
+                    gl.useProgram(program);
+
+                    // Locate Attributes and Uniforms
+                    const positionAttribute = gl.getAttribLocation(program, 'a_position');
+                    const texCoordAttribute = gl.getAttribLocation(program, 'a_texCoord');
+                    const textureUniform = gl.getUniformLocation(program, 'u_texture');
+
+                    // Define Vertices for Fullscreen Quad
+                    const vertices = new Float32Array([
+                        -1.0, -1.0,  0.0, 0.0, // Bottom-left
+                         1.0, -1.0,  1.0, 0.0, // Bottom-right
+                        -1.0,  1.0,  0.0, 1.0, // Top-left
+                         1.0,  1.0,  1.0, 1.0  // Top-right
+                    ]);
+
+                    const buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+                    // Enable Vertex Attributes
+                    gl.enableVertexAttribArray(positionAttribute);
+                    gl.vertexAttribPointer(positionAttribute, 2, gl.FLOAT, false, 16, 0); // 4 floats * 4 bytes = 16 bytes
+
+                    gl.enableVertexAttribArray(texCoordAttribute);
+                    gl.vertexAttribPointer(texCoordAttribute, 2, gl.FLOAT, false, 16, 8); // Offset by 8 bytes for texCoord
+
+                    // Create and Configure Texture
+                    const videoTexture = gl.createTexture();
+                    gl.bindTexture(gl.TEXTURE_2D, videoTexture);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+                    // Function to Update Texture with Current Frame
+                    function updateTexture() {
+                        gl.bindTexture(gl.TEXTURE_2D, videoTexture);
+                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+                    }
+
+                    // Define the Rendering Loop
+                    function render() {
+                        if (!scanning) return;
+
+                        gl.clear(gl.COLOR_BUFFER_BIT);
+
+                        updateTexture(); // Upload the latest video frame as a texture
+
+                        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // Render the fullscreen quad
+
+                        requestAnimationFrame(render);
+                    }
+
+                    // Start the Rendering Loop
+                    video.addEventListener('play', function () {
+                        render();
+                    }, false);
                 }
 
                 /* ------------------------------
@@ -1340,7 +1444,7 @@
                     if (!scanning) return;
 
                     const now = Date.now();
-                    const timeSinceLastOcr = now - lastScanTime;
+                    const timeSinceLastOcr = now - lastOcrTime;
                     const desiredInterval = 1000 / ocrFrequency; // in milliseconds
 
                     frameCounter++;
@@ -1355,23 +1459,29 @@
                         return;
                     }
 
-                    lastScanTime = now;
+                    lastOcrTime = now;
 
-                    if (hiddenVideo.readyState !== hiddenVideo.HAVE_ENOUGH_DATA) {
-                        console.warn('Video not ready');
-                        if (scanning) requestAnimationFrame(processFrame);
-                        return;
-                    }
+                    // Since video is rendered on WebGL canvas, we need to capture from it
+                    // Create an off-screen 2D canvas to extract image data
+                    const offscreenCanvas = document.createElement('canvas');
+                    const offscreenCtx = offscreenCanvas.getContext('2d');
+                    offscreenCanvas.width = videoCanvas.width;
+                    offscreenCanvas.height = videoCanvas.height;
+
+                    // Draw the WebGL canvas onto the offscreen canvas
+                    offscreenCtx.drawImage(videoCanvas, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
 
                     console.log('Processing a new frame for OCR.');
 
-                    const videoWidth = hiddenVideo.videoWidth;
-                    const videoHeight = hiddenVideo.videoHeight;
-                    videoCanvas.width = videoWidth;
-                    videoCanvas.height = videoHeight;
+                    const videoWidth = offscreenCanvas.width;
+                    const videoHeight = offscreenCanvas.height;
 
                     // Apply selected ROI filter
-                    preprocessImage(videoCanvas, videoWidth, videoHeight, selectedFilter);
+                    const ctx = offscreenCtx;
+                    ctx.filter = filterMap[selectedFilter] || 'none';
+                    ctx.drawImage(offscreenCanvas, 0, 0, videoWidth, videoHeight);
+                    ctx.filter = 'none'; // Reset filter for future operations
+                    console.log(`Image drawn on offscreenCanvas with filter: ${selectedFilter}`);
 
                     const overlayRect = roiOverlay.getBoundingClientRect();
                     const canvasRect = videoCanvas.getBoundingClientRect();
@@ -1398,7 +1508,7 @@
                     roiCanvas.width = roiWidth;
                     roiCanvas.height = roiHeight;
                     const roiCtx = roiCanvas.getContext('2d');
-                    roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
+                    roiCtx.drawImage(offscreenCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
                     console.log('ROI extracted.');
 
                     // Scale ROI for better OCR accuracy
@@ -1410,6 +1520,8 @@
                     scaledCtx.imageSmoothingQuality = 'high';
                     scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
                     console.log('ROI scaled.');
+
+                    // Update Debug Canvas if needed (removed)
 
                     // Convert Canvas to Blob for OCR
                     scaledCanvas.toBlob(async (blob) => {
@@ -1522,7 +1634,12 @@
                         console.log('Tesseract.js workers terminated.');
                     }
 
-                    console.log('Camera stream stopped.');
+                    // Clear WebGL Canvas by reinitializing it
+                    if (gl) {
+                        gl.clear(gl.COLOR_BUFFER_BIT);
+                    }
+
+                    console.log('Camera stream stopped and WebGL canvas cleared.');
                 }
 
                 /* ------------------------------
@@ -1552,19 +1669,22 @@
                     // **Call pauseScanning to pause the scanner without terminating workers**
                     await pauseScanning();
 
-                    // Capture the current frame from videoCanvas
-                    const videoWidth = videoCanvas.width;
-                    const videoHeight = videoCanvas.height;
-                    const ctx = videoCanvas.getContext('2d');
-                    ctx.drawImage(hiddenVideo, 0, 0, videoWidth, videoHeight);
+                    // Capture the current frame from videoCanvas via offscreenCanvas
+                    const offscreenCanvas = document.createElement('canvas');
+                    const offscreenCtx = offscreenCanvas.getContext('2d');
+                    offscreenCanvas.width = videoCanvas.width;
+                    offscreenCanvas.height = videoCanvas.height;
+
+                    // Draw the WebGL canvas onto the offscreen canvas
+                    offscreenCtx.drawImage(videoCanvas, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
                     console.log('Frame captured.');
 
                     // Extract ROI
                     const overlayRect = roiOverlay.getBoundingClientRect();
                     const canvasRect = videoCanvas.getBoundingClientRect();
 
-                    const scaleX = videoWidth / canvasRect.width;
-                    const scaleY = videoHeight / canvasRect.height;
+                    const scaleX = offscreenCanvas.width / canvasRect.width;
+                    const scaleY = offscreenCanvas.height / canvasRect.height;
 
                     const roiX = (overlayRect.left - canvasRect.left) * scaleX;
                     const roiY = (overlayRect.top - canvasRect.top) * scaleY;
@@ -1574,7 +1694,7 @@
                     console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
 
                     // Validate ROI boundaries
-                    if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
+                    if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > offscreenCanvas.width || (roiY + roiHeight) > offscreenCanvas.height) {
                         console.warn('ROI is out of video frame bounds.');
                         showError('ROI is out of video frame bounds.');
                         return;
@@ -1584,7 +1704,7 @@
                     roiCanvas.width = roiWidth;
                     roiCanvas.height = roiHeight;
                     const roiCtx = roiCanvas.getContext('2d');
-                    roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
+                    roiCtx.drawImage(offscreenCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
                     console.log('ROI extracted.');
 
                     // Scale ROI for better OCR accuracy
@@ -1871,153 +1991,117 @@
                 });
 
                 /* ------------------------------
-                   WebGL Integration within Side Menu
+                   WebGL Integration within Side Menu (Preserved)
                 ------------------------------ */
                 (function() {
                     const glCanvas = document.getElementById('webglCanvas');
                     const toggleButton = document.getElementById('toggleWebglButton');
-                    let gl = null;
+                    let glWebGL = null;
                     let shaderProgram = null;
                     let vertexBuffer = null;
 
                     // Vertex Shader Source
                     const vertexShaderSource = `
-                        attribute vec2 a_position;
-                        attribute vec2 a_texCoord;
-                        varying vec2 v_texCoord;
-
+                        attribute vec3 coordinates;
                         void main(void) {
-                            gl_Position = vec4(a_position, 0.0, 1.0);
-                            v_texCoord = a_texCoord;
+                            gl_Position = vec4(coordinates, 1.0);
                         }
                     `;
 
                     // Fragment Shader Source
                     const fragmentShaderSource = `
-                        precision mediump float;
-                        varying vec2 v_texCoord;
-                        uniform sampler2D u_texture;
-
                         void main(void) {
-                            gl_FragColor = texture2D(u_texture, v_texCoord);
+                            gl_FragColor = vec4(0.0, 0.5, 1.0, 1.0);
                         }
                     `;
 
-                    // Compile Shader Function
-                    function compileShader(source, type) {
-                        const shader = gl.createShader(type);
-                        gl.shaderSource(shader, source);
-                        gl.compileShader(shader);
-
-                        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                            console.error('Error compiling shader:', gl.getShaderInfoLog(shader));
-                            showError('Failed to compile WebGL shader.');
-                            gl.deleteShader(shader);
-                            return null;
-                        }
-                        return shader;
-                    }
-
-                    // Create and Link Program
-                    function initShaders() {
-                        const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
-                        const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
-
-                        shaderProgram = gl.createProgram();
-                        gl.attachShader(shaderProgram, vertexShader);
-                        gl.attachShader(shaderProgram, fragmentShader);
-                        gl.linkProgram(shaderProgram);
-
-                        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-                            console.error('Error linking program:', gl.getProgramInfoLog(shaderProgram));
-                            showError('Failed to initialize WebGL shader program.');
-                            return;
-                        }
-
-                        gl.useProgram(shaderProgram);
-
-                        // Locate Attributes and Uniforms
-                        shaderProgram.a_position = gl.getAttribLocation(shaderProgram, 'a_position');
-                        shaderProgram.a_texCoord = gl.getAttribLocation(shaderProgram, 'a_texCoord');
-                        shaderProgram.u_texture = gl.getUniformLocation(shaderProgram, 'u_texture');
-
-                        gl.enableVertexAttribArray(shaderProgram.a_position);
-                        gl.enableVertexAttribArray(shaderProgram.a_texCoord);
-                    }
-
-                    // Vertex Buffer for Fullscreen Quad
-                    function initBuffers() {
-                        const vertices = new Float32Array([
-                            -1, -1, 0, 0,  // Bottom-left
-                             1, -1, 1, 0,  // Bottom-right
-                            -1,  1, 0, 1,  // Top-left
-                             1,  1, 1, 1   // Top-right
-                        ]);
-
-                        const buffer = gl.createBuffer();
-                        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-                        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-                        const FSIZE = vertices.BYTES_PER_ELEMENT;
-
-                        // Position Attribute
-                        gl.vertexAttribPointer(shaderProgram.a_position, 2, gl.FLOAT, false, FSIZE * 4, 0);
-                        gl.enableVertexAttribArray(shaderProgram.a_position);
-
-                        // Texture Coordinate Attribute
-                        gl.vertexAttribPointer(shaderProgram.a_texCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
-                        gl.enableVertexAttribArray(shaderProgram.a_texCoord);
-                    }
-
-                    // Texture Management
-                    let videoTexture = null;
-
-                    function initTexture() {
-                        videoTexture = gl.createTexture();
-                        gl.bindTexture(gl.TEXTURE_2D, videoTexture);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, hiddenVideo);
-                        gl.uniform1i(shaderProgram.u_texture, 0);
-                    }
-
-                    // Render Video Frames
-                    function render() {
-                        gl.clear(gl.COLOR_BUFFER_BIT);
-
-                        // Update texture with the latest video frame
-                        gl.bindTexture(gl.TEXTURE_2D, videoTexture);
-                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, hiddenVideo);
-
-                        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // Render the fullscreen quad
-
-                        requestAnimationFrame(render);
-                    }
-
-                    // Function to initialize WebGL
+                    // Function to initialize WebGL for webglCanvas
                     function initWebGL() {
-                        gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
+                        glWebGL = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
 
-                        if (!gl) {
+                        if (!glWebGL) {
                             console.error('Unable to initialize WebGL.');
                             showError('WebGL is not supported by your browser.');
                             return;
                         }
 
                         // Set clear color to black, fully opaque
-                        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                        glWebGL.clearColor(0.0, 0.0, 0.0, 1.0);
                         // Clear the color buffer with specified clear color
-                        gl.clear(gl.COLOR_BUFFER_BIT);
+                        glWebGL.clear(glWebGL.COLOR_BUFFER_BIT);
 
-                        // Initialize shaders and buffers
+                        // Initialize shaders
                         initShaders();
-                        initBuffers();
-                        initTexture();
 
-                        // Start the rendering loop
-                        render();
+                        // Initialize buffers
+                        initBuffers();
+
+                        // Draw the scene
+                        drawScene();
+                    }
+
+                    // Function to compile shader
+                    function compileShader(source, type) {
+                        const shader = glWebGL.createShader(type);
+                        glWebGL.shaderSource(shader, source);
+                        glWebGL.compileShader(shader);
+
+                        if (!glWebGL.getShaderParameter(shader, glWebGL.COMPILE_STATUS)) {
+                            const info = glWebGL.getShaderInfoLog(shader);
+                            console.error('Could not compile WebGL shader. \n\n' + info);
+                            showError('Failed to compile WebGL shader.');
+                            glWebGL.deleteShader(shader);
+                            return null;
+                        }
+                        return shader;
+                    }
+
+                    // Function to initialize shaders
+                    function initShaders() {
+                        const vertexShader = compileShader(vertexShaderSource, glWebGL.VERTEX_SHADER);
+                        const fragmentShader = compileShader(fragmentShaderSource, glWebGL.FRAGMENT_SHADER);
+
+                        shaderProgram = glWebGL.createProgram();
+                        glWebGL.attachShader(shaderProgram, vertexShader);
+                        glWebGL.attachShader(shaderProgram, fragmentShader);
+                        glWebGL.linkProgram(shaderProgram);
+
+                        if (!glWebGL.getProgramParameter(shaderProgram, glWebGL.LINK_STATUS)) {
+                            const info = glWebGL.getProgramInfoLog(shaderProgram);
+                            console.error('Could not initialize WebGL shader program. \n\n' + info);
+                            showError('Failed to initialize WebGL shader program.');
+                            return;
+                        }
+
+                        glWebGL.useProgram(shaderProgram);
+
+                        shaderProgram.vertexPositionAttribute = glWebGL.getAttribLocation(shaderProgram, 'coordinates');
+                        glWebGL.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+                    }
+
+                    // Function to initialize buffers
+                    function initBuffers() {
+                        vertexBuffer = glWebGL.createBuffer();
+                        glWebGL.bindBuffer(glWebGL.ARRAY_BUFFER, vertexBuffer);
+
+                        // Define a triangle
+                        const vertices = [
+                            0.0,  1.0,  0.0,
+                           -1.0, -1.0,  0.0,
+                            1.0, -1.0,  0.0
+                        ];
+
+                        glWebGL.bufferData(glWebGL.ARRAY_BUFFER, new Float32Array(vertices), glWebGL.STATIC_DRAW);
+                    }
+
+                    // Function to draw the scene
+                    function drawScene() {
+                        glWebGL.clear(glWebGL.COLOR_BUFFER_BIT);
+
+                        glWebGL.bindBuffer(glWebGL.ARRAY_BUFFER, vertexBuffer);
+                        glWebGL.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 3, glWebGL.FLOAT, false, 0, 0);
+
+                        glWebGL.drawArrays(glWebGL.TRIANGLES, 0, 3);
                     }
 
                     // Function to toggle WebGL canvas visibility
@@ -2030,12 +2114,11 @@
                             glCanvas.style.display = 'none';
                             toggleButton.innerText = 'Show WebGL';
                             // Optionally, release WebGL context to free resources
-                            if (gl) {
-                                gl.getExtension('WEBGL_lose_context')?.loseContext();
-                                gl = null;
+                            if (glWebGL) {
+                                glWebGL.getExtension('WEBGL_lose_context')?.loseContext();
+                                glWebGL = null;
                                 shaderProgram = null;
                                 vertexBuffer = null;
-                                videoTexture = null;
                             }
                         }
                     });
