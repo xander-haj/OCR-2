@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Advanced OCR Scanner with Multiple Workers</title>
+    <title>Advanced OCR Scanner with WebGL</title>
     <!-- Viewport Meta Tag for Mobile Responsiveness -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Tesseract.js CDN (Ensure using a compatible version) -->
@@ -1204,6 +1204,28 @@
                     const hiddenVideo = document.getElementById('hiddenVideo');
                     hiddenVideo.srcObject = stream;
                     hiddenVideo.play();
+
+                    // Add event listeners to handle video readiness and errors
+                    hiddenVideo.addEventListener('loadedmetadata', () => {
+                        console.log('Hidden video metadata loaded.');
+                        videoCanvas.width = hiddenVideo.videoWidth;
+                        videoCanvas.height = hiddenVideo.videoHeight;
+                        if (gl) {
+                            gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+                        }
+                    });
+
+                    hiddenVideo.addEventListener('play', () => {
+                        console.log('Hidden video started playing.');
+                        // Start the rendering loop once the video is playing
+                        render();
+                    });
+
+                    hiddenVideo.addEventListener('error', (e) => {
+                        console.error('Hidden Video Error:', e);
+                        showError('An error occurred with the video stream.');
+                    });
+
                     console.log('Camera initialized successfully.');
 
                     // After successful camera initialization, check and set reload flag
@@ -1262,8 +1284,9 @@
                     gl.compileShader(shader);
 
                     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                        console.error('Error compiling shader:', gl.getShaderInfoLog(shader));
-                        showError('Failed to compile WebGL shader.');
+                        const info = gl.getShaderInfoLog(shader);
+                        console.error('Shader compile failed with: ' + info);
+                        showError('Shader compilation error.');
                         gl.deleteShader(shader);
                         return null;
                     }
@@ -1274,6 +1297,10 @@
                 const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
                 const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
 
+                if (!vertexShader || !fragmentShader) {
+                    return;
+                }
+
                 // Create and Link Program
                 const program = gl.createProgram();
                 gl.attachShader(program, vertexShader);
@@ -1281,8 +1308,9 @@
                 gl.linkProgram(program);
 
                 if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                    console.error('Error linking program:', gl.getProgramInfoLog(program));
-                    showError('Failed to initialize WebGL shader program.');
+                    const info = gl.getProgramInfoLog(program);
+                    console.error('Program link failed with: ' + info);
+                    showError('Shader program linking error.');
                     return;
                 }
 
@@ -1325,6 +1353,7 @@
                     gl.bindTexture(gl.TEXTURE_2D, videoTexture);
                     try {
                         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+                        console.log('Texture updated successfully.');
                     } catch (e) {
                         console.warn('Unable to update texture:', e);
                     }
@@ -1332,7 +1361,10 @@
 
                 // Define the Rendering Loop
                 function render() {
-                    if (!scanning) return;
+                    if (!scanning) {
+                        console.log('Scanning is inactive. Rendering loop stopped.');
+                        return;
+                    }
 
                     gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -1341,12 +1373,11 @@
                     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // Render the fullscreen quad
 
                     requestAnimationFrame(render);
+                    console.log('Rendered a frame.');
                 }
 
                 // Start the Rendering Loop
-                video.addEventListener('play', function () {
-                    render();
-                }, false);
+                // The render function is called when the video starts playing
             }
 
             /* ------------------------------
@@ -1638,8 +1669,6 @@
                 startButton.innerText = 'Scanning...';
                 output.value = '';
                 console.log('Scanning started.');
-
-                requestAnimationFrame(processFrame);
             }
 
             /* ------------------------------
