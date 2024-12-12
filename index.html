@@ -130,102 +130,104 @@
            Debug Show Button (Moved to Side Menu)
         ------------------------------ -->
         <button id="debug-button" class="debug-button">Show Debug</button>
-    </div>
 
-    <!-- ------------------------------
-       Overlay to cover the main content when side menu is open
-    ------------------------------ -->
-    <div class="overlay" id="menu-overlay"></div>
-
-    <!-- ------------------------------
-       Menu Toggle Button (Hamburger Icon)
-    ------------------------------ -->
-    <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
-
-    <!-- ------------------------------
-       Theme Toggle Switch
-    ------------------------------ -->
-    <div class="theme-toggle">
-        <label class="toggle-label">
-            <!-- Toggle Switch -->
-            <input type="checkbox" id="theme-checkbox">
-            <div class="toggle-switch">
-                <span class="toggle-icon sun-icon">
-                    <!-- Cartoon Yellow Sun SVG -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 64 64" fill="#FFD700">
-                        <circle cx="32" cy="32" r="12"/>
-                        <g stroke="#FFD700" stroke-width="4">
-                            <line x1="32" y1="4" x2="32" y2="16"/>
-                            <line x1="32" y1="48" x2="32" y2="60"/>
-                            <line x1="4" y1="32" x2="16" y2="32"/>
-                            <line x1="48" y1="32" x2="60" y2="32"/>
-                            <line x1="11.31" y1="11.31" x2="20.49" y2="20.49"/>
-                            <line x1="43.51" y1="43.51" x2="52.69" y2="52.69"/>
-                            <line x1="11.31" y1="52.69" x2="20.49" y2="43.51"/>
-                            <line x1="43.51" y1="20.49" x2="52.69" y2="11.31"/>
-                        </g>
-                    </svg>
-                </span>
-                <span class="toggle-icon moon-icon">&#127765;</span> <!-- Moon Unicode -->
-            </div>
-        </label>
-    </div>
-
-    <!-- ------------------------------
-       Error Message (Toast)
-    ------------------------------ -->
-    <div id="errorMsg"></div>
-
-    <!-- ------------------------------
-       Main Container
-    ------------------------------ -->
-    <div id="container">
         <!-- ------------------------------
-           Video Wrapper
+           Overlay to cover the main content when side menu is open
         ------------------------------ -->
-        <div id="videoWrapper">
-            <video id="video" playsinline></video> <!-- Removed 'autoplay' attribute -->
-            <div id="overlay"></div> <!-- ROI Bounding Box -->
-            <div id="focusIndicator">Processing...</div>
+        <div class="overlay" id="menu-overlay"></div>
+
+        <!-- ------------------------------
+           Menu Toggle Button (Hamburger Icon)
+        ------------------------------ -->
+        <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
         </div>
 
         <!-- ------------------------------
-           Controls Section
+           Theme Toggle Switch
         ------------------------------ -->
-        <div id="controls">
-            <div class="buttons-container">
-                <button id="start-button">Start Scanner</button>
-                <button id="stop-button" disabled>Stop Scanner</button>
-            </div>
-            <button id="restart-button">Restart Scanner</button>
-            <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
+        <div class="theme-toggle">
+            <label class="toggle-label">
+                <!-- Toggle Switch -->
+                <input type="checkbox" id="theme-checkbox">
+                <div class="toggle-switch">
+                    <span class="toggle-icon sun-icon">
+                        <!-- Cartoon Yellow Sun SVG -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 64 64" fill="#FFD700">
+                            <circle cx="32" cy="32" r="12"/>
+                            <g stroke="#FFD700" stroke-width="4">
+                                <line x1="32" y1="4" x2="32" y2="16"/>
+                                <line x1="32" y1="48" x2="32" y2="60"/>
+                                <line x1="4" y1="32" x2="16" y2="32"/>
+                                <line x1="48" y1="32" x2="60" y2="32"/>
+                                <line x1="11.31" y1="11.31" x2="20.49" y2="20.49"/>
+                                <line x1="43.51" y1="43.51" x2="52.69" y2="52.69"/>
+                                <line x1="11.31" y1="52.69" x2="20.49" y2="43.51"/>
+                                <line x1="43.51" y1="20.49" x2="52.69" y2="11.31"/>
+                            </g>
+                        </svg>
+                    </span>
+                    <span class="toggle-icon moon-icon">&#127765;</span> <!-- Moon Unicode -->
+                </div>
+            </label>
         </div>
 
         <!-- ------------------------------
-           Debugging Canvas
+           Error Message (Toast)
         ------------------------------ -->
-        <canvas id="debugCanvas"></canvas>
-    </div>
+        <div id="errorMsg"></div>
 
-    <!-- ------------------------------
-       Debug Controls
-    ------------------------------ -->
-    <div id="debugControls">
-        <button id="save-logs-button">Save Logs</button>
-    </div>
+        <!-- ------------------------------
+           Main Container
+        ------------------------------ -->
+        <div id="container">
+            <!-- ------------------------------
+               Video Wrapper
+            ------------------------------ -->
+            <div id="videoWrapper">
+                <!-- Hidden Video Element for WebGL Texture -->
+                <video id="video" playsinline style="display: none;"></video>
+                <!-- WebGL Canvas for Rendering Video -->
+                <canvas id="webglVideoCanvas"></canvas>
+                <div id="overlay"></div> <!-- ROI Bounding Box -->
+                <div id="focusIndicator">Processing...</div>
+            </div>
 
-    <!-- ------------------------------
-       Debug Console
-    ------------------------------ -->
-    <div id="debugConsole"></div>
+            <!-- ------------------------------
+               Controls Section
+            ------------------------------ -->
+            <div id="controls">
+                <div class="buttons-container">
+                    <button id="start-button">Start Scanner</button>
+                    <button id="stop-button" disabled>Stop Scanner</button>
+                </div>
+                <button id="restart-button">Restart Scanner</button>
+                <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
+            </div>
 
-    <!-- ------------------------------
-       Link to external JavaScript
-    ------------------------------ -->
-    <script src="content.js"></script>
-</body>
-</html>
+            <!-- ------------------------------
+               Debugging Canvas
+            ------------------------------ -->
+            <canvas id="debugCanvas"></canvas>
+        </div>
+
+        <!-- ------------------------------
+           Debug Controls
+        ------------------------------ -->
+        <div id="debugControls">
+            <button id="save-logs-button">Save Logs</button>
+        </div>
+
+        <!-- ------------------------------
+           Debug Console
+        ------------------------------ -->
+        <div id="debugConsole"></div>
+
+        <!-- ------------------------------
+           Link to external JavaScript
+        ------------------------------ -->
+        <script src="content.js"></script>
+    </body>
+    </html>
