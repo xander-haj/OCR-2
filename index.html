@@ -753,6 +753,14 @@
                         </label>
                         <input type="range" id="denoiseSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
                     </div>
+                    <!-- New Sharpen Control -->
+                    <div class="preprocessing-option">
+                        <label>
+                            <input type="checkbox" id="enableSharpen">
+                            Enable Sharpen
+                        </label>
+                        <input type="range" id="sharpenSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                    </div>
                 </content>
             </details>
         </div>
@@ -1006,6 +1014,9 @@
             const grayscaleSlider = document.getElementById('grayscaleSlider');
             const enableDenoise = document.getElementById('enableDenoise');
             const denoiseSlider = document.getElementById('denoiseSlider');
+            // New Sharpen Controls
+            const enableSharpen = document.getElementById('enableSharpen');
+            const sharpenSlider = document.getElementById('sharpenSlider');
 
             let stream = null;
             let scanning = false;
@@ -1032,6 +1043,9 @@
             let glGrayscaleAmountLoc = null;
             let glDenoiseEnabledLoc = null;
             let glDenoiseAmountLoc = null;
+            // New Sharpen Uniforms
+            let glSharpenEnabledLoc = null;
+            let glSharpenAmountLoc = null;
 
             const vertexShaderSource = `
                 attribute vec2 a_position;
@@ -1039,7 +1053,7 @@
                 varying vec2 v_texCoord;
                 void main(void) {
                     gl_Position = vec4(a_position, 0.0, 1.0);
-                    v_texCoord = a_texCoord;
+                    v_texCoord = v_texCoord;
                 }
             `;
 
@@ -1051,6 +1065,8 @@
                 uniform float u_grayscaleAmount;
                 uniform bool u_denoiseEnabled;
                 uniform float u_denoiseAmount;
+                uniform bool u_sharpenEnabled;      // New Uniform
+                uniform float u_sharpenAmount;      // New Uniform
 
                 // Simple denoise kernel (box blur)
                 vec4 denoise(sampler2D tex, vec2 uv, float strength) {
@@ -1068,6 +1084,17 @@
                     return sum / 9.0;
                 }
 
+                // Simple sharpen kernel
+                vec4 sharpen(sampler2D tex, vec2 uv, float strength) {
+                    float offset = 1.0 / 300.0 * strength;
+                    vec4 color = texture2D(tex, uv) * 5.0;
+                    color -= texture2D(tex, uv + vec2(-offset, -offset));
+                    color -= texture2D(tex, uv + vec2(-offset, offset));
+                    color -= texture2D(tex, uv + vec2(offset, -offset));
+                    color -= texture2D(tex, uv + vec2(offset, offset));
+                    return color;
+                }
+
                 void main(void) {
                     vec4 color = texture2D(u_texture, v_texCoord);
 
@@ -1078,6 +1105,10 @@
                     if (u_grayscaleEnabled) {
                         float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
                         color = mix(color, vec4(vec3(gray), color.a), u_grayscaleAmount);
+                    }
+
+                    if (u_sharpenEnabled) {               // Apply Sharpening
+                        color = sharpen(u_texture, v_texCoord, u_sharpenAmount);
                     }
 
                     gl_FragColor = color;
@@ -1323,6 +1354,10 @@
                 }
                 if (enableDenoise.checked) {
                     debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset);
+                    yOffset += 20;
+                }
+                if (enableSharpen.checked) {
+                    debugCtx.fillText(`Sharpen: ${sharpenSlider.value}%`, 10, yOffset);
                 }
 
                 if (preprocessedBlob && scanning) {
@@ -1353,20 +1388,23 @@
                 gl.uniform1f(glDenoiseAmountLoc, parseFloat(denoiseSlider.value));
                 gl.uniform1i(glGrayscaleEnabledLoc, enableGrayscale.checked ? 1 : 0);
                 gl.uniform1i(glDenoiseEnabledLoc, enableDenoise.checked ? 1 : 0);
+                // Set Sharpen Uniforms
+                gl.uniform1f(glSharpenAmountLoc, parseFloat(sharpenSlider.value) / 100.0 * 5.0); // Adjust scale as needed
+                gl.uniform1i(glSharpenEnabledLoc, enableSharpen.checked ? 1 : 0);
 
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
                 const pixels = new Uint8ClampedArray(width * height * 4);
 
-                // **Removed Framebuffer Binding**
+                // Removed Framebuffer Binding
                 // const fb = gl.createFramebuffer();
                 // gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
                 // gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, glTexture, 0);
                 
-                // **Read pixels directly from the default framebuffer**
+                // Read pixels directly from the default framebuffer
                 gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
                 
-                // **Unbind framebuffer if it was bound (not necessary here since we removed it)**
+                // Unbind framebuffer if it was bound (not necessary here since we removed it)
                 // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
                 const offscreen = document.createElement('canvas');
@@ -1375,7 +1413,7 @@
                 const offCtx = offscreen.getContext('2d');
                 const imageData = new ImageData(pixels, width, height);
                 
-                // **Optional: Flip the image vertically to match canvas coordinate system**
+                // Optional: Flip the image vertically to match canvas coordinate system
                 flipImageDataVertically(imageData);
                 
                 offCtx.putImageData(imageData, 0, 0);
@@ -1472,6 +1510,9 @@
                 glGrayscaleAmountLoc = gl.getUniformLocation(glProgram, "u_grayscaleAmount");
                 glDenoiseEnabledLoc = gl.getUniformLocation(glProgram, "u_denoiseEnabled");
                 glDenoiseAmountLoc = gl.getUniformLocation(glProgram, "u_denoiseAmount");
+                // New Sharpen Uniforms
+                glSharpenEnabledLoc = gl.getUniformLocation(glProgram, "u_sharpenEnabled");
+                glSharpenAmountLoc = gl.getUniformLocation(glProgram, "u_sharpenAmount");
 
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
             }
@@ -1633,6 +1674,10 @@
                 }
                 if (enableDenoise.checked) {
                     debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset);
+                    yOffset += 20;
+                }
+                if (enableSharpen.checked) {
+                    debugCtx.fillText(`Sharpen: ${sharpenSlider.value}%`, 10, yOffset);
                 }
 
                 if (preprocessedBlob) {
@@ -1842,6 +1887,14 @@
                 }
 
                 requestAnimationFrame(updateFPS);
+            })();
+
+            /* ------------------------------
+               WebGL Preprocessing Initialization
+            ------------------------------ */
+            (function() {
+                // This function ensures that WebGL is initialized when needed
+                // It will be called from preprocessWithWebGL
             })();
         })();
     </script>
