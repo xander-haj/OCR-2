@@ -749,7 +749,6 @@
                         </label>
                         <input type="range" id="sharpenSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
                     </div>
-                    <!-- New Brightness Control -->
                     <div class="preprocessing-option">
                         <label>
                             <input type="checkbox" id="enableBrightness">
@@ -757,13 +756,28 @@
                         </label>
                         <input type="range" id="brightnessSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
                     </div>
-                    <!-- New Contrast Control -->
                     <div class="preprocessing-option">
                         <label>
                             <input type="checkbox" id="enableContrast">
                             Enable Contrast
                         </label>
                         <input type="range" id="contrastSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                    </div>
+                    <!-- New Clarity Control -->
+                    <div class="preprocessing-option">
+                        <label>
+                            <input type="checkbox" id="enableClarity">
+                            Enable Clarity
+                        </label>
+                        <input type="range" id="claritySlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                    </div>
+                    <!-- New Highlights Control -->
+                    <div class="preprocessing-option">
+                        <label>
+                            <input type="checkbox" id="enableHighlights">
+                            Enable Highlights
+                        </label>
+                        <input type="range" id="highlightsSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
                     </div>
                 </content>
             </details>
@@ -1004,6 +1018,10 @@
             const brightnessSlider = document.getElementById('brightnessSlider');
             const enableContrast = document.getElementById('enableContrast');
             const contrastSlider = document.getElementById('contrastSlider');
+            const enableClarity = document.getElementById('enableClarity');
+            const claritySlider = document.getElementById('claritySlider');
+            const enableHighlights = document.getElementById('enableHighlights');
+            const highlightsSlider = document.getElementById('highlightsSlider');
 
             let stream = null;
             let scanning = false;
@@ -1035,6 +1053,10 @@
             let glBrightnessAmountLoc = null;
             let glContrastEnabledLoc = null;
             let glContrastAmountLoc = null;
+            let glClarityEnabledLoc = null;
+            let glClarityAmountLoc = null;
+            let glHighlightsEnabledLoc = null;
+            let glHighlightsAmountLoc = null;
 
             const vertexShaderSource = `
                 attribute vec2 a_position;
@@ -1060,6 +1082,10 @@
                 uniform float u_brightnessAmount;
                 uniform bool u_contrastEnabled;
                 uniform float u_contrastAmount;
+                uniform bool u_clarityEnabled;
+                uniform float u_clarityAmount;
+                uniform bool u_highlightsEnabled;
+                uniform float u_highlightsAmount;
 
                 vec4 denoise(sampler2D tex, vec2 uv, float strength) {
                     float offset = 1.0 / 300.0 * strength; 
@@ -1097,18 +1123,32 @@
                 }
 
                 vec4 applyBrightness(vec4 color, float amount) {
-                    // amount: 0 to 100; 50 means no change
-                    // map 0-100 to -1.0 to +1.0 (50 = 0.0)
                     float factor = (amount - 50.0) / 50.0;
                     color.rgb += factor; 
                     return color;
                 }
 
                 vec4 applyContrast(vec4 color, float amount) {
-                    // amount: 0 to 100; 50 means no change
-                    // map 0-100 to 0.0 to 2.0 (50 = 1.0 no change)
                     float factor = amount / 50.0;
                     color.rgb = (color.rgb - 0.5) * factor + 0.5;
+                    return color;
+                }
+
+                vec4 applyClarity(vec4 color, float amount) {
+                    // Clarity adjusts midtone contrast
+                    float factor = (amount - 50.0) / 50.0;
+                    color.r = (color.r - 0.5) * (1.0 + factor) + 0.5;
+                    color.g = (color.g - 0.5) * (1.0 + factor) + 0.5;
+                    color.b = (color.b - 0.5) * (1.0 + factor) + 0.5;
+                    return color;
+                }
+
+                vec4 applyHighlights(vec4 color, float amount) {
+                    // Highlights adjusts only highlights above 0.5
+                    float factor = (amount - 50.0) / 50.0;
+                    if (color.r > 0.5) color.r = color.r + factor * (color.r - 0.5);
+                    if (color.g > 0.5) color.g = color.g + factor * (color.g - 0.5);
+                    if (color.b > 0.5) color.b = color.b + factor * (color.b - 0.5);
                     return color;
                 }
 
@@ -1129,6 +1169,14 @@
 
                     if (u_contrastEnabled) {
                         color = applyContrast(color, u_contrastAmount);
+                    }
+
+                    if (u_clarityEnabled) {
+                        color = applyClarity(color, u_clarityAmount);
+                    }
+
+                    if (u_highlightsEnabled) {
+                        color = applyHighlights(color, u_highlightsAmount);
                     }
 
                     if (u_grayscaleEnabled) {
@@ -1390,6 +1438,14 @@
                 }
                 if (enableContrast.checked) {
                     debugCtx.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset);
+                    yOffset += 20;
+                }
+                if (enableClarity.checked) {
+                    debugCtx.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset);
+                    yOffset += 20;
+                }
+                if (enableHighlights.checked) {
+                    debugCtx.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset);
                 }
 
                 if (preprocessedBlob && scanning) {
@@ -1429,6 +1485,12 @@
 
                 gl.uniform1f(glContrastAmountLoc, parseFloat(contrastSlider.value));
                 gl.uniform1i(glContrastEnabledLoc, enableContrast.checked ? 1 : 0);
+
+                gl.uniform1f(glClarityAmountLoc, parseFloat(claritySlider.value));
+                gl.uniform1i(glClarityEnabledLoc, enableClarity.checked ? 1 : 0);
+
+                gl.uniform1f(glHighlightsAmountLoc, parseFloat(highlightsSlider.value));
+                gl.uniform1i(glHighlightsEnabledLoc, enableHighlights.checked ? 1 : 0);
 
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
@@ -1520,6 +1582,10 @@
                 glBrightnessAmountLoc = gl.getUniformLocation(glProgram, "u_brightnessAmount");
                 glContrastEnabledLoc = gl.getUniformLocation(glProgram, "u_contrastEnabled");
                 glContrastAmountLoc = gl.getUniformLocation(glProgram, "u_contrastAmount");
+                glClarityEnabledLoc = gl.getUniformLocation(glProgram, "u_clarityEnabled");
+                glClarityAmountLoc = gl.getUniformLocation(glProgram, "u_clarityAmount");
+                glHighlightsEnabledLoc = gl.getUniformLocation(glProgram, "u_highlightsEnabled");
+                glHighlightsAmountLoc = gl.getUniformLocation(glProgram, "u_highlightsAmount");
 
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
             }
@@ -1692,6 +1758,14 @@
                 }
                 if (enableContrast.checked) {
                     debugCtx.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset);
+                    yOffset += 20;
+                }
+                if (enableClarity.checked) {
+                    debugCtx.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset);
+                    yOffset += 20;
+                }
+                if (enableHighlights.checked) {
+                    debugCtx.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset);
                 }
 
                 if (preprocessedBlob) {
