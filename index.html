@@ -1356,6 +1356,9 @@
 
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
+                /* ADDED: Display the processed image in the ROI overlay */
+                webglCanvas.style.display = 'block'; /* ADDED */
+
                 const pixels = new Uint8ClampedArray(width * height * 4);
                 const fb = gl.createFramebuffer();
                 gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
@@ -1443,7 +1446,8 @@
                 glDenoiseEnabledLoc = gl.getUniformLocation(glProgram, "u_denoiseEnabled");
                 glDenoiseAmountLoc = gl.getUniformLocation(glProgram, "u_denoiseAmount");
 
-                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                 /* ADDED: Use transparent background so the ROI dashed box is visible behind the processed image */
+                gl.clearColor(0.0, 0.0, 0.0, 0.0);
             }
 
             async function startScanning() {
