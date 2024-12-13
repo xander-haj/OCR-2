@@ -447,15 +447,34 @@
         }
 
         #debugCanvas {
-            margin-top: 20px;
-            max-width: 90%;
-            width: auto;
-            height: auto;
+            position: absolute; /* Changed from relative to absolute for proper overlay */
+            top: 0;
+            left: 0;
+            width: 60%;
+            max-width: 350px;
+            height: 150px;
             border: 1px solid #ccc;
             border-radius: 8px;
             background: #fff;
             transition: background-color 0.3s ease, border-color 0.3s ease;
             display: none;
+            z-index: 2; /* Positioned below roiCanvas */
+        }
+
+        /* New Styles for roiCanvas */
+        #roiCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 60%;
+            max-width: 350px;
+            height: 150px;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            background: transparent;
+            display: none; /* Hidden by default */
+            pointer-events: none; /* Allows clicks to pass through */
+            z-index: 3; /* Positioned above debugCanvas */
         }
 
         body.dark-theme #debugCanvas {
@@ -812,7 +831,11 @@
             <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
         </div>
 
+        <!-- Existing debugCanvas -->
         <canvas id="debugCanvas"></canvas>
+        
+        <!-- New roiCanvas added -->
+        <canvas id="roiCanvas"></canvas>
     </div>
 
     <div id="debugControls">
@@ -956,10 +979,12 @@
         (function() {
             const debugButton = document.getElementById('debug-button');
             const debugCanvas = document.getElementById('debugCanvas');
+            const roiCanvas = document.getElementById('roiCanvas'); // Reference to the new roiCanvas
             const debugConsole = document.getElementById('debugConsole');
             const debugControls = document.getElementById('debugControls');
 
             debugCanvas.style.display = 'none';
+            roiCanvas.style.display = 'none'; // Initially hide roiCanvas
             debugConsole.style.display = 'none';
             debugControls.style.display = 'none';
 
@@ -969,11 +994,13 @@
                 isDebugVisible = !isDebugVisible;
                 if (isDebugVisible) {
                     debugCanvas.style.display = 'block';
+                    roiCanvas.style.display = 'block'; // Show roiCanvas
                     debugConsole.style.display = 'block';
                     debugControls.style.display = 'block';
                     debugButton.innerText = 'Hide Debug';
                 } else {
                     debugCanvas.style.display = 'none';
+                    roiCanvas.style.display = 'none'; // Hide roiCanvas
                     debugConsole.style.display = 'none';
                     debugControls.style.display = 'none';
                     debugButton.innerText = 'Show Debug';
@@ -1007,6 +1034,10 @@
             const enableDenoise = document.getElementById('enableDenoise');
             const denoiseSlider = document.getElementById('denoiseSlider');
 
+            // Reference to the new roiCanvas
+            const roiCanvas = document.getElementById('roiCanvas');
+            const roiCtx = roiCanvas.getContext('2d');
+
             let stream = null;
             let scanning = false;
             let confidenceThreshold = parseInt(confidenceThresholdInput.value, 10) || 60;
@@ -1018,7 +1049,6 @@
             let isTesseractInitialized = false;
 
             const videoCanvas = document.createElement('canvas');
-            const roiCanvas = document.createElement('canvas');
             const scaledCanvas = document.createElement('canvas');
             const debugCtx = debugCanvas.getContext('2d');
 
@@ -1292,9 +1322,9 @@
                 const ctx = videoCanvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
+                // Draw ROI onto roiCanvas (visible when in debug mode)
                 roiCanvas.width = roiWidth;
                 roiCanvas.height = roiHeight;
-                const roiCtx = roiCanvas.getContext('2d');
                 roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
 
                 const scaleFactor = 1.5;
@@ -1529,6 +1559,7 @@
                 }
 
                 debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                roiCtx.clearRect(0, 0, roiCanvas.width, roiCanvas.height); // Clear roiCanvas
                 console.log('Camera stream stopped and debugging canvas cleared.');
             }
 
@@ -1862,9 +1893,9 @@
                     const ctx = videoCanvas.getContext('2d');
                     ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
+                    // Draw ROI onto roiCanvas (visible when in debug mode)
                     roiCanvas.width = roiWidth;
                     roiCanvas.height = roiHeight;
-                    const roiCtx = roiCanvas.getContext('2d');
                     roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
 
                     const scaleFactor = 1.5;
@@ -1895,7 +1926,11 @@
                         debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset);
                     }
 
-                    console.log('Debug canvas updated with current preprocessing settings.');
+                    // Update roiCanvas with preprocessed image for visualization
+                    roiCtx.clearRect(0, 0, roiCanvas.width, roiCanvas.height);
+                    roiCtx.drawImage(img, 0, 0, roiCanvas.width, roiCanvas.height);
+
+                    console.log('Debug canvas and ROI canvas updated with current preprocessing settings.');
                 }
 
                 // Debounced version of the update function to optimize performance
