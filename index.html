@@ -5,11 +5,12 @@
     <title>Advanced OCR Scanner with WebGL Preprocessing</title>
     <!-- Viewport Meta Tag for Mobile Responsiveness -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Tesseract.js CDN (Ensure using a compatible version) -->
+    <!-- Tesseract.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
     <style>
         /* ------------------------------
            Reset and Base Styles
@@ -49,12 +50,10 @@
             z-index: 1000;
         }
 
-        /* Hide default checkbox */
         .theme-toggle input {
             display: none;
         }
 
-        /* Toggle Switch Label */
         .toggle-label {
             position: relative;
             display: flex;
@@ -64,7 +63,6 @@
             width: 80px;
         }
 
-        /* Toggle Switch Styles */
         .toggle-switch {
             position: fixed;
             top: 20px;
@@ -81,7 +79,6 @@
             padding: 0 5px;
         }
 
-        /* Icon Styles */
         .toggle-icon {
             width: 20px;
             height: 20px;
@@ -92,15 +89,14 @@
 
         .sun-icon {
             opacity: 1;
-            pointer-events: none; /* Prevent interaction */
+            pointer-events: none;
         }
 
         .moon-icon {
             opacity: 0;
-            pointer-events: none; /* Prevent interaction */
+            pointer-events: none;
         }
 
-        /* Checked State */
         input:checked ~ .toggle-switch {
             background-color: #4f46e5;
         }
@@ -113,7 +109,6 @@
             opacity: 1;
         }
 
-        /* Body Transition */
         body {
             transition: background-color 0.3s ease, color 0.3s ease;
         }
@@ -122,28 +117,27 @@
            Side Menu Styles
         ------------------------------ */
         .side-menu {
-            position: absolute; /* Ensure side menu can scroll never change */
+            position: absolute;
             top: 0;
-            left: -300px; /* Hidden by default */
+            left: -300px;
             width: 300px;
             height: 180vh;
             background-color: #2c3e50;
             color: #ecf0f1;
-            overflow-y: auto; /* Allow overflow and ensure elements don't overlap */
+            overflow-y: auto;
             transition: left 0.3s ease;
-            z-index: 1001; /* Above other elements */
+            z-index: 1001;
             padding: 20px;
             box-shadow: 2px 0 5px rgba(0,0,0,0.3);
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* To push Debug button to bottom */
+            justify-content: space-between;
         }
 
         .side-menu.active {
             left: 0;
         }
 
-        /* FPS Counter Styles */
         #fpsCounter {
             position: absolute;
             top: 20px;
@@ -153,19 +147,17 @@
             padding: 5px 10px;
             border-radius: 5px;
             font-size: 14px;
-            z-index: 1005; /* Above other elements */
+            z-index: 1005;
         }
 
-        /* Settings Content Container */
         .menu-content {
             display: flex;
             flex-direction: column;
             gap: 20px;
-            flex: 1; /* Allows the container to take available space */
-            overflow-y: auto; /* Enables scrolling within the side menu */
+            flex: 1;
+            overflow-y: auto;
         }
 
-        /* Collapsible Sections */
         .collapsible {
             border: 1px solid #444;
             border-radius: 8px;
@@ -198,7 +190,6 @@
             display: flex;
         }
 
-        /* Dropdown and Input Styles */
         #side-menu label {
             font-size: 16px;
             margin-bottom: 4px;
@@ -213,11 +204,10 @@
             border: 1px solid #ccc;
             background-color: #fff;
             transition: background-color 0.3s ease, border-color 0.3s ease;
-            display: block; /* Ensure elements are on a new line */
-            margin-bottom: 10px; /* Add spacing between elements */
+            display: block;
+            margin-bottom: 10px;
         }
 
-        /* Dark Theme Adjustments for Selects and Inputs */
         body.dark-theme #resolution-select,
         body.dark-theme #camera-select,
         body.dark-theme #workers-select,
@@ -229,7 +219,6 @@
             color: #e0e0e0;
         }
 
-        /* Dynamic OCR Info Text */
         #ocr-info {
             font-size: 14px;
             color: #f1c40f;
@@ -237,7 +226,6 @@
             margin-bottom: 10px;
         }
 
-        /* Toggle Button (Hamburger Icon) */
         .menu-toggle {
             position: relative;
             top: 20px;
@@ -245,7 +233,7 @@
             width: 30px;
             height: 25px;
             cursor: pointer;
-            z-index: 1002; /* Above the side menu */
+            z-index: 1002;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -259,12 +247,10 @@
             transition: background-color 0.3s ease;
         }
 
-        /* Change color when side menu is active */
         .side-menu.active + .menu-toggle span {
             background-color: #ecf0f1;
         }
 
-        /* Overlay to cover the main content when side menu is open (for mobile) */
         .overlay {
             position: fixed;
             top: 0;
@@ -280,23 +266,17 @@
             display: block;
         }
 
-        /* Adjust main content when side menu is open (for desktop) */
         #container.side-menu-open {
             margin-left: 300px;
             transition: margin-left 0.3s ease;
         }
 
-        /* Responsive Adjustments */
         @media (max-width: 768px) {
-            /* On smaller screens, the side menu overlays the content */
             #container.side-menu-open {
                 margin-left: 0;
             }
         }
 
-        /* ------------------------------
-           Container and Video Styles
-        ------------------------------ */
         #container {
             flex: 1;
             position: relative;
@@ -304,14 +284,13 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding-bottom: 240px; /* Space for fixed debug console */
-            overflow: visible; /* Allow content to overflow for scrolling */
+            padding-bottom: 240px;
+            overflow: visible;
             transition: margin-left 0.3s ease;
-            min-height: 100vh; /* Ensure container covers at least full viewport height */
-            width: 100%; /* Use full width */
+            min-height: 100vh;
+            width: 100%;
         }
 
-        /* Video Wrapper */
         #videoWrapper {
             position: relative;
             margin-top: 20px;
@@ -320,7 +299,6 @@
             justify-content: center;
         }
 
-        /* Video Styling */
         #video {
             width: 90%;
             max-width: 500px;
@@ -329,7 +307,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        /* ROI Overlay */
         #overlay {
             position: absolute;
             width: 60%;
@@ -348,7 +325,6 @@
             border-color: #0077b6;
         }
 
-        /* Focus Indicator */
         #focusIndicator {
             position: absolute;
             top: 50%;
@@ -363,9 +339,6 @@
             z-index: 10;
         }
 
-        /* ------------------------------
-           Controls Section
-        ------------------------------ */
         #controls {
             margin-top: 20px;
             width: 90%;
@@ -375,25 +348,23 @@
             align-items: center;
         }
 
-        /* Buttons Container */
         .buttons-container {
             display: flex;
-            gap: 30px; /* Increased from 20px to 30px */
-            width: 100%; /* Ensure buttons-container takes full width */
-            justify-content: center; /* Center the buttons horizontally */
+            gap: 30px;
+            width: 100%;
+            justify-content: center;
         }
 
-        /* Buttons */
         #start-button, #stop-button, #restart-button {
-            padding: 6px 12px; /* Further reduced padding */
-            font-size: 12px; /* Further reduced font size */
+            padding: 6px 12px;
+            font-size: 12px;
             cursor: pointer;
             border: none;
-            border-radius: 4px; /* Smaller border-radius */
+            border-radius: 4px;
             font-weight: 600;
             transition: background-color 0.3s ease, opacity 0.3s ease;
-            width: 140px; /* Increased from 100px to 140px */
-            white-space: nowrap; /* Prevent text from wrapping */
+            width: 140px;
+            white-space: nowrap;
         }
 
         #start-button {
@@ -420,15 +391,13 @@
             cursor: not-allowed;
         }
 
-        /* Restart Scanner Button */
         #restart-button {
             background-color: #f39c12;
             color: #fff;
-            transition: background-color 0.3s ease, opacity 0.3s ease;
-            width: 140px; /* Increased from 100px to 140px */
+            width: 140px;
             margin-top: 20px;
-            display: none; /* Hidden by default */
-            white-space: nowrap; /* Prevent text from wrapping */
+            display: none;
+            white-space: nowrap;
         }
 
         #restart-button:hover:not(:disabled) {
@@ -439,7 +408,6 @@
             cursor: not-allowed;
         }
 
-        /* Output Textarea */
         #output {
             margin-top: 20px;
             width: 100%;
@@ -462,11 +430,8 @@
             color: #e0e0e0;
         }
 
-        /* ------------------------------
-           Error Message (Toast) Styles
-        ------------------------------ */
         #errorMsg {
-            position: fixed; /* Changed from absolute to fixed to ensure it overlays the entire viewport */
+            position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
@@ -475,15 +440,12 @@
             padding: 12px 24px;
             border-radius: 8px;
             display: none;
-            z-index: 1003; /* Increased z-index to ensure it appears above all other elements */
+            z-index: 1003;
             font-weight: 600;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             font-size: 16px;
         }
 
-        /* ------------------------------
-           Debugging Canvas Styles
-        ------------------------------ */
         #debugCanvas {
             margin-top: 20px;
             max-width: 90%;
@@ -493,7 +455,7 @@
             border-radius: 8px;
             background: #fff;
             transition: background-color 0.3s ease, border-color 0.3s ease;
-            display: none; /* Initially hidden */
+            display: none;
         }
 
         body.dark-theme #debugCanvas {
@@ -501,9 +463,6 @@
             border: 1px solid #555;
         }
 
-        /* ------------------------------
-           Debug Console Styles
-        ------------------------------ */
         #debugConsole {
             position: fixed;
             bottom: 0;
@@ -518,7 +477,7 @@
             padding: 10px;
             box-sizing: border-box;
             border-top: 2px solid #111;
-            display: none; /* Initially hidden */
+            display: none;
             z-index: 999;
         }
 
@@ -531,9 +490,6 @@
         .log-entry.warn { color: #ffbb33; }
         .log-entry.error { color: #ff4f4f; }
 
-        /* ------------------------------
-           Debug Controls Styles
-        ------------------------------ */
         #debugControls {
             position: fixed;
             bottom: 200px;
@@ -545,7 +501,7 @@
             box-sizing: border-box;
             text-align: center;
             border-top: 2px solid #111;
-            display: none; /* Initially hidden */
+            display: none;
             z-index: 998;
         }
 
@@ -563,9 +519,7 @@
             background: #0b5ed7;
         }
 
-        /* ------------------------------
-           WebGL Canvas for ROI Preprocessing
-        ------------------------------ */
+        /* WebGL Canvas for ROI Preprocessing */
         #webglCanvas {
             position: absolute;
             top: 0;
@@ -573,15 +527,12 @@
             width: 100%;
             height: 100%;
             border-radius: 8px;
-            display: none; /* Initially hidden */
+            display: none; 
             z-index: 2;
         }
 
-        /* ------------------------------
-           Debug Button Styles
-        ------------------------------ */
         .debug-button {
-            background-color: #6a0dad; /* Purple color */
+            background-color: #6a0dad;
             color: #fff;
             padding: 8px 16px;
             border: none;
@@ -593,14 +544,10 @@
         }
 
         .debug-button:hover {
-            background-color: #5a0bad; /* Darker purple on hover */
+            background-color: #5a0bad;
         }
 
-        /* ------------------------------
-           Responsive Adjustments
-        ------------------------------ */
         @media (max-width: 768px) {
-            /* Adjust Toggle Button for Mobile */
             .menu-toggle {
                 width: 25px;
                 height: 20px;
@@ -610,18 +557,15 @@
                 height: 3px;
             }
 
-            /* Adjust Side Menu Padding */
             .side-menu {
                 padding: 15px;
             }
 
-            /* Adjust Debug Button for Mobile */
             .side-menu .debug-button {
                 padding: 10px 0;
                 font-size: 16px;
             }
 
-            /* Adjust Debug Canvas and Console for Mobile */
             #debugCanvas {
                 height: 150px;
             }
@@ -635,18 +579,16 @@
                 bottom: 150px;
             }
 
-            /* Increase button sizes for better touch targets */
             .buttons-container {
-                gap: 25px; /* Reduced gap on smaller screens */
+                gap: 25px;
             }
 
             #start-button, #stop-button, #restart-button {
                 padding: 12px 20px;
                 font-size: 16px;
-                width: 140px; /* Adjusted width */
+                width: 140px;
             }
 
-            /* Increase font sizes for better readability */
             #output {
                 font-size: 18px;
                 height: 180px;
@@ -664,15 +606,14 @@
         }
 
         @media (max-width: 480px) {
-            /* Further adjustments for very small screens */
             .buttons-container {
-                gap: 15px; /* Further reduce gap */
+                gap: 15px;
             }
 
             #start-button, #stop-button, #restart-button {
                 padding: 10px 18px;
                 font-size: 14px;
-                width: 120px; /* Adjusted width */
+                width: 120px;
             }
 
             #output {
@@ -691,9 +632,7 @@
             }
         }
 
-        /* ------------------------------
-           WebGL Preprocessing Controls
-        ------------------------------ */
+        /* WebGL Preprocessing Controls */
         .preprocessing-option {
             display: flex;
             flex-direction: column;
@@ -716,26 +655,19 @@
     </style>
 </head>
 <body>
-    <!-- ------------------------------
-       Side Menu Structure
-    ------------------------------ -->
+    <!-- Side Menu -->
     <div class="side-menu" id="side-menu">
-        <!-- FPS Counter -->
         <div id="fpsCounter">FPS: 0</div>
 
-        <!-- Settings Content Container -->
         <div class="menu-content">
             <h2>Settings</h2>
-            <!-- ------------------------------
-               Hardware Collapsible Section
-            ------------------------------ -->
+
             <details class="collapsible">
                 <summary>Hardware</summary>
                 <div>
                     <label for="resolution-select">Resolutions:</label>
                     <select id="resolution-select">
                         <option value="">Select Resolution</option>
-                        <!-- Pre-populated with common resolutions -->
                         <option value="320x240">320 x 240</option>
                         <option value="640x480">640 x 480</option>
                         <option value="800x600">800 x 600</option>
@@ -754,7 +686,6 @@
                     <label for="camera-select">Cameras:</label>
                     <select id="camera-select">
                         <option value="">Select Camera</option>
-                        <!-- Camera options will be populated on page load -->
                     </select>
                 </div>
                 <div>
@@ -768,9 +699,6 @@
                 </div>
             </details>
 
-            <!-- ------------------------------
-               Performance Collapsible Section
-            ------------------------------ -->
             <details class="collapsible">
                 <summary>Performance</summary>
                 <div>
@@ -807,58 +735,44 @@
                 </div>
             </details>
 
-            <!-- ------------------------------
-               WebGL Preprocessing Controls
-            ------------------------------ -->
+            <!-- WebGL Preprocessing Controls -->
             <details class="collapsible">
                 <summary>WebGL Preprocessing</summary>
-                <div class="preprocessing-option">
-                    <label>
-                        <input type="checkbox" id="enableGrayscale">
-                        Enable Grayscale
-                    </label>
-                    <input type="range" id="grayscaleSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
-                </div>
-                <div class="preprocessing-option">
-                    <label>
-                        <input type="checkbox" id="enableDenoise">
-                        Enable Denoise
-                    </label>
-                    <input type="range" id="denoiseSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
-                </div>
+                <content>
+                    <div class="preprocessing-option">
+                        <label>
+                            <input type="checkbox" id="enableGrayscale">
+                            Enable Grayscale
+                        </label>
+                        <input type="range" id="grayscaleSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
+                    </div>
+                    <div class="preprocessing-option">
+                        <label>
+                            <input type="checkbox" id="enableDenoise">
+                            Enable Denoise
+                        </label>
+                        <input type="range" id="denoiseSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                    </div>
+                </content>
             </details>
         </div>
 
-        <!-- ------------------------------
-           Debug Show Button (Moved to Side Menu)
-        ------------------------------ -->
         <button id="debug-button" class="debug-button">Show Debug</button>
     </div>
 
-    <!-- ------------------------------
-       Overlay to cover the main content when side menu is open
-    ------------------------------ -->
     <div class="overlay" id="menu-overlay"></div>
 
-    <!-- ------------------------------
-       Menu Toggle Button (Hamburger Icon)
-    ------------------------------ -->
     <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
         <span></span>
         <span></span>
         <span></span>
     </div>
 
-    <!-- ------------------------------
-       Theme Toggle Switch
-    ------------------------------ -->
     <div class="theme-toggle">
         <label class="toggle-label">
-            <!-- Toggle Switch -->
             <input type="checkbox" id="theme-checkbox">
             <div class="toggle-switch">
                 <span class="toggle-icon sun-icon">
-                    <!-- Cartoon Yellow Sun SVG -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 64 64" fill="#FFD700">
                         <circle cx="32" cy="32" r="12"/>
                         <g stroke="#FFD700" stroke-width="4">
@@ -878,28 +792,17 @@
         </label>
     </div>
 
-    <!-- ------------------------------
-       Error Message (Toast)
-    ------------------------------ -->
     <div id="errorMsg"></div>
 
-    <!-- ------------------------------
-       Main Container
-    ------------------------------ -->
     <div id="container">
-        <!-- ------------------------------
-           Video Wrapper
-        ------------------------------ -->
         <div id="videoWrapper">
             <video id="video" playsinline></video>
-            <div id="overlay"></div> <!-- ROI Bounding Box -->
+            <div id="overlay">
+                <canvas id="webglCanvas"></canvas>
+            </div>
             <div id="focusIndicator">Processing...</div>
-            <canvas id="webglCanvas"></canvas>
         </div>
 
-        <!-- ------------------------------
-           Controls Section
-        ------------------------------ -->
         <div id="controls">
             <div class="buttons-container">
                 <button id="start-button">Start Scanner</button>
@@ -909,36 +812,22 @@
             <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
         </div>
 
-        <!-- ------------------------------
-           Debugging Canvas
-        ------------------------------ -->
         <canvas id="debugCanvas"></canvas>
     </div>
 
-    <!-- ------------------------------
-       Debug Controls
-    ------------------------------ -->
     <div id="debugControls">
         <button id="save-logs-button">Save Logs</button>
     </div>
 
-    <!-- ------------------------------
-       Debug Console
-    ------------------------------ -->
     <div id="debugConsole"></div>
 
-    <!-- ------------------------------
-       JavaScript Functionality
-    ------------------------------ -->
     <script>
         /* ------------------------------
-           Initial Check for Reload Flag
+           Initial Reload Flag Check
         ------------------------------ */
         (function() {
             if (sessionStorage.getItem('cameraPermissionsGranted')) {
-                // Set a flag to indicate that the page has just reloaded after granting permissions
                 sessionStorage.setItem('cameraReloaded', 'true');
-                // Remove the flag to prevent further reloads
                 sessionStorage.removeItem('cameraPermissionsGranted');
             }
         })();
@@ -951,7 +840,6 @@
             const sideMenu = document.getElementById('side-menu');
             const menuOverlay = document.getElementById('menu-overlay');
             const container = document.getElementById('container');
-
             let isMenuOpen = false;
 
             function openMenu() {
@@ -978,14 +866,12 @@
                 }
             });
 
-            // Close the side menu when clicking on the overlay
             menuOverlay.addEventListener('click', function() {
                 if (isMenuOpen) {
                     closeMenu();
                 }
             });
 
-            // Optional: Close the menu with the Escape key
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && isMenuOpen) {
                     closeMenu();
@@ -994,7 +880,7 @@
         })();
 
         /* ------------------------------
-           Theme Toggle Functionality
+           Theme Toggle
         ------------------------------ */
         (function() {
             const toggleCheckbox = document.getElementById('theme-checkbox');
@@ -1020,7 +906,7 @@
         })();
 
         /* ------------------------------
-           Capture and Display Console Logs in Debug Console
+           Debug Console Capture
         ------------------------------ */
         (function() {
             const debugConsole = document.getElementById('debugConsole');
@@ -1048,9 +934,6 @@
             };
         })();
 
-        /* ------------------------------
-           Function to Save Logs to a File
-        ------------------------------ */
         function saveLogs() {
             const debugConsole = document.getElementById('debugConsole');
             const logsText = debugConsole.innerText;
@@ -1068,7 +951,7 @@
         document.getElementById('save-logs-button').addEventListener('click', saveLogs);
 
         /* ------------------------------
-           Debug Button Functionality (Moved to Side Menu)
+           Debug Button
         ------------------------------ */
         (function() {
             const debugButton = document.getElementById('debug-button');
@@ -1076,7 +959,6 @@
             const debugConsole = document.getElementById('debugConsole');
             const debugControls = document.getElementById('debugControls');
 
-            // Initially hide the debug elements
             debugCanvas.style.display = 'none';
             debugConsole.style.display = 'none';
             debugControls.style.display = 'none';
@@ -1103,12 +985,11 @@
            OCR Scanning Functionality
         ------------------------------ */
         (function() {
-            // References to DOM elements
             const video = document.getElementById('video');
-            const roiOverlay = document.getElementById('overlay'); // ROI Bounding Box
+            const roiOverlay = document.getElementById('overlay');
             const startButton = document.getElementById('start-button');
             const stopButton = document.getElementById('stop-button');
-            const restartButton = document.getElementById('restart-button'); // Restart Button
+            const restartButton = document.getElementById('restart-button');
             const debugButton = document.getElementById('debug-button');
             const output = document.getElementById('output');
             const errorMsg = document.getElementById('errorMsg');
@@ -1128,25 +1009,25 @@
 
             let stream = null;
             let scanning = false;
-            let lastOcrTime = 0;
             let confidenceThreshold = parseInt(confidenceThresholdInput.value, 10) || 60;
             let frameSkipping = 1;
             let ocrFrequency = 1;
             let frameCounter = 0;
+            let lastOcrTime = 0;
             let workers = [];
             let isTesseractInitialized = false;
 
-            // Create off-screen canvases
             const videoCanvas = document.createElement('canvas');
             const roiCanvas = document.createElement('canvas');
             const scaledCanvas = document.createElement('canvas');
             const debugCtx = debugCanvas.getContext('2d');
 
-            // Tesseract.js Workers Management and WebGL Setup Variables
+            // WebGL setup
+            const webglCanvas = document.getElementById('webglCanvas');
             let gl = null;
             let glProgram = null;
             let glTexture = null;
-            let glOutputTexture = null;
+            let glBuffer = null;
             let glGrayscaleEnabledLoc = null;
             let glGrayscaleAmountLoc = null;
             let glDenoiseEnabledLoc = null;
@@ -1203,26 +1084,10 @@
                 }
             `;
 
-            /* ------------------------------
-               Function to Show Error Messages
-            ------------------------------ */
-            function showError(message) {
-                console.error(`Error: ${message}`);
-                errorMsg.innerText = message;
-                errorMsg.style.display = 'block';
-                setTimeout(() => {
-                    errorMsg.style.display = 'none';
-                }, 5000);
-            }
-
-            /* ------------------------------
-               Function to Get Available Cameras
-            ------------------------------ */
             async function getAvailableCameras() {
                 try {
                     const devices = await navigator.mediaDevices.enumerateDevices();
-                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                    return videoDevices;
+                    return devices.filter(device => device.kind === 'videoinput');
                 } catch (err) {
                     console.error('Error enumerating devices:', err);
                     showError('Unable to access camera devices.');
@@ -1230,14 +1095,9 @@
                 }
             }
 
-            /* ------------------------------
-               Function to Populate Cameras Dropdown
-            ------------------------------ */
             async function populateCameras() {
                 const cameraSelect = document.getElementById('camera-select');
-                cameraSelect.innerHTML = ''; // Clear existing options
-
-                // Add a default option
+                cameraSelect.innerHTML = '';
                 const defaultOption = document.createElement('option');
                 defaultOption.value = '';
                 defaultOption.text = 'Select Camera';
@@ -1259,18 +1119,22 @@
                 }
             }
 
-            /* ------------------------------
-               Function to Initialize Camera
-            ------------------------------ */
+            function showError(message) {
+                console.error(`Error: ${message}`);
+                errorMsg.innerText = message;
+                errorMsg.style.display = 'block';
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                }, 5000);
+            }
+
             async function initCamera(resolution = null, cameraId = null) {
                 try {
                     const videoConstraints = {};
 
                     if (cameraId) {
-                        // If a specific camera is selected, set deviceId only
                         videoConstraints.deviceId = { exact: cameraId };
                     } else {
-                        // If no specific camera is selected, default to environment-facing camera
                         videoConstraints.facingMode = { exact: "environment" };
                     }
 
@@ -1278,25 +1142,18 @@
                         videoConstraints.width = { exact: resolution.width };
                         videoConstraints.height = { exact: resolution.height };
                     } else {
-                        // Set a default resolution if none selected
                         videoConstraints.width = { ideal: 1280 };
                         videoConstraints.height = { ideal: 720 };
                     }
 
-                    // Limit frame rate for performance
                     videoConstraints.frameRate = { ideal: 60, max: 60 };
-
-                    const constraints = {
-                        video: videoConstraints,
-                        audio: false
-                    };
+                    const constraints = { video: videoConstraints, audio: false };
 
                     stream = await navigator.mediaDevices.getUserMedia(constraints);
                     video.srcObject = stream;
                     await video.play();
                     console.log('Camera initialized successfully.');
 
-                    // After successful camera initialization, check and set reload flag
                     if (!sessionStorage.getItem('cameraPermissionsGranted') && !sessionStorage.getItem('cameraReloaded')) {
                         sessionStorage.setItem('cameraPermissionsGranted', 'true');
                         location.reload();
@@ -1309,35 +1166,30 @@
                 }
             }
 
-            /* ------------------------------
-               OCR Worker Initialization
-            ------------------------------ */
             function isMobileDevice() {
                 return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
             }
 
             function getOptimalWorkerCount() {
-                const cores = navigator.hardwareConcurrency || 2; // Default to 2 if not available
+                const cores = navigator.hardwareConcurrency || 2;
                 if (isMobileDevice()) {
-                    return Math.min(cores, 1); // Limit to 1 worker on mobile
+                    return Math.min(cores, 1);
                 } else {
-                    return Math.min(cores, 3); // Allow up to 3 workers on desktops
+                    return Math.min(cores, 3);
                 }
             }
 
             async function initializeTesseract(workersCount) {
                 try {
-                    // Terminate existing workers if any
                     if (workers.length > 0) {
                         await Promise.all(workers.map(worker => worker.terminate()));
                         workers = [];
                         console.log('Existing Tesseract.js workers terminated.');
                     }
 
-                    // Initialize new workers based on the selected count
                     for (let i = 0; i < workersCount; i++) {
                         if (typeof Tesseract.createWorker !== 'function') {
-                            throw new TypeError('Tesseract.createWorker is not a function. Check the Tesseract.js version and script loading.');
+                            throw new TypeError('Tesseract.createWorker is not a function. Check the Tesseract.js version.');
                         }
 
                         const worker = await Tesseract.createWorker({
@@ -1361,14 +1213,10 @@
                 }
             }
 
-            /* ------------------------------
-               Perform OCR
-            ------------------------------ */
             async function performOCR(blob) {
                 const ocrPromises = workers.map(worker => worker.recognize(blob));
                 const results = await Promise.all(ocrPromises);
 
-                // Aggregate results
                 let aggregatedText = '';
                 let totalConfidence = 0;
                 results.forEach(result => {
@@ -1391,22 +1239,19 @@
                 }
             }
 
-            /* ------------------------------
-               Process Each Video Frame
-            ------------------------------ */
             async function processFrame() {
                 if (!scanning) return;
 
                 const now = Date.now();
                 const timeSinceLastOcr = now - lastOcrTime;
-                const desiredInterval = 1000 / ocrFrequency; // in milliseconds
+                const desiredInterval = 1000 / ocrFrequency;
 
                 frameCounter++;
                 if (frameCounter < frameSkipping) {
                     if (scanning) requestAnimationFrame(processFrame);
                     return;
                 }
-                frameCounter = 0; // Reset frame counter after skipping
+                frameCounter = 0;
 
                 if (timeSinceLastOcr < desiredInterval) {
                     if (scanning) requestAnimationFrame(processFrame);
@@ -1421,38 +1266,10 @@
                     return;
                 }
 
-                console.log('Processing a new frame for OCR.');
-
-                const preprocessedBlob = await getPreprocessedBlobFromROI();
-                if (!preprocessedBlob) {
-                    if (scanning) requestAnimationFrame(processFrame);
-                    return;
-                }
-
-                // Update Debug Canvas
-                drawToDebugCanvas(preprocessedBlob);
-
-                // Perform OCR on the preprocessed frame
-                await performOCR(preprocessedBlob);
-
-                if (scanning) requestAnimationFrame(processFrame);
-            }
-
-            /* ------------------------------
-               Extract and Preprocess ROI
-            ------------------------------ */
-            async function getPreprocessedBlobFromROI() {
                 const videoWidth = video.videoWidth;
                 const videoHeight = video.videoHeight;
-                if (videoWidth === 0 || videoHeight === 0) {
-                    console.warn('No video frame available.');
-                    return null;
-                }
-
                 videoCanvas.width = videoWidth;
                 videoCanvas.height = videoHeight;
-                const ctx = videoCanvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
                 const overlayRect = roiOverlay.getBoundingClientRect();
                 const videoRect = video.getBoundingClientRect();
@@ -1465,20 +1282,20 @@
                 const roiWidth = overlayRect.width * scaleX;
                 const roiHeight = overlayRect.height * scaleY;
 
-                console.log(`ROI Coordinates: (${roiX.toFixed(2)}, ${roiY.toFixed(2)}, ${roiWidth.toFixed(2)}, ${roiHeight.toFixed(2)})`);
-
                 if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
                     console.warn('ROI is out of video frame bounds.');
                     showError('ROI is out of video frame bounds.');
                     stopScanning();
-                    return null;
+                    return;
                 }
+
+                const ctx = videoCanvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
                 roiCanvas.width = roiWidth;
                 roiCanvas.height = roiHeight;
                 const roiCtx = roiCanvas.getContext('2d');
                 roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
-                console.log('ROI extracted.');
 
                 const scaleFactor = 1.5;
                 scaledCanvas.width = roiWidth * scaleFactor;
@@ -1487,62 +1304,125 @@
                 scaledCtx.imageSmoothingEnabled = true;
                 scaledCtx.imageSmoothingQuality = 'high';
                 scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-                console.log('ROI scaled.');
 
                 const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
-                if (!preprocessedBlob) {
-                    console.warn('Blob conversion failed or scanning stopped.');
-                    return null;
+
+                debugCanvas.width = scaledCanvas.width;
+                debugCanvas.height = scaledCanvas.height;
+                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                const img = await createImageBitmap(preprocessedBlob);
+                debugCtx.drawImage(img, 0, 0);
+
+                // Overlay text to show active preprocessing effects
+                debugCtx.font = '16px Arial';
+                debugCtx.fillStyle = 'yellow';
+                let yOffset = 20;
+                if (enableGrayscale.checked) {
+                    debugCtx.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset);
+                    yOffset += 20;
                 }
-                console.log('Blob created for OCR.');
-                return preprocessedBlob;
+                if (enableDenoise.checked) {
+                    debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset);
+                }
+
+                if (preprocessedBlob && scanning) {
+                    await performOCR(preprocessedBlob);
+                }
+
+                if (scanning) requestAnimationFrame(processFrame);
             }
 
-            /* ------------------------------
-               Initialize WebGL and Preprocessing
-            ------------------------------ */
-            function initWebGL() {
-                const glCanvas = document.getElementById('webglCanvas');
-                gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
+            async function preprocessWithWebGL(sourceCanvas) {
+                if (!gl) {
+                    initWebGL();
+                }
 
+                const width = sourceCanvas.width;
+                const height = sourceCanvas.height;
+
+                webglCanvas.width = width;
+                webglCanvas.height = height;
+
+                gl.viewport(0, 0, width, height);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+
+                gl.bindTexture(gl.TEXTURE_2D, glTexture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
+
+                gl.uniform1f(glGrayscaleAmountLoc, parseFloat(grayscaleSlider.value) / 100.0);
+                gl.uniform1f(glDenoiseAmountLoc, parseFloat(denoiseSlider.value));
+                gl.uniform1i(glGrayscaleEnabledLoc, enableGrayscale.checked ? 1 : 0);
+                gl.uniform1i(glDenoiseEnabledLoc, enableDenoise.checked ? 1 : 0);
+
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+                const pixels = new Uint8ClampedArray(width * height * 4);
+                const fb = gl.createFramebuffer();
+                gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, glTexture, 0);
+                gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+                const offscreen = document.createElement('canvas');
+                offscreen.width = width;
+                offscreen.height = height;
+                const offCtx = offscreen.getContext('2d');
+                const imageData = new ImageData(pixels, width, height);
+                offCtx.putImageData(imageData, 0, 0);
+
+                return new Promise((resolve) => {
+                    offscreen.toBlob((blob) => {
+                        resolve(blob);
+                    }, 'image/png');
+                });
+            }
+
+            function initWebGL() {
+                gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('experimental-webgl');
                 if (!gl) {
                     console.error('Unable to initialize WebGL.');
                     showError('WebGL is not supported by your browser.');
                     return;
                 }
 
-                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                // Compile shaders
+                const vs = gl.createShader(gl.VERTEX_SHADER);
+                gl.shaderSource(vs, vertexShaderSource);
+                gl.compileShader(vs);
+                if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+                    console.error('Vertex shader error: ', gl.getShaderInfoLog(vs));
+                }
 
-                const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
-                const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
+                const fs = gl.createShader(gl.FRAGMENT_SHADER);
+                gl.shaderSource(fs, fragmentShaderSource);
+                gl.compileShader(fs);
+                if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+                    console.error('Fragment shader error: ', gl.getShaderInfoLog(fs));
+                }
 
                 glProgram = gl.createProgram();
-                gl.attachShader(glProgram, vertexShader);
-                gl.attachShader(glProgram, fragmentShader);
+                gl.attachShader(glProgram, vs);
+                gl.attachShader(glProgram, fs);
                 gl.linkProgram(glProgram);
 
                 if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
-                    const info = gl.getProgramInfoLog(glProgram);
-                    console.error('Could not initialize WebGL shader program. \n\n' + info);
-                    showError('Failed to initialize WebGL shader program.');
-                    return;
+                    console.error('Program link error: ', gl.getProgramInfoLog(glProgram));
                 }
 
                 gl.useProgram(glProgram);
 
-                const vertexBuffer = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-
+                glBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
                 const vertices = new Float32Array([
                     -1.0, -1.0, 0.0, 0.0,
                      1.0, -1.0, 1.0, 0.0,
                     -1.0,  1.0, 0.0, 1.0,
                      1.0,  1.0, 1.0, 1.0
                 ]);
-
                 gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
                 const FSIZE = vertices.BYTES_PER_ELEMENT;
+
                 const aPosition = gl.getAttribLocation(glProgram, 'a_position');
                 gl.enableVertexAttribArray(aPosition);
                 gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, FSIZE * 4, 0);
@@ -1558,119 +1438,14 @@
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-                glOutputTexture = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, glOutputTexture);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
                 glGrayscaleEnabledLoc = gl.getUniformLocation(glProgram, "u_grayscaleEnabled");
                 glGrayscaleAmountLoc = gl.getUniformLocation(glProgram, "u_grayscaleAmount");
                 glDenoiseEnabledLoc = gl.getUniformLocation(glProgram, "u_denoiseEnabled");
                 glDenoiseAmountLoc = gl.getUniformLocation(glProgram, "u_denoiseAmount");
+
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
             }
 
-            function compileShader(source, type) {
-                const shader = gl.createShader(type);
-                gl.shaderSource(shader, source);
-                gl.compileShader(shader);
-
-                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                    const info = gl.getShaderInfoLog(shader);
-                    console.error('Could not compile WebGL shader. \n\n' + info);
-                    showError('Failed to compile WebGL shader.');
-                    gl.deleteShader(shader);
-                    return null;
-                }
-                return shader;
-            }
-
-            /* ------------------------------
-               Preprocess the ROI with WebGL
-            ------------------------------ */
-            async function preprocessWithWebGL(sourceCanvas) {
-                if (!gl) {
-                    initWebGL();
-                    if (!gl) return null; // If still no GL, return
-                }
-
-                const width = sourceCanvas.width;
-                const height = sourceCanvas.height;
-
-                gl.viewport(0, 0, width, height);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-
-                // Upload image to texture
-                gl.bindTexture(gl.TEXTURE_2D, glTexture);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
-
-                // Set uniform values
-                gl.uniform1f(glGrayscaleAmountLoc, parseFloat(grayscaleSlider.value) / 100.0);
-                gl.uniform1f(glDenoiseAmountLoc, parseFloat(denoiseSlider.value));
-                gl.uniform1i(glGrayscaleEnabledLoc, enableGrayscale.checked ? 1 : 0);
-                gl.uniform1i(glDenoiseEnabledLoc, enableDenoise.checked ? 1 : 0);
-
-                // Set up framebuffer to draw into glOutputTexture
-                const fb = gl.createFramebuffer();
-                gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-                gl.bindTexture(gl.TEXTURE_2D, glOutputTexture);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, glOutputTexture, 0);
-
-                // Draw
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-                // Read pixels
-                const pixels = new Uint8ClampedArray(width * height * 4);
-                gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-                // Create a canvas to put pixels into a blob
-                const offscreen = document.createElement('canvas');
-                offscreen.width = width;
-                offscreen.height = height;
-                const offCtx = offscreen.getContext('2d');
-                const imageData = new ImageData(pixels, width, height);
-                offCtx.putImageData(imageData, 0, 0);
-
-                /* ADDED: Ensure preprocessed output is visible in ROI overlay */
-                webglCanvas.style.display = 'block'; /* ADDED */
-
-                return new Promise((resolve) => {
-                    offscreen.toBlob((blob) => {
-                        resolve(blob);
-                    }, 'image/png');
-                });
-            }
-
-            /* ------------------------------
-               Draw to Debug Canvas
-            ------------------------------ */
-            async function drawToDebugCanvas(blob) {
-                debugCanvas.width = scaledCanvas.width;
-                debugCanvas.height = scaledCanvas.height;
-                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-                const img = await createImageBitmap(blob);
-                debugCtx.drawImage(img, 0, 0);
-
-                // Overlay text to show active preprocessing effects
-                debugCtx.font = '16px Arial';
-                debugCtx.fillStyle = 'yellow';
-                let yOffset = 20;
-                if (enableGrayscale.checked) {
-                    debugCtx.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset);
-                    yOffset += 20;
-                }
-                if (enableDenoise.checked) {
-                    debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset);
-                }
-                console.log('Debugging canvas updated.');
-            }
-
-            /* ------------------------------
-               Start/Stop Scanning
-            ------------------------------ */
             async function startScanning() {
                 if (scanning) return;
 
@@ -1679,6 +1454,7 @@
                 restartButton.style.display = 'none';
                 startButton.innerText = 'Starting...';
                 console.log('Initializing camera...');
+
                 try {
                     const cameraSelect = document.getElementById('camera-select');
                     const selectedCameraId = cameraSelect.value || null;
@@ -1718,9 +1494,6 @@
 
                 frameSkipping = parseInt(frameSkippingSelect.value);
                 ocrFrequency = parseFloat(frequencySelect.value);
-                console.log(`Frame Skipping set to: Every ${frameSkipping} frame(s)`);
-                console.log(`OCR Frequency set to: ${ocrFrequency} Hz`);
-
                 updateOcrInfo();
 
                 scanning = true;
@@ -1773,12 +1546,66 @@
             async function captureFrameAndPerformOCR() {
                 if (!scanning) return;
 
-                console.log('Capturing frame for OCR.');
                 await pauseScanning();
 
-                const preprocessedBlob = await getPreprocessedBlobFromROI();
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+                videoCanvas.width = videoWidth;
+                videoCanvas.height = videoHeight;
+                const ctx = videoCanvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+
+                const overlayRect = roiOverlay.getBoundingClientRect();
+                const videoRect = video.getBoundingClientRect();
+
+                const scaleX = videoWidth / videoRect.width;
+                const scaleY = videoHeight / videoRect.height;
+
+                const roiX = (overlayRect.left - videoRect.left) * scaleX;
+                const roiY = (overlayRect.top - videoRect.top) * scaleY;
+                const roiWidth = overlayRect.width * scaleX;
+                const roiHeight = overlayRect.height * scaleY;
+
+                if (roiX < 0 || roiY < 0 || (roiX + roiWidth) > videoWidth || (roiY + roiHeight) > videoHeight) {
+                    console.warn('ROI is out of video frame bounds.');
+                    showError('ROI is out of video frame bounds.');
+                    return;
+                }
+
+                roiCanvas.width = roiWidth;
+                roiCanvas.height = roiHeight;
+                const roiCtx = roiCanvas.getContext('2d');
+                roiCtx.drawImage(videoCanvas, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
+
+                const scaleFactor = 1.5;
+                scaledCanvas.width = roiWidth * scaleFactor;
+                scaledCanvas.height = roiHeight * scaleFactor;
+                const scaledCtx = scaledCanvas.getContext('2d');
+                scaledCtx.imageSmoothingEnabled = true;
+                scaledCtx.imageSmoothingQuality = 'high';
+                scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+
+                const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
+
+                debugCanvas.width = scaledCanvas.width;
+                debugCanvas.height = scaledCanvas.height;
+                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                const img = await createImageBitmap(preprocessedBlob);
+                debugCtx.drawImage(img, 0, 0);
+
+                // Overlay text for preprocessing effects
+                debugCtx.font = '16px Arial';
+                debugCtx.fillStyle = 'yellow';
+                let yOffset = 20;
+                if (enableGrayscale.checked) {
+                    debugCtx.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset);
+                    yOffset += 20;
+                }
+                if (enableDenoise.checked) {
+                    debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset);
+                }
+
                 if (preprocessedBlob) {
-                    drawToDebugCanvas(preprocessedBlob);
                     await performOCR(preprocessedBlob);
                 }
             }
@@ -1792,7 +1619,6 @@
                 if (!selectedResolution) return;
 
                 console.log(`Selected resolution: ${selectedResolution.width}x${selectedResolution.height}`);
-
                 const wasScanning = scanning;
 
                 if (wasScanning) {
@@ -1807,7 +1633,6 @@
                 if (wasScanning) {
                     const cameraSelect = document.getElementById('camera-select');
                     const selectedCameraId = cameraSelect.value || null;
-
                     initCamera(selectedResolution, selectedCameraId).then(() => {
                         console.log('Camera re-initialized with new resolution.');
                         if (wasScanning) {
@@ -1818,7 +1643,7 @@
                         showError('Failed to set the selected resolution.');
                     });
                 } else {
-                    console.log('Resolution changed, but scanning is not active. Camera not initialized.');
+                    console.log('Resolution changed, but scanning is not active.');
                 }
             }
 
@@ -1827,7 +1652,6 @@
                 if (selectedCameraId === '') return;
 
                 console.log(`Selected camera ID: ${selectedCameraId}`);
-
                 const wasScanning = scanning;
 
                 if (wasScanning) {
@@ -1841,7 +1665,6 @@
 
                 if (wasScanning) {
                     const selectedResolution = getSelectedResolution();
-
                     initCamera(selectedResolution, selectedCameraId).then(() => {
                         console.log('Camera re-initialized with new camera.');
                         if (wasScanning) {
@@ -1852,7 +1675,7 @@
                         showError('Failed to set the selected camera.');
                     });
                 } else {
-                    console.log('Camera changed, but scanning is not active. Camera not initialized.');
+                    console.log('Camera changed, but scanning is not active.');
                 }
             }
 
@@ -1861,8 +1684,8 @@
                 console.log(`Selected workers count: ${selectedWorkers}`);
 
                 if (isTesseractInitialized) {
+                    showTemporaryMessage('Updating workers...', 2000);
                     console.log('Updating workers...');
-
                     const wasScanning = scanning;
 
                     if (wasScanning) {
@@ -1990,28 +1813,7 @@
 
                 requestAnimationFrame(updateFPS);
             })();
-
-            async function updateDebugViewportOnly() {
-                if (!stream) {
-                    console.warn("No camera stream available. Please start the scanner first.");
-                    return;
-                }
-                const blob = await getPreprocessedBlobFromROI();
-                if (blob) {
-                    await drawToDebugCanvas(blob);
-                    /* ADDED: Show the processed image in the ROI overlay as well */
-                    webglCanvas.style.display = 'block'; /* ADDED */
-                } else {
-                    console.warn("Could not update debug viewport. ROI/frame may be invalid.");
-                }
-            }
-
-            enableGrayscale.addEventListener('change', updateDebugViewportOnly);
-            grayscaleSlider.addEventListener('input', updateDebugViewportOnly);
-            enableDenoise.addEventListener('change', updateDebugViewportOnly);
-            denoiseSlider.addEventListener('input', updateDebugViewportOnly);
         })();
     </script>
-
 </body>
 </html>
