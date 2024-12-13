@@ -1075,8 +1075,6 @@
                     sum += texture2D(tex, uv + vec2(offset, 0.0));
                     sum += texture2D(tex, uv + vec2(offset, offset));
 
-                    // Basic sharpen: center * (1 + a) - blur * a
-                    // a can be derived from strength. We'll assume u_sharpenAmount is direct strength
                     float a = strength * 0.5;
                     vec4 blurColor = sum / 9.0;
                     vec4 sharpColor = center * (1.0 + a) - blurColor * a;
@@ -1390,7 +1388,7 @@
                 const offCtx = offscreen.getContext('2d');
                 const imageData = new ImageData(pixels, width, height);
 
-                flipImageDataVertically(imageData);
+                // No vertical flipping here as requested
                 offCtx.putImageData(imageData, 0, 0);
 
                 return new Promise((resolve) => {
@@ -1398,22 +1396,6 @@
                         resolve(blob);
                     }, 'image/png');
                 });
-            }
-
-            function flipImageDataVertically(imageData) {
-                const { data, width, height } = imageData;
-                const halfHeight = Math.floor(height / 2);
-                for (let y = 0; y < halfHeight; y++) {
-                    for (let x = 0; x < width; x++) {
-                        const topIndex = (y * width + x) * 4;
-                        const bottomIndex = ((height - y - 1) * width + x) * 4;
-                        for (let i = 0; i < 4; i++) {
-                            const temp = data[topIndex + i];
-                            data[topIndex + i] = data[bottomIndex + i];
-                            data[bottomIndex + i] = temp;
-                        }
-                    }
-                }
             }
 
             function initWebGL() {
