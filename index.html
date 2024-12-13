@@ -1357,17 +1357,27 @@
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
                 const pixels = new Uint8ClampedArray(width * height * 4);
-                const fb = gl.createFramebuffer();
-                gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, glTexture, 0);
+
+                // **Removed Framebuffer Binding**
+                // const fb = gl.createFramebuffer();
+                // gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+                // gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, glTexture, 0);
+                
+                // **Read pixels directly from the default framebuffer**
                 gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                
+                // **Unbind framebuffer if it was bound (not necessary here since we removed it)**
+                // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
                 const offscreen = document.createElement('canvas');
                 offscreen.width = width;
                 offscreen.height = height;
                 const offCtx = offscreen.getContext('2d');
                 const imageData = new ImageData(pixels, width, height);
+                
+                // **Optional: Flip the image vertically to match canvas coordinate system**
+                flipImageDataVertically(imageData);
+                
                 offCtx.putImageData(imageData, 0, 0);
 
                 return new Promise((resolve) => {
@@ -1375,6 +1385,26 @@
                         resolve(blob);
                     }, 'image/png');
                 });
+            }
+
+            /**
+             * Utility function to flip ImageData vertically.
+             * WebGL's origin is bottom-left, while canvas's origin is top-left.
+             */
+            function flipImageDataVertically(imageData) {
+                const { data, width, height } = imageData;
+                const halfHeight = Math.floor(height / 2);
+                for (let y = 0; y < halfHeight; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const topIndex = (y * width + x) * 4;
+                        const bottomIndex = ((height - y - 1) * width + x) * 4;
+                        for (let i = 0; i < 4; i++) {
+                            const temp = data[topIndex + i];
+                            data[topIndex + i] = data[bottomIndex + i];
+                            data[bottomIndex + i] = temp;
+                        }
+                    }
+                }
             }
 
             function initWebGL() {
