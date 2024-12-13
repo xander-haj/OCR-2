@@ -1634,6 +1634,9 @@
                 const imageData = new ImageData(pixels, width, height);
                 offCtx.putImageData(imageData, 0, 0);
 
+                /* ADDED: Ensure preprocessed output is visible in ROI overlay */
+                webglCanvas.style.display = 'block'; /* ADDED */
+
                 return new Promise((resolve) => {
                     offscreen.toBlob((blob) => {
                         resolve(blob);
@@ -1996,6 +1999,8 @@
                 const blob = await getPreprocessedBlobFromROI();
                 if (blob) {
                     await drawToDebugCanvas(blob);
+                    /* ADDED: Show the processed image in the ROI overlay as well */
+                    webglCanvas.style.display = 'block'; /* ADDED */
                 } else {
                     console.warn("Could not update debug viewport. ROI/frame may be invalid.");
                 }
