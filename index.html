@@ -163,7 +163,7 @@
             margin-bottom: 4px;
             display: block;
         }
-        #resolution-select, #camera-select, #workers-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input {
+        #resolution-select, #camera-select, #workers-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input, #config-select {
             width: 100%;
             padding: 8px;
             font-size: 14px;
@@ -177,7 +177,8 @@
         body.dark-theme #workers-select,
         body.dark-theme #frame-skipping-select,
         body.dark-theme #frequency-select,
-        body.dark-theme #confidence-threshold-input {
+        body.dark-theme #confidence-threshold-input,
+        body.dark-theme #config-select {
             background-color: #1e1e1e;
             border: 1px solid #555;
             color: #e0e0e0;
@@ -583,6 +584,25 @@
 
         <div class="menu-content">
             <h2>Settings</h2>
+            <!-- Config Management Section -->
+            <details class="collapsible">
+                <summary>Config Management</summary>
+                <div>
+                    <label for="config-select">Load Configuration:</label>
+                    <select id="config-select">
+                        <option value="">Select Config</option>
+                        <!-- Configuration options will be populated here -->
+                    </select>
+                </div>
+                <div>
+                    <button id="load-config-button">Load Config</button>
+                </div>
+                <div>
+                    <button id="save-config-button">Save Current Config</button>
+                </div>
+            </details>
+
+            <!-- Existing Hardware Settings -->
             <details class="collapsible">
                 <summary>Hardware</summary>
                 <div>
@@ -620,6 +640,7 @@
                 </div>
             </details>
 
+            <!-- Existing Performance Settings -->
             <details class="collapsible">
                 <summary>Performance</summary>
                 <div>
@@ -656,6 +677,7 @@
                 </div>
             </details>
 
+            <!-- Existing WebGL Preprocessing Settings -->
             <details class="collapsible">
                 <summary>WebGL Preprocessing</summary>
                 <content>
@@ -813,6 +835,14 @@
         const roiCanvas = document.createElement('canvas');
         const scaledCanvas = document.createElement('canvas');
         
+        // Configuration Management elements
+        const configSelect = document.getElementById('config-select');
+        const loadConfigButton = document.getElementById('load-config-button');
+        const saveConfigButton = document.getElementById('save-config-button');
+
+        // Predefined list of configuration files
+        const predefinedConfigFiles = ['config1.json', 'config2.json', 'config3.json']; // Add more as needed
+
         // Lazy initialization function for Tesseract workers
         async function initializeTesseract(workersCount) {
             if (workers.length > 0) {
@@ -837,10 +867,31 @@
             // If OCR frequency <2 and we have >1 worker, remove one
             const maxWorkers = parseInt(workersSelect.value);
             if (ocrFrequency > 5 && workers.length < maxWorkers) {
-                // Add a worker (for brevity, not implemented fully here)
+                // Add a worker
+                addWorker();
             } else if (ocrFrequency < 2 && workers.length > 1) {
-                // Remove a worker (not fully implemented)
+                // Remove a worker
+                removeWorker();
             }
+        }
+
+        async function addWorker() {
+            const workerIndex = workers.length + 1;
+            const worker = await Tesseract.createWorker({
+                lang: 'eng',
+                logger: m => console.log(`[Worker ${workerIndex}] ${m.status}: ${Math.round(m.progress * 100)}%`)
+            });
+            await worker.loadLanguage('eng');
+            await worker.initialize('eng');
+            workers.push(worker);
+            console.log(`Worker ${workerIndex} added.`);
+        }
+
+        async function removeWorker() {
+            if (workers.length === 0) return;
+            const worker = workers.pop();
+            await worker.terminate();
+            console.log(`Worker terminated. Remaining workers: ${workers.length}`);
         }
 
         // Initialize WebGL if needed
@@ -1217,7 +1268,7 @@
             const roiCtx = roiCanvas.getContext('2d');
             roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0,0,roiW,roiH);
 
-            const scaleFactor = 2;
+            const scaleFactor = 1.5;
             scaledCanvas.width = roiW * scaleFactor;
             scaledCanvas.height = roiH * scaleFactor;
             const scaledCtx = scaledCanvas.getContext('2d');
@@ -1324,49 +1375,135 @@
             ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
         }
 
-        // Event listeners
-        roiOverlay.addEventListener('click', async () => {
-            if (scanning) {
-                // Focus request logic (not changed for performance)
-                // Just capture and OCR once
-                await captureFrameAndPerformOCR();
-            }
-        });
-        startButton.addEventListener('click', startScanning);
-        stopButton.addEventListener('click', stopScanning);
-        restartButton.addEventListener('click', startScanning);
+        // Configuration Management Functions
 
-        document.getElementById('resolution-select').addEventListener('change', async () => {
-            currentResolution = getSelectedResolution();
-            if (scanning) {
-                await stopScanning();
-                await startScanning();
+        // Populate Configurations Dropdown
+        async function populateConfigurations() {
+            try {
+                configSelect.innerHTML = '<option value="">Select Config</option>';
+                predefinedConfigFiles.forEach(file => {
+                    const option = document.createElement('option');
+                    option.value = file;
+                    option.text = file.replace('.json', '');
+                    configSelect.appendChild(option);
+                });
+            } catch (err) {
+                console.error('Error loading configurations:', err);
             }
-        });
-        document.getElementById('camera-select').addEventListener('change', async () => {
-            selectedCameraId = document.getElementById('camera-select').value;
-            if (selectedCameraId && scanning) {
-                await stopScanning();
-                await startScanning();
-            }
-        });
+        }
 
-        workersSelect.addEventListener('change', adjustWorkers);
-        frameSkippingSelect.addEventListener('change', () => {
-            frameSkipping = parseInt(frameSkippingSelect.value);
-            updateOcrInfo();
-        });
-        frequencySelect.addEventListener('change', () => {
-            ocrFrequency = parseFloat(frequencySelect.value);
-            updateOcrInfo();
-        });
-        confidenceThresholdInput.addEventListener('change', function() {
-            let val = parseInt(this.value, 10);
-            if (isNaN(val)|| val<1) val=1;
-            if (val>100) val=100;
-            this.value = val;
-            confidenceThreshold = val;
-        });
+        // Load Selected Configuration
+        async function loadConfiguration() {
+            const selectedConfig = configSelect.value;
+            if (!selectedConfig) return alert('Please select a configuration to load.');
+
+            try {
+                const response = await fetch(`./configs/${selectedConfig}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const configData = await response.json();
+
+                // Apply configData to UI controls
+                document.getElementById('resolution-select').value = configData.resolution || '';
+                document.getElementById('camera-select').value = configData.camera || '';
+                document.getElementById('workers-select').value = configData.workers || '1';
+                document.getElementById('frame-skipping-select').value = configData.frameSkipping || '1';
+                document.getElementById('frequency-select').value = configData.frequency || '1';
+                document.getElementById('confidence-threshold-input').value = configData.confidenceThreshold || '60';
+
+                // Preprocessing Options
+                const preprocessing = configData.preprocessing || {};
+                document.getElementById('enableGrayscale').checked = preprocessing.enableGrayscale || false;
+                document.getElementById('grayscaleSlider').value = preprocessing.grayscale || 100;
+
+                document.getElementById('enableDenoise').checked = preprocessing.enableDenoise || false;
+                document.getElementById('denoiseSlider').value = preprocessing.denoise || 50;
+
+                document.getElementById('enableSharpen').checked = preprocessing.enableSharpen || false;
+                document.getElementById('sharpenSlider').value = preprocessing.sharpen || 50;
+
+                document.getElementById('enableBrightness').checked = preprocessing.enableBrightness || false;
+                document.getElementById('brightnessSlider').value = preprocessing.brightness || 50;
+
+                document.getElementById('enableContrast').checked = preprocessing.enableContrast || false;
+                document.getElementById('contrastSlider').value = preprocessing.contrast || 50;
+
+                document.getElementById('enableClarity').checked = preprocessing.enableClarity || false;
+                document.getElementById('claritySlider').value = preprocessing.clarity || 50;
+
+                document.getElementById('enableHighlights').checked = preprocessing.enableHighlights || false;
+                document.getElementById('highlightsSlider').value = preprocessing.highlights || 50;
+
+                // Update internal variables
+                frameSkipping = parseInt(frameSkippingSelect.value);
+                ocrFrequency = parseFloat(frequencySelect.value);
+                confidenceThreshold = parseInt(confidenceThresholdInput.value, 10);
+                updateOcrInfo();
+
+                alert('Configuration loaded successfully.');
+            } catch (err) {
+                console.error('Error loading configuration:', err);
+                alert('Failed to load the selected configuration.');
+            }
+        }
+
+        // Save Current Configuration
+        function saveConfiguration() {
+            const configData = {
+                resolution: document.getElementById('resolution-select').value,
+                camera: document.getElementById('camera-select').value,
+                workers: document.getElementById('workers-select').value,
+                frameSkipping: document.getElementById('frame-skipping-select').value,
+                frequency: document.getElementById('frequency-select').value,
+                confidenceThreshold: document.getElementById('confidence-threshold-input').value,
+                preprocessing: {
+                    enableGrayscale: document.getElementById('enableGrayscale').checked,
+                    grayscale: document.getElementById('grayscaleSlider').value,
+                    enableDenoise: document.getElementById('enableDenoise').checked,
+                    denoise: document.getElementById('denoiseSlider').value,
+                    enableSharpen: document.getElementById('enableSharpen').checked,
+                    sharpen: document.getElementById('sharpenSlider').value,
+                    enableBrightness: document.getElementById('enableBrightness').checked,
+                    brightness: document.getElementById('brightnessSlider').value,
+                    enableContrast: document.getElementById('enableContrast').checked,
+                    contrast: document.getElementById('contrastSlider').value,
+                    enableClarity: document.getElementById('enableClarity').checked,
+                    clarity: document.getElementById('claritySlider').value,
+                    enableHighlights: document.getElementById('enableHighlights').checked,
+                    highlights: document.getElementById('highlightsSlider').value
+                }
+            };
+
+            const configName = prompt('Enter a name for the configuration (e.g., "config4"):');
+            if (!configName) return;
+
+            // Validate configName to prevent invalid filenames
+            const validName = configName.replace(/[^a-z0-9_\-]/gi, '_').toLowerCase();
+            if (validName.length === 0) {
+                alert('Invalid configuration name.');
+                return;
+            }
+
+            const blob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${validName}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert('Configuration saved as a JSON file. To reuse it, upload it to the /configs directory in the repository and refresh the page.');
+        }
+
+        // Event Listeners for Config Management
+        loadConfigButton.addEventListener('click', loadConfiguration);
+        saveConfigButton.addEventListener('click', saveConfiguration);
+
+        // Populate configurations on page load
+        populateConfigurations();
 
         // Side menu logic
         (function(){
@@ -1518,7 +1655,7 @@
 
             debugCanvas.width=scaledCanvas.width;
             debugCanvas.height=scaledCanvas.height;
-            debugCtx.clearRect(0,0,debugCanvas.width,debugCanvas.height);
+            debugCtx.clearRect(0,0,debugCanvas.width, debugCanvas.height);
             const img=await createImageBitmap(preprocessedBlob);
             debugCtx.drawImage(img,0,0);
 
@@ -1583,6 +1720,51 @@
             }
             requestAnimationFrame(updateFPS);
         })();
+
+        // Event listeners
+        roiOverlay.addEventListener('click', async () => {
+            if (scanning) {
+                // Focus request logic (not changed for performance)
+                // Just capture and OCR once
+                await captureFrameAndPerformOCR();
+            }
+        });
+        startButton.addEventListener('click', startScanning);
+        stopButton.addEventListener('click', stopScanning);
+        restartButton.addEventListener('click', startScanning);
+
+        document.getElementById('resolution-select').addEventListener('change', async () => {
+            currentResolution = getSelectedResolution();
+            if (scanning) {
+                await stopScanning();
+                await startScanning();
+            }
+        });
+        document.getElementById('camera-select').addEventListener('change', async () => {
+            selectedCameraId = document.getElementById('camera-select').value;
+            if (selectedCameraId && scanning) {
+                await stopScanning();
+                await startScanning();
+            }
+        });
+
+        workersSelect.addEventListener('change', adjustWorkers);
+        frameSkippingSelect.addEventListener('change', () => {
+            frameSkipping = parseInt(frameSkippingSelect.value);
+            updateOcrInfo();
+        });
+        frequencySelect.addEventListener('change', () => {
+            ocrFrequency = parseFloat(frequencySelect.value);
+            updateOcrInfo();
+        });
+        confidenceThresholdInput.addEventListener('change', function() {
+            let val = parseInt(this.value, 10);
+            if (isNaN(val)|| val<1) val=1;
+            if (val>100) val=100;
+            this.value = val;
+            confidenceThreshold = val;
+        });
+
     </script>
 </body>
-</html>
+    </html>
