@@ -1,3 +1,8 @@
-[
-    "safe.json"
-]
+{
+    "configurations": [
+        "config1.json",
+        "config2.json",
+        "config3.json",
+        "safe.json"
+    ]
+}
