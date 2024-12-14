@@ -149,15 +149,14 @@
         .collapsible summary::-webkit-details-marker {
             display: none;
         }
-        .collapsible content {
+        .collapsible div {
             padding: 10px 15px;
-            display: none;
+            display: flex;
             flex-direction: column;
             gap: 15px;
         }
-        .collapsible[open] content {
-            display: flex;
-        }
+        /* Removed .collapsible content and replaced with .collapsible div */
+
         #side-menu label {
             font-size: 16px;
             margin-bottom: 4px;
@@ -576,6 +575,41 @@
             width: 100%;
             margin-top: 5px;
         }
+
+        /* Config Management Buttons */
+        #load-config-button, #save-config-button {
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.3s ease, opacity 0.3s ease;
+            background-color: #3498db;
+            color: #fff;
+        }
+        #load-config-button:hover, #save-config-button:hover {
+            background-color: #2980b9;
+        }
+        #load-config-button:disabled, #save-config-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Config Management Select */
+        #config-select {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 14px;
+            width: 100%;
+        }
+        body.dark-theme #config-select {
+            background-color: #1e1e1e;
+            border: 1px solid #555;
+            color: #e0e0e0;
+        }
     </style>
 </head>
 <body>
@@ -680,7 +714,7 @@
             <!-- Existing WebGL Preprocessing Settings -->
             <details class="collapsible">
                 <summary>WebGL Preprocessing</summary>
-                <content>
+                <div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableGrayscale">Enable Grayscale</label>
                         <input type="range" id="grayscaleSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
@@ -709,7 +743,7 @@
                         <label><input type="checkbox" id="enableHighlights">Enable Highlights</label>
                         <input type="range" id="highlightsSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
                     </div>
-                </content>
+                </div>
             </details>
         </div>
 
@@ -837,9 +871,6 @@
             const configSelect = document.getElementById('config-select');
             const loadConfigButton = document.getElementById('load-config-button');
             const saveConfigButton = document.getElementById('save-config-button');
-
-            // Predefined list of configuration files
-            // Removed predefinedConfigFiles array to enable dynamic detection via index.json
 
             // Lazy initialization function for Tesseract workers
             async function initializeTesseract(workersCount) {
