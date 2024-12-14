@@ -1,1 +1,24 @@
-
+{
+  "resolution": "1280x720",
+  "camera": "9c7fa6ed3d5c26816bb5e06b1a4976b16b2e985a23e25585ad9371b029e8032a",
+  "workers": "1",
+  "frameSkipping": "1",
+  "frequency": "1",
+  "confidenceThreshold": "60",
+  "preprocessing": {
+    "enableGrayscale": true,
+    "grayscale": "100",
+    "enableDenoise": false,
+    "denoise": "50",
+    "enableSharpen": false,
+    "sharpen": "76",
+    "enableBrightness": false,
+    "brightness": "50",
+    "enableContrast": false,
+    "contrast": "50",
+    "enableClarity": false,
+    "clarity": "50",
+    "enableHighlights": true,
+    "highlights": "50"
+  }
+}
