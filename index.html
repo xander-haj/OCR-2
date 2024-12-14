@@ -360,12 +360,27 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-        #load-config-button, #save-config-button, #init-scanner-button {
+        #load-config-button {
             background-color: #3498db;
             color: #fff;
         }
-        #load-config-button:hover, #save-config-button:hover, #init-scanner-button:hover {
+        #load-config-button:hover:not(:disabled) {
             background-color: #2980b9;
+        }
+        #save-config-button {
+            background-color: #9b59b6;
+            color: #fff;
+        }
+        #save-config-button:hover:not(:disabled) {
+            background-color: #8e44ad;
+        }
+        /* Added Init Scanner Button Styles */
+        #init-scanner-button {
+            background-color: #f1c40f;
+            color: #fff;
+        }
+        #init-scanner-button:hover:not(:disabled) {
+            background-color: #d4ac0d;
         }
 
         #output {
@@ -583,25 +598,6 @@
             width: 100%;
             margin-top: 5px;
         }
-
-        /* Additional Styles for Configuration Management Buttons */
-        #load-config-button, #save-config-button, #init-scanner-button {
-            padding: 8px 16px;
-            font-size: 14px;
-            cursor: pointer;
-            border: none;
-            border-radius: 4px;
-            font-weight: 600;
-            background-color: #3498db;
-            color: #fff;
-            transition: background-color 0.3s ease;
-        }
-        #load-config-button:hover, #save-config-button:hover, #init-scanner-button:hover {
-            background-color: #2980b9;
-        }
-
-        /* Styles for Init Scanner Button */
-        /* Removed from side-menu and placed in main controls */
     </style>
 </head>
 <body>
@@ -610,7 +606,7 @@
 
         <div class="menu-content">
             <h2>Settings</h2>
-            <!-- Hardware Settings -->
+            <!-- Existing Settings Sections -->
             <details class="collapsible">
                 <summary>Hardware</summary>
                 <div>
@@ -648,7 +644,6 @@
                 </div>
             </details>
 
-            <!-- Performance Settings -->
             <details class="collapsible">
                 <summary>Performance</summary>
                 <div>
@@ -685,7 +680,6 @@
                 </div>
             </details>
 
-            <!-- WebGL Preprocessing Settings -->
             <details class="collapsible">
                 <summary>WebGL Preprocessing</summary>
                 <content>
@@ -735,9 +729,13 @@
                 <div>
                     <button id="save-config-button">Save Current Config</button>
                 </div>
-                <!-- Removed Init Scanner Button from here -->
+                <!-- Added Init Scanner Button -->
+                <div>
+                    <button id="init-scanner-button">Init Scanner</button>
+                </div>
             </details>
         </div>
+        <button id="debug-button" class="debug-button">Show Debug</button>
 
         <div class="overlay" id="menu-overlay"></div>
         <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
@@ -781,7 +779,7 @@
                 <div class="buttons-container">
                     <button id="start-button">Start Scanner</button>
                     <button id="stop-button" disabled>Stop Scanner</button>
-                    <button id="init-scanner-button">Init Scanner</button> <!-- Moved Init Scanner Button to main controls -->
+                    <button id="init-scanner-button">Init Scanner</button> <!-- Added Init Scanner Button -->
                 </div>
                 <button id="restart-button">Restart Scanner</button>
                 <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
@@ -859,15 +857,16 @@
             const enableHighlights = document.getElementById('enableHighlights');
             const highlightsSlider = document.getElementById('highlightsSlider');
 
+            const videoCanvas = document.createElement('canvas');
+            const roiCanvas = document.createElement('canvas');
+            const scaledCanvas = document.createElement('canvas');
+            
+            // Configuration Management Elements
             const configSelect = document.getElementById('config-select');
             const loadConfigButton = document.getElementById('load-config-button');
             const saveConfigButton = document.getElementById('save-config-button');
             const initScannerButton = document.getElementById('init-scanner-button'); // Init Scanner Button
 
-            const videoCanvas = document.createElement('canvas');
-            const roiCanvas = document.createElement('canvas');
-            const scaledCanvas = document.createElement('canvas');
-            
             // Lazy initialization function for Tesseract workers
             async function initializeTesseract(workersCount) {
                 if (workers.length > 0) {
@@ -893,14 +892,32 @@
                 const maxWorkers = parseInt(workersSelect.value);
                 if (ocrFrequency > 5 && workers.length < maxWorkers) {
                     // Add a worker
-                    initializeTesseract(workers.length + 1);
+                    addWorker();
                 } else if (ocrFrequency < 2 && workers.length > 1) {
                     // Remove a worker
-                    if (workers.length > 1) {
-                        const workerToTerminate = workers.pop();
-                        workerToTerminate.terminate();
-                    }
+                    removeWorker();
                 }
+            }
+
+            // Function to add a Tesseract worker
+            async function addWorker() {
+                const workerNumber = workers.length + 1;
+                const worker = await Tesseract.createWorker({
+                    lang: 'eng',
+                    logger: m => console.log(`[Worker ${workerNumber}] ${m.status}: ${Math.round(m.progress * 100)}%`)
+                });
+                await worker.loadLanguage('eng');
+                await worker.initialize('eng');
+                workers.push(worker);
+                console.log(`Worker ${workerNumber} added.`);
+            }
+
+            // Function to remove a Tesseract worker
+            async function removeWorker() {
+                if (workers.length === 0) return;
+                const worker = workers.pop();
+                await worker.terminate();
+                console.log(`A worker has been removed. Total workers: ${workers.length}`);
             }
 
             // Initialize WebGL if needed
@@ -1128,9 +1145,8 @@
                     videoConstraints.frameRate = { ideal: adjustedFrameRate, max: 30 };
 
                     if (resolution) {
-                        const [width, height] = resolution.split('x').map(Number);
-                        videoConstraints.width = { exact: width };
-                        videoConstraints.height = { exact: height };
+                        videoConstraints.width = { exact: resolution.width };
+                        videoConstraints.height = { exact: resolution.height };
                     } else {
                         videoConstraints.width = { ideal: 1280 };
                         videoConstraints.height = { ideal: 720 };
@@ -1326,7 +1342,7 @@
             }
 
             async function preprocessWithWebGL(sourceCanvas) {
-                initWebGL();
+                // WebGL is already initialized in the global scope
                 const width = sourceCanvas.width;
                 const height = sourceCanvas.height;
 
@@ -1399,175 +1415,6 @@
             stopButton.addEventListener('click', stopScanning);
             restartButton.addEventListener('click', startScanning);
             initScannerButton.addEventListener('click', initScanner); // Event listener for Init Scanner button
-
-            document.getElementById('resolution-select').addEventListener('change', async () => {
-                currentResolution = getSelectedResolution();
-                if (scanning) {
-                    await stopScanning();
-                    await startScanning();
-                }
-            });
-            document.getElementById('camera-select').addEventListener('change', async () => {
-                selectedCameraId = document.getElementById('camera-select').value;
-                if (selectedCameraId && scanning) {
-                    await stopScanning();
-                    await startScanning();
-                }
-            });
-
-            workersSelect.addEventListener('change', adjustWorkers);
-            frameSkippingSelect.addEventListener('change', () => {
-                frameSkipping = parseInt(frameSkippingSelect.value);
-                updateOcrInfo();
-            });
-            frequencySelect.addEventListener('change', () => {
-                ocrFrequency = parseFloat(frequencySelect.value);
-                updateOcrInfo();
-            });
-            confidenceThresholdInput.addEventListener('change', function() {
-                let val = parseInt(this.value, 10);
-                if (isNaN(val)|| val<1) val=1;
-                if (val>100) val=100;
-                this.value = val;
-                confidenceThreshold = val;
-            });
-
-            // Configuration Management System Implementation
-
-            // Populate Configurations on Page Load
-            document.addEventListener('DOMContentLoaded', populateConfigurations);
-
-            async function populateConfigurations() {
-                try {
-                    const response = await fetch('./configs/index.json'); // Fetch index.json
-                    const data = await response.json();
-                    const configurations = data.configurations;
-
-                    configSelect.innerHTML = '<option value="">Select Config</option>';
-                    configurations.forEach(file => {
-                        const option = document.createElement('option');
-                        option.value = file;
-                        option.text = file.replace('.json', ''); // Display name without .json
-                        configSelect.appendChild(option);
-                    });
-                } catch (err) {
-                    console.error('Error loading configuration index:', err);
-                    showError('Failed to load configuration index.');
-                }
-            }
-
-            async function loadConfiguration() {
-                const selectedConfig = configSelect.value; // Get selected configuration
-                if (!selectedConfig) return alert('Please select a configuration to load.');
-
-                try {
-                    const response = await fetch(`./configs/${selectedConfig}`); // Fetch the JSON file
-                    const configData = await response.json();
-
-                    // Retrieve available cameras with labels
-                    const devices = await navigator.mediaDevices.enumerateDevices();
-                    cameras = devices.filter(d => d.kind === 'videoinput');
-
-                    // Find the camera with the matching label
-                    const savedCameraLabel = configData.camera;
-                    const matchingCamera = cameras.find(cam => cam.label === savedCameraLabel);
-                    if (matchingCamera) {
-                        document.getElementById('camera-select').value = matchingCamera.deviceId;
-                    } else {
-                        alert('The configured camera is not available. Please select a different camera.');
-                        // Optionally, allow the user to proceed without setting the camera
-                    }
-
-                    // Apply other configuration settings
-                    document.getElementById('resolution-select').value = configData.resolution || '';
-                    document.getElementById('workers-select').value = configData.workers || '1';
-                    document.getElementById('frame-skipping-select').value = configData.frameSkipping || '1';
-                    document.getElementById('frequency-select').value = configData.frequency || '1';
-                    document.getElementById('confidence-threshold-input').value = configData.confidenceThreshold || '60';
-                    confidenceThreshold = configData.confidenceThreshold || 60;
-
-                    // Apply preprocessing settings
-                    const preprocessing = configData.preprocessing || {};
-                    document.getElementById('enableGrayscale').checked = preprocessing.enableGrayscale || false;
-                    document.getElementById('grayscaleSlider').value = preprocessing.grayscale || 100;
-
-                    document.getElementById('enableDenoise').checked = preprocessing.enableDenoise || false;
-                    document.getElementById('denoiseSlider').value = preprocessing.denoise || 50;
-
-                    document.getElementById('enableSharpen').checked = preprocessing.enableSharpen || false;
-                    document.getElementById('sharpenSlider').value = preprocessing.sharpen || 50;
-
-                    document.getElementById('enableBrightness').checked = preprocessing.enableBrightness || false;
-                    document.getElementById('brightnessSlider').value = preprocessing.brightness || 50;
-
-                    document.getElementById('enableContrast').checked = preprocessing.enableContrast || false;
-                    document.getElementById('contrastSlider').value = preprocessing.contrast || 50;
-
-                    document.getElementById('enableClarity').checked = preprocessing.enableClarity || false;
-                    document.getElementById('claritySlider').value = preprocessing.clarity || 50;
-
-                    document.getElementById('enableHighlights').checked = preprocessing.enableHighlights || false;
-                    document.getElementById('highlightsSlider').value = preprocessing.highlights || 50;
-
-                    updateOcrInfo();
-
-                    alert('Configuration loaded successfully.');
-                } catch (err) {
-                    console.error('Error loading configuration:', err);
-                    showError('Failed to load the selected configuration.');
-                }
-            }
-
-            function saveConfiguration() {
-                const cameraSelect = document.getElementById('camera-select');
-                const selectedCameraId = cameraSelect.value;
-                const selectedCamera = cameras.find(cam => cam.deviceId === selectedCameraId);
-                const cameraLabel = selectedCamera ? selectedCamera.label : '';
-
-                const configData = {
-                    resolution: document.getElementById('resolution-select').value,
-                    camera: cameraLabel, // Using label instead of deviceId
-                    workers: document.getElementById('workers-select').value,
-                    frameSkipping: document.getElementById('frame-skipping-select').value,
-                    frequency: document.getElementById('frequency-select').value,
-                    confidenceThreshold: document.getElementById('confidence-threshold-input').value,
-                    preprocessing: {
-                        enableGrayscale: document.getElementById('enableGrayscale').checked,
-                        grayscale: document.getElementById('grayscaleSlider').value,
-                        enableDenoise: document.getElementById('enableDenoise').checked,
-                        denoise: document.getElementById('denoiseSlider').value,
-                        enableSharpen: document.getElementById('enableSharpen').checked,
-                        sharpen: document.getElementById('sharpenSlider').value,
-                        enableBrightness: document.getElementById('enableBrightness').checked,
-                        brightness: document.getElementById('brightnessSlider').value,
-                        enableContrast: document.getElementById('enableContrast').checked,
-                        contrast: document.getElementById('contrastSlider').value,
-                        enableClarity: document.getElementById('enableClarity').checked,
-                        clarity: document.getElementById('claritySlider').value,
-                        enableHighlights: document.getElementById('enableHighlights').checked,
-                        highlights: document.getElementById('highlightsSlider').value
-                    }
-                };
-
-                const configName = prompt('Enter a name for the configuration (e.g., "safe"):'); // Prompt for custom name
-                if (!configName) return;
-
-                const blob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${configName}.json`; // Save with custom name
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                alert('Configuration saved as a JSON file. Please upload it to the /configs directory and update index.json to reuse.');
-            }
-
-            // Event Listeners for Configuration Management
-            loadConfigButton.addEventListener('click', loadConfiguration);
-            saveConfigButton.addEventListener('click', saveConfiguration);
 
             // Side menu logic
             (function(){
@@ -1644,7 +1491,8 @@
                 const blob = new Blob([logsText],{type:'text/plain'});
                 const url = URL.createObjectURL(blob);
                 const a=document.createElement('a');
-                a.href=url; a.download='logs.txt';
+                a.href=url;
+                a.download='logs.txt';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -1729,33 +1577,216 @@
                 scanning=true;
             }
 
-            (async function populateCameras(){
+            // Configuration Management Functions
+
+            // Fetch configurations from index.json
+            async function populateConfigurations() {
                 try {
-                    const cameraSelect=document.getElementById('camera-select');
-                    cameraSelect.innerHTML='';
-                    const defaultOption=document.createElement('option');
-                    defaultOption.value='';
-                    defaultOption.text='Select Camera';
-                    cameraSelect.appendChild(defaultOption);
+                    const response = await fetch('./configs/index.json');
+                    const data = await response.json();
+                    const configurations = data.configurations;
+
+                    configSelect.innerHTML = '<option value="">Select Config</option>';
+                    configurations.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file;
+                        option.text = file.replace('.json', '');
+                        configSelect.appendChild(option);
+                    });
+                } catch (err) {
+                    console.error('Error loading configuration index:', err);
+                    alert('Failed to load configurations.');
+                }
+            }
+
+            // Fetch cameras and populate the cameras array
+            async function populateCameras() {
+                try {
+                    const cameraSelect = document.getElementById('camera-select');
+                    cameraSelect.innerHTML = '<option value="">Select Camera</option>';
                     const devices = await navigator.mediaDevices.enumerateDevices();
-                    cameras = devices.filter(d=>d.kind==='videoinput');
-                    cameras.forEach(camera=>{
-                        const option=document.createElement('option');
-                        option.value=camera.deviceId;
-                        option.text=camera.label||`Camera ${cameraSelect.length}`;
+                    cameras = devices.filter(d => d.kind === 'videoinput'); // Populate global cameras array
+                    cameras.forEach((camera, index) => {
+                        const option = document.createElement('option');
+                        option.value = camera.deviceId;
+                        option.text = camera.label || `Camera ${index + 1}`;
                         cameraSelect.appendChild(option);
                     });
-                    if(cameras.length===0){
-                        const option=document.createElement('option');
-                        option.value='';
-                        option.text='No cameras found';
+                    if (cameras.length === 0) {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.text = 'No cameras found';
                         cameraSelect.appendChild(option);
                     }
                 } catch (err) {
-                    console.error('Failed to populate cameras:',err);
+                    console.error('Failed to populate cameras:', err);
                     showError('Failed to retrieve camera devices.');
                 }
+            }
+
+            // Load the selected configuration
+            async function loadConfiguration() {
+                const selectedConfig = configSelect.value;
+                if (!selectedConfig) return alert('Please select a configuration to load.');
+
+                try {
+                    const response = await fetch(`./configs/${selectedConfig}`);
+                    const configData = await response.json();
+
+                    // Apply config data to the UI controls
+                    document.getElementById('resolution-select').value = configData.resolution || '';
+                    // Find the camera by label
+                    const savedCameraLabel = configData.camera;
+                    const matchingCamera = cameras.find(cam => cam.label === savedCameraLabel);
+                    if (matchingCamera) {
+                        document.getElementById('camera-select').value = matchingCamera.deviceId;
+                    } else {
+                        alert('The configured camera is not available. Please select a different camera.');
+                        // Optionally, allow the user to proceed without setting the camera
+                    }
+                    document.getElementById('workers-select').value = configData.workers || '1';
+                    document.getElementById('frame-skipping-select').value = configData.frameSkipping || '1';
+                    document.getElementById('frequency-select').value = configData.frequency || '1';
+                    document.getElementById('confidence-threshold-input').value = configData.confidenceThreshold || '60';
+
+                    // Apply preprocessing options
+                    const preprocessing = configData.preprocessing || {};
+                    document.getElementById('enableGrayscale').checked = preprocessing.enableGrayscale || false;
+                    document.getElementById('grayscaleSlider').value = preprocessing.grayscale || 100;
+
+                    document.getElementById('enableDenoise').checked = preprocessing.enableDenoise || false;
+                    document.getElementById('denoiseSlider').value = preprocessing.denoise || 50;
+
+                    document.getElementById('enableSharpen').checked = preprocessing.enableSharpen || false;
+                    document.getElementById('sharpenSlider').value = preprocessing.sharpen || 50;
+
+                    document.getElementById('enableBrightness').checked = preprocessing.enableBrightness || false;
+                    document.getElementById('brightnessSlider').value = preprocessing.brightness || 50;
+
+                    document.getElementById('enableContrast').checked = preprocessing.enableContrast || false;
+                    document.getElementById('contrastSlider').value = preprocessing.contrast || 50;
+
+                    document.getElementById('enableClarity').checked = preprocessing.enableClarity || false;
+                    document.getElementById('claritySlider').value = preprocessing.clarity || 50;
+
+                    document.getElementById('enableHighlights').checked = preprocessing.enableHighlights || false;
+                    document.getElementById('highlightsSlider').value = preprocessing.highlights || 50;
+
+                    // Adjust workers based on loaded config
+                    adjustWorkers();
+                    updateOcrInfo();
+
+                    alert('Configuration loaded successfully.');
+                } catch (err) {
+                    console.error('Error loading configuration:', err);
+                    alert('Failed to load the selected configuration.');
+                }
+            }
+
+            // Save the current settings as a JSON file
+            function saveConfiguration() {
+                const cameraSelect = document.getElementById('camera-select');
+                const selectedCameraId = cameraSelect.value;
+                const selectedCamera = cameras.find(cam => cam.deviceId === selectedCameraId);
+                const cameraLabel = selectedCamera ? selectedCamera.label : '';
+
+                const configData = {
+                    resolution: document.getElementById('resolution-select').value,
+                    camera: cameraLabel, // Save camera label instead of deviceId
+                    workers: document.getElementById('workers-select').value,
+                    frameSkipping: document.getElementById('frame-skipping-select').value,
+                    frequency: document.getElementById('frequency-select').value,
+                    confidenceThreshold: document.getElementById('confidence-threshold-input').value,
+                    preprocessing: {
+                        enableGrayscale: document.getElementById('enableGrayscale').checked,
+                        grayscale: document.getElementById('grayscaleSlider').value,
+                        enableDenoise: document.getElementById('enableDenoise').checked,
+                        denoise: document.getElementById('denoiseSlider').value,
+                        enableSharpen: document.getElementById('enableSharpen').checked,
+                        sharpen: document.getElementById('sharpenSlider').value,
+                        enableBrightness: document.getElementById('enableBrightness').checked,
+                        brightness: document.getElementById('brightnessSlider').value,
+                        enableContrast: document.getElementById('enableContrast').checked,
+                        contrast: document.getElementById('contrastSlider').value,
+                        enableClarity: document.getElementById('enableClarity').checked,
+                        clarity: document.getElementById('claritySlider').value,
+                        enableHighlights: document.getElementById('enableHighlights').checked,
+                        highlights: document.getElementById('highlightsSlider').value
+                    }
+                };
+
+                const configName = prompt('Enter a name for the configuration (e.g., "config1"):');
+                if (!configName) return;
+
+                // Validate config name
+                const validName = configName.trim().replace(/[^a-zA-Z0-9_-]/g, '');
+                if (validName.length === 0) {
+                    alert('Invalid configuration name.');
+                    return;
+                }
+
+                const blob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${validName}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                alert('Configuration saved as a JSON file. Please upload it to the /configs directory to reuse.');
+            }
+
+            // Main Initialization Function
+            (async function initializeApp(){
+                // Populate cameras first
+                await populateCameras();
+
+                // Then populate configurations
+                await populateConfigurations();
             })();
+
+            // Event listener to load configurations
+            loadConfigButton.addEventListener('click', loadConfiguration);
+
+            // Event listener for save configuration button
+            saveConfigButton.addEventListener('click', saveConfiguration);
+
+            // Event listener for resolution change
+            document.getElementById('resolution-select').addEventListener('change', async () => {
+                currentResolution = getSelectedResolution();
+                if (scanning) {
+                    await stopScanning();
+                    await startScanning();
+                }
+            });
+
+            // Event listener for camera selection change
+            document.getElementById('camera-select').addEventListener('change', async () => {
+                selectedCameraId = document.getElementById('camera-select').value;
+                if (selectedCameraId && scanning) {
+                    await stopScanning();
+                    await startScanning();
+                }
+            });
+
+            workersSelect.addEventListener('change', adjustWorkers);
+            frameSkippingSelect.addEventListener('change', () => {
+                frameSkipping = parseInt(frameSkippingSelect.value);
+                updateOcrInfo();
+            });
+            frequencySelect.addEventListener('change', () => {
+                ocrFrequency = parseFloat(frequencySelect.value);
+                updateOcrInfo();
+            });
+            confidenceThresholdInput.addEventListener('change', function() {
+                let val = parseInt(this.value, 10);
+                if (isNaN(val) || val < 1) val = 1;
+                if (val > 100) val = 100;
+                this.value = val;
+                confidenceThreshold = val;
+            });
 
             window.addEventListener('beforeunload', async ()=>{
                 if(stream) {
@@ -1791,63 +1822,92 @@
                 try {
                     // Request camera permissions
                     await navigator.mediaDevices.getUserMedia({ video: true });
-                    alert('Camera permissions granted. The page will now reload to initialize the scanner.');
-                    // Reload the page to populate camera labels correctly
-                    location.reload();
+                    alert('Camera permissions granted. The scanner is now initialized.');
+                    // Optionally, you can automatically start scanning after initialization
                 } catch (err) {
                     console.error('Camera permissions denied:', err);
                     showError('Camera permissions are required to initialize the scanner.');
                 }
             }
 
-            // Function to check camera permissions and control "Init Scanner" button visibility
-            async function checkCameraPermissions() {
-                try {
-                    const permissionStatus = await navigator.permissions.query({ name: 'camera' });
-                    if (permissionStatus.state === 'granted') {
-                        // Permissions are already granted
-                        document.getElementById('init-scanner-button').style.display = 'none';
-                        // Show Start and Stop buttons after permissions are granted
-                        document.getElementById('start-button').style.display = 'inline-block';
-                        document.getElementById('stop-button').style.display = 'inline-block';
+            // Debug console visibility toggle
+            (function(){
+                const debugButton = document.getElementById('debug-button');
+                const debugCanvas = document.getElementById('debugCanvas');
+                const debugConsole = document.getElementById('debugConsole');
+                const debugControls = document.getElementById('debugControls');
+                debugCanvas.style.display='none';
+                debugConsole.style.display='none';
+                debugControls.style.display='none';
+                let isDebugVisible=false;
+                debugButton.addEventListener('click',function(){
+                    isDebugVisible=!isDebugVisible;
+                    if(isDebugVisible){
+                        debugCanvas.style.display='block';
+                        debugConsole.style.display='block';
+                        debugControls.style.display='block';
+                        debugButton.innerText='Hide Debug';
                     } else {
-                        // Permissions are not granted
-                        document.getElementById('init-scanner-button').style.display = 'block';
-                        // Hide Start and Stop buttons to prevent usage before initialization
-                        document.getElementById('start-button').style.display = 'none';
-                        document.getElementById('stop-button').style.display = 'none';
-                        document.getElementById('restart-button').style.display = 'none';
+                        debugCanvas.style.display='none';
+                        debugConsole.style.display='none';
+                        debugControls.style.display='none';
+                        debugButton.innerText='Show Debug';
                     }
+                });
+            })();
 
-                    // Listen for permission changes
-                    permissionStatus.onchange = function() {
-                        if (this.state === 'granted') {
-                            document.getElementById('init-scanner-button').style.display = 'none';
-                            // Show Start and Stop buttons after permissions are granted
-                            document.getElementById('start-button').style.display = 'inline-block';
-                            document.getElementById('stop-button').style.display = 'inline-block';
-                        } else {
-                            document.getElementById('init-scanner-button').style.display = 'block';
-                            document.getElementById('start-button').style.display = 'none';
-                            document.getElementById('stop-button').style.display = 'none';
-                            document.getElementById('restart-button').style.display = 'none';
-                        }
-                    };
-                } catch (err) {
-                    console.warn('Permissions API not supported, defaulting to showing "Init Scanner" button.');
-                    // If Permissions API is not supported, default to showing "Init Scanner" button
-                    document.getElementById('init-scanner-button').style.display = 'block';
-                    // Hide Start and Stop buttons to prevent usage before initialization
-                    document.getElementById('start-button').style.display = 'none';
-                    document.getElementById('stop-button').style.display = 'none';
-                    document.getElementById('restart-button').style.display = 'none';
+            // Function to capture frame and perform OCR
+            async function captureFrameAndPerformOCR() {
+                if(!scanning) return;
+                // Just one-off capture
+                scanning = false;
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+                videoCanvas.width = videoWidth;
+                videoCanvas.height= videoHeight;
+                const ctx = videoCanvas.getContext('2d');
+                ctx.drawImage(video,0,0,videoWidth,videoHeight);
+
+                const overlayRect = roiOverlay.getBoundingClientRect();
+                const videoRect = video.getBoundingClientRect();
+                const scaleX = videoWidth/videoRect.width;
+                const scaleY = videoHeight/videoRect.height;
+                const roiX=(overlayRect.left - videoRect.left)*scaleX;
+                const roiY=(overlayRect.top - videoRect.top)*scaleY;
+                const roiW=overlayRect.width*scaleX;
+                const roiH=overlayRect.height*scaleY;
+                if(roiX<0||roiY<0||(roiX+roiW)>videoWidth||(roiY+roiH)>videoHeight){
+                    showError('ROI out of frame bounds');
+                    scanning=false;
+                    return;
                 }
-            }
 
-            // Call checkCameraPermissions on page load
-            document.addEventListener('DOMContentLoaded', () => {
-                checkCameraPermissions();
-            });
+                roiCanvas.width=roiW;
+                roiCanvas.height=roiH;
+                const roiCtx=roiCanvas.getContext('2d');
+                roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH,0,0,roiW,roiH);
+
+                const scaleFactor=1.5;
+                scaledCanvas.width=roiW*scaleFactor;
+                scaledCanvas.height=roiH*scaleFactor;
+                const scaledCtx=scaledCanvas.getContext('2d');
+                scaledCtx.imageSmoothingEnabled=true;
+                scaledCtx.imageSmoothingQuality='high';
+                scaledCtx.drawImage(roiCanvas,0,0,scaledCanvas.width,scaledCanvas.height);
+
+                const preprocessedBlob=await preprocessWithWebGL(scaledCanvas);
+
+                debugCanvas.width=scaledCanvas.width;
+                debugCanvas.height=scaledCanvas.height;
+                debugCtx.clearRect(0,0,debugCanvas.width, debugCanvas.height);
+                const img=await createImageBitmap(preprocessedBlob);
+                debugCtx.drawImage(img,0,0);
+
+                if(preprocessedBlob){
+                    await performOCR(preprocessedBlob);
+                }
+                scanning=true;
+            }
         </script>
     </body>
-    </html>
+</html>
