@@ -1495,9 +1495,11 @@
         }
 
         function saveConfiguration() {
+            const cameraSelect = document.getElementById('camera-select');
+            const cameraLabel = cameraSelect.options[cameraSelect.selectedIndex].text;
             const configData = {
                 resolution: document.getElementById('resolution-select').value,
-                camera: document.getElementById('camera-select').value,
+                camera: cameraLabel !== 'Select Camera' ? cameraLabel : '',
                 workers: document.getElementById('workers-select').value,
                 frameSkipping: document.getElementById('frame-skipping-select').value,
                 frequency: document.getElementById('frequency-select').value,
