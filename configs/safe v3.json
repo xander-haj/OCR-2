@@ -1,0 +1,24 @@
+{
+  "resolution": "1280x720",
+  "camera": "camera2 0, facing back",
+  "workers": "1",
+  "frameSkipping": "1",
+  "frequency": "1",
+  "confidenceThreshold": "60",
+  "preprocessing": {
+    "enableGrayscale": false,
+    "grayscale": "100",
+    "enableDenoise": false,
+    "denoise": "50",
+    "enableSharpen": false,
+    "sharpen": "50",
+    "enableBrightness": false,
+    "brightness": "50",
+    "enableContrast": false,
+    "contrast": "50",
+    "enableClarity": false,
+    "clarity": "50",
+    "enableHighlights": false,
+    "highlights": "50"
+  }
+}
