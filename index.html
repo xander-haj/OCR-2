@@ -885,10 +885,10 @@
             // If OCR frequency <2 and we have >1 worker, remove one
             const maxWorkers = parseInt(workersSelect.value);
             if (ocrFrequency > 5 && workers.length < maxWorkers) {
-                // Add a worker (for brevity, not implemented fully here)
+                // Add a worker
                 initializeTesseract(workers.length + 1);
             } else if (ocrFrequency < 2 && workers.length > 1) {
-                // Remove a worker (not fully implemented)
+                // Remove a worker
                 if (workers.length > 1) {
                     const workerToTerminate = workers.pop();
                     workerToTerminate.terminate();
@@ -1425,6 +1425,25 @@
 
         // Populate Configurations on Page Load
         document.addEventListener('DOMContentLoaded', populateConfigurations);
+
+        // New Camera Permissions Logic
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const permissionStatus = await navigator.permissions.query({name: 'camera'});
+                if (permissionStatus.state !== 'granted') {
+                    // Request camera access
+                    const stream = await navigator.mediaDevices.getUserMedia({video: true});
+                    // After granting, stop the stream to release the camera
+                    stream.getTracks().forEach(track => track.stop());
+                    // Show prompt and reload
+                    alert("Permissions granted successfully, page will now reload");
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error('Camera permission denied or error occurred:', err);
+                // Optionally show error to user
+            }
+        });
 
         async function populateConfigurations() {
             try {
