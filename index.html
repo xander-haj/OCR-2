@@ -818,15 +818,11 @@
     </div>
     <div id="debugConsole"></div>
 
-   <script>
-    /* Performance-Focused Enhancements and Initialization */
+  <script>
+    /* Comprehensive Enhancements and Initialization */
 
-    // Flags for lazy initialization
+    // Initialize Flags and Variables
     let isTesseractInitialized = false;
-    let gl = null;
-    let glProgram = null;
-    let glTexture = null;
-    let glBuffer = null;
     let workers = [];
     let stream = null;
 
@@ -846,9 +842,14 @@
     let currentResolution = null;
     let selectedCameraId = null;
 
-    // Keep track of initialization states to lazy load workers, webgl, etc.
+    // WebGL Variables
+    let gl = null;
+    let glProgram = null;
+    let glTexture = null;
+    let glBuffer = null;
     let glInitialized = false;
 
+    // DOM Elements
     const video = document.getElementById('video');
     const roiOverlay = document.getElementById('overlay');
     const startButton = document.getElementById('start-button');
@@ -865,36 +866,7 @@
     const ocrInfo = document.getElementById('ocr-info');
     const confidenceThresholdInput = document.getElementById('confidence-threshold-input');
 
-    // Initialize ResizeObserver to monitor video size changes
-    const resizeObserver = new ResizeObserver(entries => {
-        for (let entry of entries) {
-            if (entry.target === video) {
-                const videoWidth = video.videoWidth;
-                const videoHeight = video.videoHeight;
-                viewportCanvas.width = videoWidth;
-                viewportCanvas.height = videoHeight;
-                console.log(`viewportCanvas resized to ${videoWidth}x${videoHeight}`);
-            }
-        }
-    });
-
-    // Start observing the video element
-    resizeObserver.observe(video);
-
-    // Add the loadedmetadata listener here
-    video.addEventListener('loadedmetadata', () => {
-        // Initialize the ResizeObserver
-        initializeResizeObserver(video, viewportCanvas);
-
-        // Set initial canvas dimensions
-        viewportCanvas.width = video.videoWidth;
-        viewportCanvas.height = video.videoHeight;
-
-        console.log('Initial viewportCanvas dimensions set based on video metadata.');
-    });
-
-
-    // Preprocessing controls
+    // Preprocessing Controls
     const enableGrayscale = document.getElementById('enableGrayscale');
     const grayscaleSlider = document.getElementById('grayscaleSlider');
     const enableDenoise = document.getElementById('enableDenoise');
@@ -910,63 +882,27 @@
     const enableHighlights = document.getElementById('enableHighlights');
     const highlightsSlider = document.getElementById('highlightsSlider');
 
+    // Configuration Management Elements
     const configSelect = document.getElementById('config-select');
     const loadConfigButton = document.getElementById('load-config-button');
     const saveConfigButton = document.getElementById('save-config-button');
 
+    // Offscreen Canvases
     const videoCanvas = document.createElement('canvas');
     const roiCanvas = document.createElement('canvas');
     const scaledCanvas = document.createElement('canvas');
-    const viewportCanvas = document.getElementById('viewportCanvas'); // Reference to viewportCanvas
-    const viewportCtx = viewportCanvas.getContext('2d'); // Context for viewportCanvas
-    
-    // Lazy initialization function for Tesseract workers
-    async function initializeTesseract(workersCount) {
-        if (workers.length > 0) {
-            await Promise.all(workers.map(w => w.terminate()));
-            workers = [];
-        }
-        for (let i = 0; i < workersCount; i++) {
-            const worker = await Tesseract.createWorker({
-                lang: 'eng',
-                logger: m => console.log(`[Worker ${i+1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
-            });
-            await worker.loadLanguage('eng');
-            await worker.initialize('eng');
-            workers.push(worker);
-        }
-        isTesseractInitialized = true;
-    }
 
-    // Dynamic worker scaling (basic approach)
-    function adjustWorkers() {
-        // Example: if OCR frequency >5 and we have <4 workers, add one
-        // If OCR frequency <2 and we have >1 worker, remove one
-        const maxWorkers = parseInt(workersSelect.value);
-        if (ocrFrequency > 5 && workers.length < maxWorkers) {
-            // Add a worker
-            initializeTesseract(workers.length + 1);
-        } else if (ocrFrequency < 2 && workers.length > 1) {
-            // Remove a worker
-            if (workers.length > 1) {
-                const workerToTerminate = workers.pop();
-                workerToTerminate.terminate();
-            }
-        }
-    }
-
-    // Initialize WebGL if needed
+    // Initialize WebGL for Preprocessing
     function initWebGL() {
         if (glInitialized) return;
         const webglCanvas = document.getElementById('webglCanvas');
-        // Use mediump precision for performance on mobile
         gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('experimental-webgl');
         if (!gl) {
-            showError('WebGL not supported');
+            showError('WebGL not supported in this browser.');
             return;
         }
 
-        // Vertex and Fragment Shaders (with conditions)
+        // Vertex Shader
         const vertexShaderSource = `
             attribute vec2 a_position;
             attribute vec2 a_texCoord;
@@ -976,7 +912,8 @@
                 v_texCoord = a_texCoord;
             }
         `;
-        // Use mediump for mobile performance
+
+        // Fragment Shader
         const fragmentShaderSource = `
             precision mediump float;
             varying vec2 v_texCoord;
@@ -996,11 +933,10 @@
             uniform bool u_highlightsEnabled;
             uniform float u_highlightsAmount;
 
+            // Denoise Function
             vec4 denoise(sampler2D tex, vec2 uv, float strength) {
-                // Reduce the sampling kernel for performance
-                float offset = 1.0/300.0*strength;
+                float offset = 1.0 / 300.0 * strength;
                 vec4 center = texture2D(tex, uv);
-                // Sample fewer surrounding pixels for performance
                 vec4 sum = center;
                 sum += texture2D(tex, uv + vec2(-offset, 0.0));
                 sum += texture2D(tex, uv + vec2(offset, 0.0));
@@ -1009,6 +945,7 @@
                 return sum / 5.0; 
             }
 
+            // Sharpen Function
             vec4 sharpen(sampler2D tex, vec2 uv, float strength) {
                 float offset = 1.0 / 300.0 * strength;
                 vec4 center = texture2D(tex, uv);
@@ -1019,67 +956,77 @@
                 sum += texture2D(tex, uv + vec2(0.0, offset));
                 float a = strength * 0.5;
                 vec4 blurColor = sum / 5.0;
-                return center*(1.0+a)-blurColor*a;
+                return center * (1.0 + a) - blurColor * a;
             }
 
+            // Brightness Adjustment
             vec4 applyBrightness(vec4 color, float amount) {
-                float factor = (amount - 50.0)/50.0;
+                float factor = (amount - 50.0) / 50.0;
                 color.rgb += factor; 
                 return color;
             }
 
+            // Contrast Adjustment
             vec4 applyContrast(vec4 color, float amount) {
-                float factor = amount/50.0;
-                color.rgb = (color.rgb-0.5)*factor+0.5;
+                float factor = amount / 50.0;
+                color.rgb = (color.rgb - 0.5) * factor + 0.5;
                 return color;
             }
 
+            // Clarity Adjustment
             vec4 applyClarity(vec4 color, float amount) {
-                float factor = (amount - 50.0)/50.0;
-                color.r = (color.r-0.5)*(1.0+factor)+0.5;
-                color.g = (color.g-0.5)*(1.0+factor)+0.5;
-                color.b = (color.b-0.5)*(1.0+factor)+0.5;
+                float factor = (amount - 50.0) / 50.0;
+                color.r = (color.r - 0.5) * (1.0 + factor) + 0.5;
+                color.g = (color.g - 0.5) * (1.0 + factor) + 0.5;
+                color.b = (color.b - 0.5) * (1.0 + factor) + 0.5;
                 return color;
             }
 
+            // Highlights Adjustment
             vec4 applyHighlights(vec4 color, float amount) {
-                float factor = (amount - 50.0)/50.0;
-                if(color.r > 0.5) color.r = color.r + factor*(color.r-0.5);
-                if(color.g > 0.5) color.g = color.g + factor*(color.g-0.5);
-                if(color.b > 0.5) color.b = color.b + factor*(color.b-0.5);
+                float factor = (amount - 50.0) / 50.0;
+                if(color.r > 0.5) color.r += factor * (color.r - 0.5);
+                if(color.g > 0.5) color.g += factor * (color.g - 0.5);
+                if(color.b > 0.5) color.b += factor * (color.b - 0.5);
                 return color;
             }
 
             void main(void) {
                 vec4 color = texture2D(u_texture, v_texCoord);
 
-                // Conditional application of effects
+                // Apply Denoise
                 if (u_denoiseEnabled) {
                     color = denoise(u_texture, v_texCoord, u_denoiseAmount);
                 }
 
+                // Apply Sharpen
                 if (u_sharpenEnabled) {
                     color = sharpen(u_texture, v_texCoord, u_sharpenAmount);
                 }
 
+                // Apply Brightness
                 if (u_brightnessEnabled) {
                     color = applyBrightness(color, u_brightnessAmount);
                 }
 
+                // Apply Contrast
                 if (u_contrastEnabled) {
                     color = applyContrast(color, u_contrastAmount);
                 }
 
+                // Apply Clarity
                 if (u_clarityEnabled) {
                     color = applyClarity(color, u_clarityAmount);
                 }
 
+                // Apply Highlights
                 if (u_highlightsEnabled) {
                     color = applyHighlights(color, u_highlightsAmount);
                 }
 
+                // Apply Grayscale
                 if (u_grayscaleEnabled) {
-                    float gray = dot(color.rgb, vec3(0.299,0.587,0.114));
+                    float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
                     color = mix(color, vec4(vec3(gray), color.a), u_grayscaleAmount);
                 }
 
@@ -1087,28 +1034,39 @@
             }
         `;
 
+        // Helper Function to Compile Shaders
         function compileShader(type, source) {
             const shader = gl.createShader(type);
             gl.shaderSource(shader, source);
             gl.compileShader(shader);
             if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                console.error('Shader error:', gl.getShaderInfoLog(shader));
+                const info = gl.getShaderInfoLog(shader);
+                showError(`Shader compilation failed: ${info}`);
+                gl.deleteShader(shader);
+                return null;
             }
             return shader;
         }
 
+        // Compile Shaders
         const vs = compileShader(gl.VERTEX_SHADER, vertexShaderSource);
         const fs = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
+        if (!vs || !fs) return;
 
+        // Create and Link Program
         glProgram = gl.createProgram();
         gl.attachShader(glProgram, vs);
         gl.attachShader(glProgram, fs);
         gl.linkProgram(glProgram);
         if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
-            console.error('Program link error:', gl.getProgramInfoLog(glProgram));
+            const info = gl.getProgramInfoLog(glProgram);
+            showError(`Program linking failed: ${info}`);
+            gl.deleteProgram(glProgram);
+            return;
         }
         gl.useProgram(glProgram);
 
+        // Define Geometry
         glBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
         const vertices = new Float32Array([
@@ -1122,12 +1080,13 @@
         const FSIZE = vertices.BYTES_PER_ELEMENT;
         const aPosition = gl.getAttribLocation(glProgram, 'a_position');
         gl.enableVertexAttribArray(aPosition);
-        gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, FSIZE*4, 0);
+        gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, FSIZE * 4, 0);
 
         const aTexCoord = gl.getAttribLocation(glProgram, 'a_texCoord');
         gl.enableVertexAttribArray(aTexCoord);
-        gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, FSIZE*4, FSIZE*2);
+        gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
 
+        // Create and Bind Texture
         glTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, glTexture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -1135,7 +1094,7 @@
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-        // Get Uniform locations once
+        // Get Uniform Locations
         window.uLocations = {
             grayscaleEnabled: gl.getUniformLocation(glProgram, "u_grayscaleEnabled"),
             grayscaleAmount: gl.getUniformLocation(glProgram, "u_grayscaleAmount"),
@@ -1153,10 +1112,12 @@
             highlightsAmount: gl.getUniformLocation(glProgram, "u_highlightsAmount"),
         };
 
-        gl.clearColor(0.0,0.0,0.0,1.0);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
         glInitialized = true;
+        console.log('WebGL initialized successfully.');
     }
 
+    // Function to Display Errors
     function showError(message) {
         console.error(message);
         errorMsg.innerText = message;
@@ -1166,6 +1127,7 @@
         }, 5000);
     }
 
+    // Initialize Camera with Given Constraints
     async function initCamera(resolution = null, cameraId = null) {
         try {
             const videoConstraints = {};
@@ -1195,25 +1157,72 @@
             video.srcObject = stream;
             await video.play();
             console.log('Camera initialized with adjusted framerate:', adjustedFrameRate);
-
         } catch (err) {
-            showError('Unable to access camera.');
+            showError('Unable to access the camera. Please check permissions and try again.');
+            console.error('initCamera Error:', err);
             throw err;
         }
     }
 
+    // Get Selected Resolution from Dropdown
     function getSelectedResolution() {
         const resolutionSelect = document.getElementById('resolution-select');
         const val = resolutionSelect.value;
         if (!val) return null;
         const [width, height] = val.split('x').map(Number);
-        return {width, height};
+        return { width, height };
     }
 
+    // Initialize Tesseract.js Workers
+    async function initializeTesseract(workersCount) {
+        try {
+            if (workers.length > 0) {
+                await Promise.all(workers.map(w => w.terminate()));
+                workers = [];
+            }
+            for (let i = 0; i < workersCount; i++) {
+                const worker = await Tesseract.createWorker({
+                    lang: 'eng',
+                    logger: m => console.log(`[Worker ${i + 1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
+                });
+                await worker.loadLanguage('eng');
+                await worker.initialize('eng');
+                workers.push(worker);
+                console.log(`Tesseract worker ${i + 1} initialized.`);
+            }
+            isTesseractInitialized = true;
+            console.log('All Tesseract workers initialized successfully.');
+        } catch (err) {
+            showError('Failed to initialize OCR workers.');
+            console.error('initializeTesseract Error:', err);
+            throw err;
+        }
+    }
+
+    // Adjust Number of Workers Based on OCR Frequency
+    function adjustWorkers() {
+        const maxWorkers = parseInt(workersSelect.value);
+        if (ocrFrequency > 5 && workers.length < maxWorkers) {
+            // Add a worker
+            initializeTesseract(workers.length + 1).catch(err => {});
+        } else if (ocrFrequency < 2 && workers.length > 1) {
+            // Remove a worker
+            if (workers.length > 1) {
+                const workerToTerminate = workers.pop();
+                workerToTerminate.terminate().then(() => {
+                    console.log('Tesseract worker terminated.');
+                }).catch(err => {
+                    console.error('Error terminating worker:', err);
+                });
+            }
+        }
+    }
+
+    // Start the Scanning Process
     async function startScanning() {
         if (scanning) return; // Prevent multiple scans at the same time
 
-        // Disable start and stop buttons, show 'Starting...' status
+        // Update UI to reflect scanning status
         startButton.disabled = true;
         stopButton.disabled = true;
         restartButton.style.display = 'none';
@@ -1254,14 +1263,13 @@
         // Initialize WebGL for preprocessing if not already done
         if (!glInitialized) {
             initWebGL();
+            if (!glInitialized) {
+                showError('WebGL initialization failed.');
+                startButton.disabled = false;
+                startButton.innerText = 'Start Scanner';
+                return;
+            }
         }
-
-        // Initialize ResizeObserver to keep viewportCanvas in sync with video size
-        initializeResizeObserver(video, viewportCanvas);
-
-        // Ensure viewportCanvas dimensions match the video initially
-        viewportCanvas.width = video.videoWidth;
-        viewportCanvas.height = video.videoHeight;
 
         // Update scanning state and UI elements
         scanning = true;
@@ -1272,9 +1280,10 @@
 
         // Start processing frames
         requestAnimationFrame(processFrame);
+        console.log('Scanning started.');
     }
 
-
+    // Stop the Scanning Process
     async function stopScanning() {
         if (!scanning) return;
         scanning = false;
@@ -1287,30 +1296,37 @@
             stream.getTracks().forEach(t => t.stop());
             stream = null;
         }
-        debugCtx.clearRect(0,0,debugCanvas.width, debugCanvas.height);
-        viewportCtx.clearRect(0,0,viewportCanvas.width, viewportCanvas.height); // Clear viewportCanvas
+        debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
         console.log('Scanning stopped.');
     }
 
+    // Perform OCR on the Preprocessed Image Blob
     async function performOCR(blob) {
-        const results = await Promise.all(workers.map(worker => worker.recognize(blob)));
-        let aggText = '';
-        let totalConf = 0;
-        results.forEach(r => {
-            aggText += r.data.text + '\n';
-            totalConf += r.data.confidence;
-        });
-        const avgConf = totalConf / workers.length;
-        if (avgConf >= confidenceThreshold && aggText.trim().length > 0) {
-            roiOverlay.style.borderColor = '#2cb67d';
-            if (!output.value.includes(aggText.trim())) {
-                output.value += aggText.trim() + '\n';
+        try {
+            const results = await Promise.all(workers.map(worker => worker.recognize(blob)));
+            let aggText = '';
+            let totalConf = 0;
+            results.forEach(r => {
+                aggText += r.data.text + '\n';
+                totalConf += r.data.confidence;
+            });
+            const avgConf = totalConf / workers.length;
+            if (avgConf >= confidenceThreshold && aggText.trim().length > 0) {
+                roiOverlay.style.borderColor = '#2cb67d';
+                if (!output.value.includes(aggText.trim())) {
+                    output.value += aggText.trim() + '\n';
+                }
+            } else {
+                roiOverlay.style.borderColor = '#d00000';
             }
-        } else {
-            roiOverlay.style.borderColor = '#d00000';
+            console.log('OCR performed. Average Confidence:', avgConf);
+        } catch (err) {
+            showError('OCR processing failed.');
+            console.error('performOCR Error:', err);
         }
     }
 
+    // Process Each Frame from the Video Stream
     async function processFrame() {
         if (!scanning) return;
         const startTime = performance.now();
@@ -1318,11 +1334,13 @@
         const timeSinceLastOcr = now - lastOcrTime;
         const desiredInterval = 1000 / ocrFrequency;
         frameCounter++;
+
         if (frameCounter < frameSkipping) {
             if (scanning) requestAnimationFrame(processFrame);
             return;
         }
         frameCounter = 0;
+
         if (timeSinceLastOcr < desiredInterval) {
             if (scanning) requestAnimationFrame(processFrame);
             return;
@@ -1334,211 +1352,284 @@
             return;
         }
 
-        const videoWidth = video.videoWidth;
-        const videoHeight = video.videoHeight;
-        videoCanvas.width = videoWidth;
-        videoCanvas.height = videoHeight;
+        try {
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+            videoCanvas.width = videoWidth;
+            videoCanvas.height = videoHeight;
 
-        // Synchronize viewportCanvas size with video
-        viewportCanvas.width = videoWidth;
-        viewportCanvas.height = videoHeight;
+            const ctx = videoCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
-        const overlayRect = roiOverlay.getBoundingClientRect();
-        const videoRect = video.getBoundingClientRect();
-        const scaleX = videoWidth / videoRect.width;
-        const scaleY = videoHeight / videoRect.height;
-        const roiX = (overlayRect.left - videoRect.left)*scaleX;
-        const roiY = (overlayRect.top - videoRect.top)*scaleY;
-        const roiW = overlayRect.width * scaleX;
-        const roiH = overlayRect.height * scaleY;
+            const overlayRect = roiOverlay.getBoundingClientRect();
+            const videoRect = video.getBoundingClientRect();
+            const scaleX = videoWidth / videoRect.width;
+            const scaleY = videoHeight / videoRect.height;
+            const roiX = (overlayRect.left - videoRect.left) * scaleX;
+            const roiY = (overlayRect.top - videoRect.top) * scaleY;
+            const roiW = overlayRect.width * scaleX;
+            const roiH = overlayRect.height * scaleY;
 
-        if (roiX <0 || roiY<0 || (roiX+roiW)>videoWidth || (roiY+roiH)>videoHeight) {
-            showError('ROI out of frame bounds.');
-            stopScanning();
-            return;
-        }
-
-        const ctx = videoCanvas.getContext('2d');
-        ctx.drawImage(video,0,0,videoWidth,videoHeight);
-        roiCanvas.width = roiW;
-        roiCanvas.height = roiH;
-        const roiCtx = roiCanvas.getContext('2d');
-        roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0,0,roiW,roiH);
-
-        const scaleFactor = 1.5;
-        scaledCanvas.width = roiW * scaleFactor;
-        scaledCanvas.height = roiH * scaleFactor;
-        const scaledCtx = scaledCanvas.getContext('2d');
-        scaledCtx.imageSmoothingEnabled = true;
-        scaledCtx.imageSmoothingQuality = 'high';
-        scaledCtx.drawImage(roiCanvas, 0,0, scaledCanvas.width, scaledCanvas.height);
-
-        const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
-
-        debugCanvas.width = scaledCanvas.width;
-        debugCanvas.height = scaledCanvas.height;
-        debugCtx.clearRect(0,0,debugCanvas.width, debugCanvas.height);
-        const img = await createImageBitmap(preprocessedBlob);
-        debugCtx.drawImage(img,0,0);
-
-        // Draw effect labels
-        debugCtx.font = '16px Arial';
-        debugCtx.fillStyle = 'yellow';
-        let yOffset = 20;
-        if (enableGrayscale.checked) { debugCtx.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset+=20; }
-        if (enableDenoise.checked) { debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset); yOffset+=20; }
-        if (enableSharpen.checked) { debugCtx.fillText(`Sharpen: ${sharpenSlider.value}`, 10, yOffset); yOffset+=20; }
-        if (enableBrightness.checked) { debugCtx.fillText(`Brightness: ${brightnessSlider.value}`, 10, yOffset); yOffset+=20; }
-        if (enableContrast.checked) { debugCtx.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset+=20; }
-        if (enableClarity.checked) { debugCtx.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset+=20; }
-        if (enableHighlights.checked) { debugCtx.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); }
-
-        // Draw preprocessed image on viewportCanvas
-        viewportCtx.clearRect(0, 0, viewportCanvas.width, viewportCanvas.height);
-        viewportCtx.drawImage(img, 0, 0, viewportCanvas.width, viewportCanvas.height);
-
-        if (preprocessedBlob && scanning) {
-            await performOCR(preprocessedBlob);
-        }
-
-        // Adaptive frame skipping based on processing time
-        const processingTime = performance.now() - startTime;
-        if (dynamicAdjust) {
-            if (processingTime > targetFrameTime && frameSkipping < maxSkipping) {
-                frameSkipping++;
-            } else if (processingTime < targetFrameTime && frameSkipping > 1) {
-                frameSkipping--;
+            if (roiX < 0 || roiY < 0 || (roiX + roiW) > videoWidth || (roiY + roiH) > videoHeight) {
+                showError('ROI out of frame bounds.');
+                await stopScanning();
+                return;
             }
+
+            roiCanvas.width = roiW;
+            roiCanvas.height = roiH;
+            const roiCtx = roiCanvas.getContext('2d');
+            roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+            const scaleFactor = 1.5;
+            scaledCanvas.width = roiW * scaleFactor;
+            scaledCanvas.height = roiH * scaleFactor;
+            const scaledCtx = scaledCanvas.getContext('2d');
+            scaledCtx.imageSmoothingEnabled = true;
+            scaledCtx.imageSmoothingQuality = 'high';
+            scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+
+            const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
+            if (!preprocessedBlob) {
+                throw new Error('Preprocessing failed.');
+            }
+
+            debugCanvas.width = scaledCanvas.width;
+            debugCanvas.height = scaledCanvas.height;
+            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+            const img = await createImageBitmap(preprocessedBlob);
+            debugCtx.drawImage(img, 0, 0);
+
+            // Draw effect labels for debugging
+            debugCtx.font = '16px Arial';
+            debugCtx.fillStyle = 'yellow';
+            let yOffset = 20;
+            if (enableGrayscale.checked) { debugCtx.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableDenoise.checked) { debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableSharpen.checked) { debugCtx.fillText(`Sharpen: ${sharpenSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableBrightness.checked) { debugCtx.fillText(`Brightness: ${brightnessSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableContrast.checked) { debugCtx.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableClarity.checked) { debugCtx.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableHighlights.checked) { debugCtx.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); }
+
+            // Perform OCR on the preprocessed image
+            await performOCR(preprocessedBlob);
+
+            // Adaptive frame skipping based on processing time
+            const processingTime = performance.now() - startTime;
+            if (dynamicAdjust) {
+                if (processingTime > targetFrameTime && frameSkipping < maxSkipping) {
+                    frameSkipping++;
+                } else if (processingTime < targetFrameTime && frameSkipping > 1) {
+                    frameSkipping--;
+                }
+            }
+
+        } catch (err) {
+            showError('An error occurred during frame processing.');
+            console.error('processFrame Error:', err);
+            await stopScanning();
+            return;
         }
 
         if (scanning) requestAnimationFrame(processFrame);
     }
 
+    // Preprocess Image Using WebGL
     async function preprocessWithWebGL(sourceCanvas) {
-        initWebGL();
-        const width = sourceCanvas.width;
-        const height = sourceCanvas.height;
+        try {
+            if (!glInitialized) {
+                initWebGL();
+                if (!glInitialized) {
+                    throw new Error('WebGL initialization failed.');
+                }
+            }
 
-        const webglCanvas = document.getElementById('webglCanvas');
-        webglCanvas.width = width;
-        webglCanvas.height = height;
+            const width = sourceCanvas.width;
+            const height = sourceCanvas.height;
 
-        gl.viewport(0,0,width,height);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+            const webglCanvas = document.getElementById('webglCanvas');
+            webglCanvas.width = width;
+            webglCanvas.height = height;
 
-        gl.bindTexture(gl.TEXTURE_2D, glTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
+            gl.viewport(0, 0, width, height);
+            gl.clear(gl.COLOR_BUFFER_BIT);
 
-        gl.uniform1i(window.uLocations.grayscaleEnabled, enableGrayscale.checked ? 1 : 0);
-        gl.uniform1f(window.uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value)/100.0);
+            gl.bindTexture(gl.TEXTURE_2D, glTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
 
-        gl.uniform1i(window.uLocations.denoiseEnabled, enableDenoise.checked ? 1 : 0);
-        gl.uniform1f(window.uLocations.denoiseAmount, parseFloat(denoiseSlider.value));
+            // Set Uniforms Based on Preprocessing Settings
+            gl.uniform1i(window.uLocations.grayscaleEnabled, enableGrayscale.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value) / 100.0);
 
-        gl.uniform1i(window.uLocations.sharpenEnabled, enableSharpen.checked ? 1 : 0);
-        gl.uniform1f(window.uLocations.sharpenAmount, parseFloat(sharpenSlider.value));
+            gl.uniform1i(window.uLocations.denoiseEnabled, enableDenoise.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.denoiseAmount, parseFloat(denoiseSlider.value));
 
-        gl.uniform1i(window.uLocations.brightnessEnabled, enableBrightness.checked ? 1 : 0);
-        gl.uniform1f(window.uLocations.brightnessAmount, parseFloat(brightnessSlider.value));
+            gl.uniform1i(window.uLocations.sharpenEnabled, enableSharpen.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.sharpenAmount, parseFloat(sharpenSlider.value));
 
-        gl.uniform1i(window.uLocations.contrastEnabled, enableContrast.checked ? 1 : 0);
-        gl.uniform1f(window.uLocations.contrastAmount, parseFloat(contrastSlider.value));
+            gl.uniform1i(window.uLocations.brightnessEnabled, enableBrightness.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.brightnessAmount, parseFloat(brightnessSlider.value));
 
-        gl.uniform1i(window.uLocations.clarityEnabled, enableClarity.checked ? 1 : 0);
-        gl.uniform1f(window.uLocations.clarityAmount, parseFloat(claritySlider.value));
+            gl.uniform1i(window.uLocations.contrastEnabled, enableContrast.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.contrastAmount, parseFloat(contrastSlider.value));
 
-        gl.uniform1i(window.uLocations.highlightsEnabled, enableHighlights.checked ? 1 : 0);
-        gl.uniform1f(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value));
+            gl.uniform1i(window.uLocations.clarityEnabled, enableClarity.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.clarityAmount, parseFloat(claritySlider.value));
 
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            gl.uniform1i(window.uLocations.highlightsEnabled, enableHighlights.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value));
 
-        const pixels = new Uint8ClampedArray(width*height*4);
-        gl.readPixels(0,0,width,height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-        const offscreen = document.createElement('canvas');
-        offscreen.width = width;
-        offscreen.height = height;
-        const offCtx = offscreen.getContext('2d');
-        const imageData = new ImageData(pixels, width, height);
-        offCtx.putImageData(imageData,0,0);
+            // Read Pixels from WebGL Canvas
+            const pixels = new Uint8ClampedArray(width * height * 4);
+            gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
-        return new Promise(resolve => {
-            offscreen.toBlob((blob) => {
-                resolve(blob);
-            }, 'image/png');
-        });
+            // Create ImageData and Draw to Offscreen Canvas
+            const offscreen = document.createElement('canvas');
+            offscreen.width = width;
+            offscreen.height = height;
+            const offCtx = offscreen.getContext('2d');
+            const imageData = new ImageData(pixels, width, height);
+            offCtx.putImageData(imageData, 0, 0);
+
+            // Convert Canvas to Blob
+            return new Promise((resolve, reject) => {
+                offscreen.toBlob((blob) => {
+                    if (blob) {
+                        resolve(blob);
+                    } else {
+                        reject(new Error('Failed to convert canvas to blob.'));
+                    }
+                }, 'image/png');
+            });
+        } catch (err) {
+            showError('Preprocessing with WebGL failed.');
+            console.error('preprocessWithWebGL Error:', err);
+            return null;
+        }
     }
 
+    // Update OCR Information Display
     function updateOcrInfo() {
         const approximateFPS = 60;
-        const frameBasedFrequency = approximateFPS/frameSkipping;
+        const frameBasedFrequency = approximateFPS / frameSkipping;
         const effectiveFrequency = Math.min(frameBasedFrequency, ocrFrequency);
         ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
     }
 
-    // Event listeners
-    roiOverlay.addEventListener('click', async () => {
-        if (scanning) {
-            // Focus request logic (not changed for performance)
-            // Just capture and OCR once
-            await captureFrameAndPerformOCR();
-        }
-    });
-    startButton.addEventListener('click', startScanning);
-    stopButton.addEventListener('click', stopScanning);
-    restartButton.addEventListener('click', startScanning);
+    // Capture Frame and Perform OCR (Triggered by Click)
+    async function captureFrameAndPerformOCR() {
+        if (!scanning) return;
+        scanning = false; // Temporarily stop scanning to perform manual capture
 
-    document.getElementById('resolution-select').addEventListener('change', async () => {
-        currentResolution = getSelectedResolution();
-        if (scanning) {
-            await stopScanning();
-            await startScanning();
-        }
-    });
-    document.getElementById('camera-select').addEventListener('change', async () => {
-        selectedCameraId = document.getElementById('camera-select').value;
-        if (selectedCameraId && scanning) {
-            await stopScanning();
-            await startScanning();
-        }
-    });
-
-    workersSelect.addEventListener('change', adjustWorkers);
-    frameSkippingSelect.addEventListener('change', () => {
-        frameSkipping = parseInt(frameSkippingSelect.value);
-        updateOcrInfo();
-    });
-    frequencySelect.addEventListener('change', () => {
-        ocrFrequency = parseFloat(frequencySelect.value);
-        updateOcrInfo();
-    });
-    confidenceThresholdInput.addEventListener('change', function() {
-        let val = parseInt(this.value, 10);
-        if (isNaN(val)|| val<1) val=1;
-        if (val>100) val=100;
-        this.value = val;
-        confidenceThreshold = val;
-    });
-
-    // Configuration Management System Implementation
-
-    // Populate Configurations on Page Load
-    document.addEventListener('DOMContentLoaded', populateConfigurations);
-
-    // Updated Camera Permissions Logic
-    document.addEventListener('DOMContentLoaded', async () => {
         try {
-            const permissionStatus = await navigator.permissions.query({name: 'camera'});
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+            videoCanvas.width = videoWidth;
+            videoCanvas.height = videoHeight;
+            const ctx = videoCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+
+            const overlayRect = roiOverlay.getBoundingClientRect();
+            const videoRect = video.getBoundingClientRect();
+            const scaleX = videoWidth / videoRect.width;
+            const scaleY = videoHeight / videoRect.height;
+            const roiX = (overlayRect.left - videoRect.left) * scaleX;
+            const roiY = (overlayRect.top - videoRect.top) * scaleY;
+            const roiW = overlayRect.width * scaleX;
+            const roiH = overlayRect.height * scaleY;
+
+            if (roiX < 0 || roiY < 0 || (roiX + roiW) > videoWidth || (roiY + roiH) > videoHeight) {
+                showError('ROI out of frame bounds.');
+                scanning = false;
+                return;
+            }
+
+            roiCanvas.width = roiW;
+            roiCanvas.height = roiH;
+            const roiCtx = roiCanvas.getContext('2d');
+            roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+            const scaleFactor = 1.5;
+            scaledCanvas.width = roiW * scaleFactor;
+            scaledCanvas.height = roiH * scaleFactor;
+            const scaledCtx = scaledCanvas.getContext('2d');
+            scaledCtx.imageSmoothingEnabled = true;
+            scaledCtx.imageSmoothingQuality = 'high';
+            scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+
+            const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
+            if (!preprocessedBlob) {
+                throw new Error('Preprocessing failed.');
+            }
+
+            debugCanvas.width = scaledCanvas.width;
+            debugCanvas.height = scaledCanvas.height;
+            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+            const img = await createImageBitmap(preprocessedBlob);
+            debugCtx.drawImage(img, 0, 0);
+
+            // Perform OCR on the preprocessed image
+            await performOCR(preprocessedBlob);
+        } catch (err) {
+            showError('Failed to capture and perform OCR.');
+            console.error('captureFrameAndPerformOCR Error:', err);
+        }
+
+        scanning = true; // Resume scanning
+    }
+
+    // Populate Camera Selection Dropdown
+    async function populateCameras() {
+        try {
+            const cameraSelect = document.getElementById('camera-select');
+            cameraSelect.innerHTML = ''; // Clear existing options
+
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.text = 'Select Camera';
+            cameraSelect.appendChild(defaultOption);
+
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const cameras = devices.filter(d => d.kind === 'videoinput');
+
+            cameras.forEach(camera => {
+                const option = document.createElement('option');
+                option.value = camera.deviceId;
+                option.text = camera.label || `Camera ${cameraSelect.length}`;
+                cameraSelect.appendChild(option);
+            });
+
+            if (cameras.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.text = 'No cameras found';
+                cameraSelect.appendChild(option);
+            }
+
+            console.log('Camera devices populated successfully.');
+        } catch (err) {
+            console.error('Failed to populate cameras:', err);
+            showError('Failed to retrieve camera devices.');
+        }
+    }
+
+    // Handle Camera Permissions and Populate Cameras
+    async function handleCameraPermissions() {
+        try {
+            const permissionStatus = await navigator.permissions.query({ name: 'camera' });
             if (permissionStatus.state !== 'granted') {
                 // Request camera access
-                const stream = await navigator.mediaDevices.getUserMedia({video: true});
+                const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
                 // After granting, stop the stream to release the camera
-                stream.getTracks().forEach(track => track.stop());
-                // Show prompt and reload
+                tempStream.getTracks().forEach(track => track.stop());
+                // Notify the user and reload to populate camera labels
                 alert("Camera permissions granted successfully. The page will now reload.");
                 window.location.reload();
             } else {
-                // Permission already granted, populate cameras
+                // Permissions already granted, populate cameras
                 await populateCameras();
             }
 
@@ -1550,7 +1641,7 @@
                     // Clear camera select if permissions are revoked
                     const cameraSelect = document.getElementById('camera-select');
                     cameraSelect.innerHTML = '<option value="">Select Camera</option>';
-                    alert("Camera permissions have been revoked.");
+                    showError("Camera permissions have been revoked.");
                 }
             };
 
@@ -1560,11 +1651,13 @@
             console.error('Camera permission denied or error occurred:', err);
             showError('Camera permissions are required to use this application.');
         }
-    });
+    }
 
+    // Populate Configurations on Page Load
     async function populateConfigurations() {
         try {
             const response = await fetch('./configs/index.json'); // Fetch index.json
+            if (!response.ok) throw new Error('Network response was not ok.');
             const data = await response.json();
             const configurations = data.configurations;
 
@@ -1575,18 +1668,21 @@
                 option.text = file.replace('.json', ''); // Display name without .json
                 configSelect.appendChild(option);
             });
+            console.log('Configurations populated successfully.');
         } catch (err) {
             console.error('Error loading configuration index:', err);
             showError('Failed to load configuration index.');
         }
     }
 
+    // Load Selected Configuration
     async function loadConfiguration() {
         const selectedConfig = configSelect.value; // Get selected configuration
         if (!selectedConfig) return alert('Please select a configuration to load.');
 
         try {
             const response = await fetch(`./configs/${selectedConfig}`); // Fetch the JSON file
+            if (!response.ok) throw new Error('Network response was not ok.');
             const configData = await response.json();
 
             // Apply configuration data to UI controls
@@ -1644,12 +1740,14 @@
             updateOcrInfo();
 
             alert('Configuration loaded successfully.');
+            console.log('Configuration loaded:', selectedConfig);
         } catch (err) {
             console.error('Error loading configuration:', err);
             showError('Failed to load the selected configuration.');
         }
     }
 
+    // Save Current Configuration as JSON File
     function saveConfiguration() {
         const cameraSelect = document.getElementById('camera-select');
         const cameraLabel = cameraSelect.options[cameraSelect.selectedIndex].text;
@@ -1680,6 +1778,7 @@
 
         const configName = prompt('Enter a name for the configuration (e.g., "safe"):'); // Prompt for custom name
         if (!configName) return;
+
         if (/[^a-zA-Z0-9-_]/.test(configName)) {
             alert('Configuration name can only contain letters, numbers, hyphens, and underscores.');
             return;
@@ -1696,19 +1795,17 @@
         URL.revokeObjectURL(url);
 
         alert('Configuration saved as a JSON file. Please upload it to the /configs directory and update index.json to reuse.');
+        console.log('Configuration saved:', configName);
     }
 
-    // Event Listeners for Configuration Management
-    loadConfigButton.addEventListener('click', loadConfiguration);
-    saveConfigButton.addEventListener('click', saveConfiguration);
-
-    // Side menu logic
+    // Side Menu Toggle Logic
     (function(){
         const menuToggle = document.getElementById('menu-toggle');
         const sideMenu = document.getElementById('side-menu');
         const menuOverlay = document.getElementById('menu-overlay');
         const container = document.getElementById('container');
         let isMenuOpen = false;
+
         function openMenu() {
             sideMenu.classList.add('active');
             menuOverlay.classList.add('active');
@@ -1716,6 +1813,7 @@
             menuToggle.setAttribute('aria-expanded','true');
             isMenuOpen = true;
         }
+
         function closeMenu() {
             sideMenu.classList.remove('active');
             menuOverlay.classList.remove('active');
@@ -1723,21 +1821,22 @@
             menuToggle.setAttribute('aria-expanded','false');
             isMenuOpen = false;
         }
-        menuToggle.addEventListener('click', () => { isMenuOpen? closeMenu():openMenu(); });
+
+        menuToggle.addEventListener('click', () => { isMenuOpen ? closeMenu() : openMenu(); });
         menuOverlay.addEventListener('click', closeMenu);
-        document.addEventListener('keydown', (e) => { if(e.key==='Escape'&& isMenuOpen) closeMenu(); });
+        document.addEventListener('keydown', (e) => { if(e.key==='Escape' && isMenuOpen) closeMenu(); });
     })();
 
-    // Theme logic
+    // Theme Toggle Logic
     (function(){
         const toggleCheckbox = document.getElementById('theme-checkbox');
-        const currentTheme = localStorage.getItem('theme')||'light';
-        if (currentTheme==='dark') {
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
             document.documentElement.classList.add('dark-theme');
             document.body.classList.add('dark-theme');
             toggleCheckbox.checked = true;
         }
-        toggleCheckbox.addEventListener('change',function(){
+        toggleCheckbox.addEventListener('change', function(){
             if(this.checked) {
                 document.documentElement.classList.add('dark-theme');
                 document.body.classList.add('dark-theme');
@@ -1750,15 +1849,15 @@
         });
     })();
 
-    // Debug console capture
+    // Debug Console Capture
     (function(){
         const debugConsole = document.getElementById('debugConsole');
-        function addLogEntry(type,args) {
+        function addLogEntry(type, args) {
             const entry = document.createElement('div');
-            entry.className=`log-entry ${type}`;
-            entry.textContent=`[${type.toUpperCase()}] ` + Array.from(args).join(' ');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${type.toUpperCase()}] ` + Array.from(args).join(' ');
             // Batch DOM update at next frame
-            requestAnimationFrame(()=>{
+            requestAnimationFrame(() => {
                 debugConsole.appendChild(entry);
                 debugConsole.scrollTop = debugConsole.scrollHeight;
             });
@@ -1766,187 +1865,187 @@
         const originalLog = console.log;
         const originalWarn = console.warn;
         const originalError = console.error;
-        console.log = function(...args){originalLog.apply(console,args);addLogEntry('log',args);};
-        console.warn=function(...args){originalWarn.apply(console,args);addLogEntry('warn',args);};
-        console.error=function(...args){originalError.apply(console,args);addLogEntry('error',args);};
+        console.log = function(...args){ originalLog.apply(console, args); addLogEntry('log', args); };
+        console.warn = function(...args){ originalWarn.apply(console, args); addLogEntry('warn', args); };
+        console.error = function(...args){ originalError.apply(console, args); addLogEntry('error', args); };
     })();
 
+    // Save Logs to a Text File
     function saveLogs() {
         const debugConsole = document.getElementById('debugConsole');
         const logsText = debugConsole.innerText;
-        const blob = new Blob([logsText],{type:'text/plain'});
+        const blob = new Blob([logsText], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=url; a.download='logs.txt';
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'logs.txt';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        console.log('Logs saved successfully.');
     }
     document.getElementById('save-logs-button').addEventListener('click', saveLogs);
 
-    // Updated debug toggle logic to handle both debugCanvas and viewportCanvas
+    // Debug Toggle Logic
     (function(){
         const debugButton = document.getElementById('debug-button');
         const debugCanvas = document.getElementById('debugCanvas');
         const viewportCanvas = document.getElementById('viewportCanvas'); // Reference to viewportCanvas
         const debugConsole = document.getElementById('debugConsole');
         const debugControls = document.getElementById('debugControls');
-        debugCanvas.style.display='none';
-        viewportCanvas.style.display='none'; // Hide viewportCanvas by default
-        debugConsole.style.display='none';
-        debugControls.style.display='none';
-        let isDebugVisible=false;
-        debugButton.addEventListener('click',function(){
-            isDebugVisible=!isDebugVisible;
+        debugCanvas.style.display = 'none';
+        viewportCanvas.style.display = 'none'; // Hide viewportCanvas by default
+        debugConsole.style.display = 'none';
+        debugControls.style.display = 'none';
+        let isDebugVisible = false;
+
+        debugButton.addEventListener('click', function(){
+            isDebugVisible = !isDebugVisible;
             if(isDebugVisible){
-                debugCanvas.style.display='block';
-                viewportCanvas.style.display='block'; // Show viewportCanvas
-                debugConsole.style.display='block';
-                debugControls.style.display='block';
-                debugButton.innerText='Hide Debug';
+                debugCanvas.style.display = 'block';
+                viewportCanvas.style.display = 'block'; // Show viewportCanvas
+                debugConsole.style.display = 'block';
+                debugControls.style.display = 'block';
+                debugButton.innerText = 'Hide Debug';
             } else {
-                debugCanvas.style.display='none';
-                viewportCanvas.style.display='none'; // Hide viewportCanvas
-                debugConsole.style.display='none';
-                debugControls.style.display='none';
-                debugButton.innerText='Show Debug';
+                debugCanvas.style.display = 'none';
+                viewportCanvas.style.display = 'none'; // Hide viewportCanvas
+                debugConsole.style.display = 'none';
+                debugControls.style.display = 'none';
+                debugButton.innerText = 'Show Debug';
             }
         });
     })();
 
+    // Capture Frame and Perform OCR (Manual Trigger)
     async function captureFrameAndPerformOCR() {
         if(!scanning) return;
-        // Just one-off capture
-        scanning = false;
-        const videoWidth = video.videoWidth;
-        const videoHeight = video.videoHeight;
-        videoCanvas.width = videoWidth;
-        videoCanvas.height= videoHeight;
-        const ctx = videoCanvas.getContext('2d');
-        ctx.drawImage(video,0,0,videoWidth,videoHeight);
+        scanning = false; // Temporarily stop scanning to perform manual capture
+        focusIndicator.style.display = 'block'; // Show processing indicator
 
-        const overlayRect = roiOverlay.getBoundingClientRect();
-        const videoRect = video.getBoundingClientRect();
-        const scaleX = videoWidth/videoRect.width;
-        const scaleY = videoHeight/videoRect.height;
-        const roiX=(overlayRect.left - videoRect.left)*scaleX;
-        const roiY=(overlayRect.top - videoRect.top)*scaleY;
-        const roiW=overlayRect.width*scaleX;
-        const roiH=overlayRect.height*scaleY;
-        if(roiX<0||roiY<0||(roiX+roiW)>videoWidth||(roiY+roiH)>videoHeight){
-            showError('ROI out of frame bounds');
-            scanning=false;
-            return;
-        }
-
-        roiCanvas.width=roiW;
-        roiCanvas.height=roiH;
-        const roiCtx=roiCanvas.getContext('2d');
-        roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH,0,0,roiW,roiH);
-
-        const scaleFactor=1.5;
-        scaledCanvas.width=roiW*scaleFactor;
-        scaledCanvas.height=roiH*scaleFactor;
-        const scaledCtx=scaledCanvas.getContext('2d');
-        scaledCtx.imageSmoothingEnabled=true;
-        scaledCtx.imageSmoothingQuality='high';
-        scaledCtx.drawImage(roiCanvas,0,0,scaledCanvas.width,scaledCanvas.height);
-
-        const preprocessedBlob=await preprocessWithWebGL(scaledCanvas);
-
-        debugCanvas.width=scaledCanvas.width;
-        debugCanvas.height=scaledCanvas.height;
-        debugCtx.clearRect(0,0,debugCanvas.width, debugCanvas.height);
-        const img=await createImageBitmap(preprocessedBlob);
-        debugCtx.drawImage(img,0,0);
-
-        // Draw effect labels
-        debugCtx.font = '16px Arial';
-        debugCtx.fillStyle = 'yellow';
-        let yOffset = 20;
-        if (enableGrayscale.checked) { debugCtx.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset+=20; }
-        if (enableDenoise.checked) { debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset); yOffset+=20; }
-        if (enableSharpen.checked) { debugCtx.fillText(`Sharpen: ${sharpenSlider.value}`, 10, yOffset); yOffset+=20; }
-        if (enableBrightness.checked) { debugCtx.fillText(`Brightness: ${brightnessSlider.value}`, 10, yOffset); yOffset+=20; }
-        if (enableContrast.checked) { debugCtx.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset+=20; }
-        if (enableClarity.checked) { debugCtx.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset+=20; }
-        if (enableHighlights.checked) { debugCtx.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); }
-
-        // Draw preprocessed image on viewportCanvas
-        const viewportCtx = viewportCanvas.getContext('2d');
-        viewportCtx.clearRect(0, 0, viewportCanvas.width, viewportCanvas.height);
-        viewportCtx.drawImage(img, 0, 0, viewportCanvas.width, viewportCanvas.height);
-
-        if(preprocessedBlob){
-            await performOCR(preprocessedBlob);
-        }
-        scanning=true;
-    }
-
-    async function populateCameras(){
         try {
-            const cameraSelect = document.getElementById('camera-select');
-            cameraSelect.innerHTML = ''; // Clear existing options
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+            videoCanvas.width = videoWidth;
+            videoCanvas.height = videoHeight;
+            const ctx = videoCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.text = 'Select Camera';
-            cameraSelect.appendChild(defaultOption);
+            const overlayRect = roiOverlay.getBoundingClientRect();
+            const videoRect = video.getBoundingClientRect();
+            const scaleX = videoWidth / videoRect.width;
+            const scaleY = videoHeight / videoRect.height;
+            const roiX = (overlayRect.left - videoRect.left) * scaleX;
+            const roiY = (overlayRect.top - videoRect.top) * scaleY;
+            const roiW = overlayRect.width * scaleX;
+            const roiH = overlayRect.height * scaleY;
 
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const cameras = devices.filter(d => d.kind === 'videoinput');
-
-            cameras.forEach(camera => {
-                const option = document.createElement('option');
-                option.value = camera.deviceId;
-                option.text = camera.label || `Camera ${cameraSelect.length}`;
-                cameraSelect.appendChild(option);
-            });
-
-            if(cameras.length === 0){
-                const option = document.createElement('option');
-                option.value = '';
-                option.text = 'No cameras found';
-                cameraSelect.appendChild(option);
+            if (roiX < 0 || roiY < 0 || (roiX + roiW) > videoWidth || (roiY + roiH) > videoHeight) {
+                showError('ROI out of frame bounds.');
+                scanning = false;
+                focusIndicator.style.display = 'none';
+                return;
             }
 
-            console.log('Camera devices populated successfully.');
+            roiCanvas.width = roiW;
+            roiCanvas.height = roiH;
+            const roiCtx = roiCanvas.getContext('2d');
+            roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+            const scaleFactor = 1.5;
+            scaledCanvas.width = roiW * scaleFactor;
+            scaledCanvas.height = roiH * scaleFactor;
+            const scaledCtx = scaledCanvas.getContext('2d');
+            scaledCtx.imageSmoothingEnabled = true;
+            scaledCtx.imageSmoothingQuality = 'high';
+            scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+
+            const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
+            if (!preprocessedBlob) {
+                throw new Error('Preprocessing failed.');
+            }
+
+            debugCanvas.width = scaledCanvas.width;
+            debugCanvas.height = scaledCanvas.height;
+            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+            const img = await createImageBitmap(preprocessedBlob);
+            debugCtx.drawImage(img, 0, 0);
+
+            // Perform OCR on the preprocessed image
+            await performOCR(preprocessedBlob);
         } catch (err) {
-            console.error('Failed to populate cameras:', err);
-            showError('Failed to retrieve camera devices.');
+            showError('Failed to capture and perform OCR.');
+            console.error('captureFrameAndPerformOCR Error:', err);
         }
+
+        focusIndicator.style.display = 'none'; // Hide processing indicator
+        scanning = true; // Resume scanning
     }
 
-    window.addEventListener('beforeunload', async ()=>{
-        if(stream) {
-            stream.getTracks().forEach(t=>t.stop());
+    // Event Listeners
+    roiOverlay.addEventListener('click', captureFrameAndPerformOCR);
+    startButton.addEventListener('click', startScanning);
+    stopButton.addEventListener('click', stopScanning);
+    restartButton.addEventListener('click', startScanning);
+    loadConfigButton.addEventListener('click', loadConfiguration);
+    saveConfigButton.addEventListener('click', saveConfiguration);
+    workersSelect.addEventListener('change', adjustWorkers);
+    frameSkippingSelect.addEventListener('change', () => {
+        frameSkipping = parseInt(frameSkippingSelect.value);
+        updateOcrInfo();
+    });
+    frequencySelect.addEventListener('change', () => {
+        ocrFrequency = parseFloat(frequencySelect.value);
+        updateOcrInfo();
+    });
+    confidenceThresholdInput.addEventListener('change', function() {
+        let val = parseInt(this.value, 10);
+        if (isNaN(val) || val < 1) val = 1;
+        if (val > 100) val = 100;
+        this.value = val;
+        confidenceThreshold = val;
+    });
+
+    // Handle Camera Permissions and Populate Cameras on Page Load
+    document.addEventListener('DOMContentLoaded', async () => {
+        await handleCameraPermissions();
+        await populateConfigurations();
+    });
+
+    // Cleanup on Page Unload
+    window.addEventListener('beforeunload', async () => {
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
         }
-        if(workers.length>0){
-            await Promise.all(workers.map(w=>w.terminate()));
-            workers=[];
+        if (workers.length > 0) {
+            await Promise.all(workers.map(w => w.terminate()));
+            workers = [];
         }
     });
 
+    // FPS Counter
     (function(){
-        const fpsCounter=document.getElementById('fpsCounter');
-        let frameCount=0;
-        let fps=0;
-        let lastTime=performance.now();
+        const fpsCounter = document.getElementById('fpsCounter');
+        let frameCount = 0;
+        let fps = 0;
+        let lastTime = performance.now();
+
         function updateFPS(){
-            const now=performance.now();
+            const now = performance.now();
             frameCount++;
-            if(now-lastTime>=1000){
-                fps=frameCount;
-                frameCount=0;
-                lastTime=now;
-                fpsCounter.innerText=`FPS: ${fps}`;
+            if(now - lastTime >= 1000){
+                fps = frameCount;
+                frameCount = 0;
+                lastTime = now;
+                fpsCounter.innerText = `FPS: ${fps}`;
             }
             requestAnimationFrame(updateFPS);
         }
         requestAnimationFrame(updateFPS);
     })();
 </script>
+
 
 </body>
 </html>
