@@ -938,6 +938,18 @@
                         frameRate: Math.max(ocrFrequency, 15)
                     });
 
+                    // Set a default ROI if not already defined
+                    if (!videoContent.getROI()) {
+                        const defaultROI = {
+                            x: currentResolution.width * 0.2,
+                            y: currentResolution.height * 0.2,
+                            width: currentResolution.width * 0.6,
+                            height: currentResolution.height * 0.6
+                        };
+                        videoContent.setROI(defaultROI);
+                        console.log("Default ROI set:", defaultROI);
+                    }
+
                     // Hook into VideoContent's frame output
                     videoContent.onFrameProcessed = async (processedCanvas) => {
                         if (!scanning) return;
