@@ -34,7 +34,7 @@
         }
 
         .theme-toggle {
-            position: relative;
+            position: fixed;
             top: 20px;
             right: 20px;
             display: flex;
@@ -44,28 +44,18 @@
         .theme-toggle input {
             display: none;
         }
-        .toggle-label {
-            position: relative;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            user-select: none;
-            width: 80px;
-        }
         .toggle-switch {
-            position: fixed;
-            top: 20px;
-            right: 20px;
             width: 50px;
             height: 24px;
             background-color: #ccc;
             border-radius: 12px;
             transition: background-color 0.3s ease;
-            margin: 0 5px;
+            margin-left: 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 5px;
+            cursor: pointer;
         }
         .toggle-icon {
             width: 20px;
@@ -82,22 +72,22 @@
             opacity: 0;
             pointer-events: none;
         }
-        input:checked ~ .toggle-switch {
+        input:checked + .toggle-switch {
             background-color: #4f46e5;
         }
-        input:checked ~ .toggle-switch .sun-icon {
+        input:checked + .toggle-switch .sun-icon {
             opacity: 0;
         }
-        input:checked ~ .toggle-switch .moon-icon {
+        input:checked + .toggle-switch .moon-icon {
             opacity: 1;
         }
 
         .side-menu {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: -300px;
             width: 300px;
-            height: 180vh;
+            height: 100%;
             background-color: #2c3e50;
             color: #ecf0f1;
             overflow-y: auto;
@@ -192,7 +182,7 @@
         }
 
         .menu-toggle {
-            position: relative;
+            position: fixed;
             top: 20px;
             left: 20px;
             width: 30px;
@@ -256,18 +246,20 @@
             position: relative;
             margin-top: 20px;
             width: 100%;
+            max-width: 800px;
             display: flex;
             justify-content: center;
+            align-items: center;
         }
 
         #video {
-            width: 90%;
-            max-width: 500px;
+            width: 100%;
             border-radius: 12px;
             background: #000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
+        /* Viewport Canvas positioned above the video and below the ROI */
         #viewportCanvas {
             position: absolute;
             top: 0;
@@ -276,8 +268,8 @@
             height: 100%;
             border-radius: 12px;
             pointer-events: none;
-            display: none; /* Hidden by default, shown when "Show Debug" is pressed */
-            z-index: 1;
+            z-index: 2; /* Above video (z-index:1) and below ROI (z-index:3) */
+            display: none; /* Initially hidden */
         }
 
         #overlay {
@@ -292,7 +284,7 @@
             transform: translate(-50%, -50%);
             cursor: pointer;
             transition: border-color 0.3s ease;
-            z-index: 3;
+            z-index: 3; /* Above viewportCanvas */
         }
         #overlay:hover {
             border-color: #0077b6;
@@ -309,13 +301,13 @@
             border-radius: 4px;
             font-size: 14px;
             display: none;
-            z-index: 10;
+            z-index: 4;
         }
 
         #controls {
             margin-top: 20px;
             width: 90%;
-            max-width: 500px;
+            max-width: 800px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -418,7 +410,7 @@
             font-size: 16px;
         }
 
-        #debugCanvas {
+        #viewportCanvas, #debugCanvas {
             margin-top: 20px;
             max-width: 90%;
             width: auto;
@@ -427,24 +419,11 @@
             border-radius: 8px;
             background: #fff;
             display: none;
-            z-index: 4; /* Ensure it's above video and viewportCanvas */
         }
+        body.dark-theme #viewportCanvas,
         body.dark-theme #debugCanvas {
             background-color: #1e1e1e;
             border: 1px solid #555;
-        }
-
-        #viewportCanvas {
-            /* Styles added for viewportCanvas */
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 12px;
-            pointer-events: none;
-            display: none; /* Hidden by default, shown when "Show Debug" is pressed */
-            z-index: 1; /* Positioned above video but below overlay */
         }
 
         #debugConsole {
@@ -502,17 +481,6 @@
             background: #0b5ed7;
         }
 
-        #webglCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 8px;
-            display: none;
-            z-index: 2;
-        }
-
         .debug-button {
             background-color: #6a0dad;
             color: #fff;
@@ -523,6 +491,7 @@
             font-size: 14px;
             font-weight: 600;
             transition: background-color 0.3s ease;
+            margin-top: 20px;
         }
         .debug-button:hover {
             background-color: #5a0bad;
@@ -539,7 +508,7 @@
             .side-menu {
                 padding: 15px;
             }
-            #debugCanvas {
+            #viewportCanvas, #debugCanvas {
                 height: 150px;
             }
             #debugConsole {
@@ -629,6 +598,7 @@
     </style>
 </head>
 <body>
+    <!-- Side Menu -->
     <div class="side-menu" id="side-menu">
         <div id="fpsCounter">FPS: 0</div>
 
@@ -762,1290 +732,1329 @@
             </details>
         </div>
         <button id="debug-button" class="debug-button">Show Debug</button>
-    </div>
 
-    <div class="overlay" id="menu-overlay"></div>
-    <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
-        <span></span><span></span><span></span>
-    </div>
+        <!-- Overlay for Side Menu -->
+        <div class="overlay" id="menu-overlay"></div>
 
-    <div class="theme-toggle">
-        <label class="toggle-label">
-            <input type="checkbox" id="theme-checkbox">
-            <div class="toggle-switch">
-                <span class="toggle-icon sun-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 64 64" fill="#FFD700">
-                        <circle cx="32" cy="32" r="12"/>
-                        <g stroke="#FFD700" stroke-width="4">
-                            <line x1="32" y1="4" x2="32" y2="16"/>
-                            <line x1="32" y1="48" x2="32" y2="60"/>
-                            <line x1="4" y1="32" x2="16" y2="32"/>
-                            <line x1="48" y1="32" x2="60" y2="32"/>
-                            <line x1="11.31" y1="11.31" x2="20.49" y2="20.49"/>
-                            <line x1="43.51" y1="43.51" x2="52.69" y2="52.69"/>
-                            <line x1="11.31" y1="52.69" x2="20.49" y2="43.51"/>
-                            <line x1="43.51" y1="20.49" x2="52.69" y2="11.31"/>
-                        </g>
-                    </svg>
-                </span>
-                <span class="toggle-icon moon-icon">&#127765;</span>
-            </div>
-        </label>
-    </div>
-
-    <div id="errorMsg"></div>
-    <div id="container">
-        <div id="videoWrapper">
-            <video id="video" playsinline></video>
-            <canvas id="viewportCanvas"></canvas> <!-- Added viewportCanvas -->
-            <div id="overlay">
-                <canvas id="webglCanvas"></canvas>
-            </div>
-            <div id="focusIndicator">Processing...</div>
+        <!-- Menu Toggle Button -->
+        <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
+            <span></span><span></span><span></span>
         </div>
-        <div id="controls">
-            <div class="buttons-container">
-                <button id="start-button">Start Scanner</button>
-                <button id="stop-button" disabled>Stop Scanner</button>
-            </div>
-            <button id="restart-button">Restart Scanner</button>
-            <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
+
+        <!-- Theme Toggle Switch -->
+        <div class="theme-toggle">
+            <label class="toggle-label">
+                <input type="checkbox" id="theme-checkbox">
+                <div class="toggle-switch">
+                    <span class="toggle-icon sun-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 64 64" fill="#FFD700">
+                            <circle cx="32" cy="32" r="12"/>
+                            <g stroke="#FFD700" stroke-width="4">
+                                <line x1="32" y1="4" x2="32" y2="16"/>
+                                <line x1="32" y1="48" x2="32" y2="60"/>
+                                <line x1="4" y1="32" x2="16" y2="32"/>
+                                <line x1="48" y1="32" x2="60" y2="32"/>
+                                <line x1="11.31" y1="11.31" x2="20.49" y2="20.49"/>
+                                <line x1="43.51" y1="43.51" x2="52.69" y2="52.69"/>
+                                <line x1="11.31" y1="52.69" x2="20.49" y2="43.51"/>
+                                <line x1="43.51" y1="20.49" x2="52.69" y2="11.31"/>
+                            </g>
+                        </svg>
+                    </span>
+                    <span class="toggle-icon moon-icon">&#127765;</span>
+                </div>
+            </label>
         </div>
-        <canvas id="debugCanvas"></canvas>
-    </div>
-    <div id="debugControls">
-        <button id="save-logs-button">Save Logs</button>
-    </div>
-    <div id="debugConsole"></div>
 
-  <script>
-    /* Comprehensive Enhancements and Initialization */
+        <!-- Error Message Display -->
+        <div id="errorMsg"></div>
 
-    // Initialize Flags and Variables
-    let isTesseractInitialized = false;
-    let workers = [];
-    let stream = null;
+        <!-- Main Container -->
+        <div id="container">
+            <div id="videoWrapper">
+                <video id="video" playsinline></video>
+                <!-- Viewport Canvas positioned above video and below ROI -->
+                <canvas id="viewportCanvas"></canvas>
+                <!-- ROI Overlay -->
+                <div id="overlay">
+                    <canvas id="webglCanvas"></canvas>
+                </div>
+                <!-- Focus Indicator -->
+                <div id="focusIndicator">Processing...</div>
+            </div>
+            <!-- Controls Section -->
+            <div id="controls">
+                <div class="buttons-container">
+                    <button id="start-button">Start Scanner</button>
+                    <button id="stop-button" disabled>Stop Scanner</button>
+                </div>
+                <button id="restart-button">Restart Scanner</button>
+                <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
+            </div>
+            <!-- Debug Canvas -->
+            <canvas id="debugCanvas"></canvas>
+        </div>
+        <!-- Debug Controls -->
+        <div id="debugControls">
+            <button id="save-logs-button">Save Logs</button>
+        </div>
+        <!-- Debug Console -->
+        <div id="debugConsole"></div>
 
-    let scanning = false;
-    let frameSkipping = 1;
-    let ocrFrequency = 1;
-    let confidenceThreshold = 60;
-    let lastOcrTime = 0;
-    let frameCounter = 0;
-    
-    // Adaptive frame skipping variables
-    let targetFrameTime = 1000 / 30; // target ~30 fps processing
-    let maxSkipping = 60; 
-    let dynamicAdjust = true;
+        <script>
+            /* Comprehensive Enhancements and Initialization */
 
-    // Dynamic camera frame rate and adaptive resolution suggestions
-    let currentResolution = null;
-    let selectedCameraId = null;
+            // Initialize Flags and Variables
+            let isTesseractInitialized = false;
+            let workers = [];
+            let stream = null;
 
-    // WebGL Variables
-    let gl = null;
-    let glProgram = null;
-    let glTexture = null;
-    let glBuffer = null;
-    let glInitialized = false;
+            let scanning = false;
+            let frameSkipping = 1;
+            let ocrFrequency = 1;
+            let confidenceThreshold = 60;
+            let lastOcrTime = 0;
+            let frameCounter = 0;
+            
+            // Adaptive frame skipping variables
+            let targetFrameTime = 1000 / 30; // target ~30 fps processing
+            let maxSkipping = 60; 
+            let dynamicAdjust = true;
 
-    // DOM Elements
-    const video = document.getElementById('video');
-    const roiOverlay = document.getElementById('overlay');
-    const startButton = document.getElementById('start-button');
-    const stopButton = document.getElementById('stop-button');
-    const restartButton = document.getElementById('restart-button');
-    const output = document.getElementById('output');
-    const errorMsg = document.getElementById('errorMsg');
-    const debugCanvas = document.getElementById('debugCanvas');
-    const debugCtx = debugCanvas.getContext('2d');
-    const focusIndicator = document.getElementById('focusIndicator');
-    const workersSelect = document.getElementById('workers-select');
-    const frameSkippingSelect = document.getElementById('frame-skipping-select');
-    const frequencySelect = document.getElementById('frequency-select');
-    const ocrInfo = document.getElementById('ocr-info');
-    const confidenceThresholdInput = document.getElementById('confidence-threshold-input');
+            // WebGL Variables
+            let gl = null;
+            let glProgram = null;
+            let glTexture = null;
+            let glBuffer = null;
+            let glInitialized = false;
 
-    // Preprocessing Controls
-    const enableGrayscale = document.getElementById('enableGrayscale');
-    const grayscaleSlider = document.getElementById('grayscaleSlider');
-    const enableDenoise = document.getElementById('enableDenoise');
-    const denoiseSlider = document.getElementById('denoiseSlider');
-    const enableSharpen = document.getElementById('enableSharpen');
-    const sharpenSlider = document.getElementById('sharpenSlider');
-    const enableBrightness = document.getElementById('enableBrightness');
-    const brightnessSlider = document.getElementById('brightnessSlider');
-    const enableContrast = document.getElementById('enableContrast');
-    const contrastSlider = document.getElementById('contrastSlider');
-    const enableClarity = document.getElementById('enableClarity');
-    const claritySlider = document.getElementById('claritySlider');
-    const enableHighlights = document.getElementById('enableHighlights');
-    const highlightsSlider = document.getElementById('highlightsSlider');
+            // DOM Elements
+            const video = document.getElementById('video');
+            const roiOverlay = document.getElementById('overlay');
+            const startButton = document.getElementById('start-button');
+            const stopButton = document.getElementById('stop-button');
+            const restartButton = document.getElementById('restart-button');
+            const output = document.getElementById('output');
+            const errorMsg = document.getElementById('errorMsg');
+            const debugCanvas = document.getElementById('debugCanvas');
+            const debugCtx = debugCanvas.getContext('2d');
+            const focusIndicator = document.getElementById('focusIndicator');
+            const workersSelect = document.getElementById('workers-select');
+            const frameSkippingSelect = document.getElementById('frame-skipping-select');
+            const frequencySelect = document.getElementById('frequency-select');
+            const ocrInfo = document.getElementById('ocr-info');
+            const confidenceThresholdInput = document.getElementById('confidence-threshold-input');
 
-    // Configuration Management Elements
-    const configSelect = document.getElementById('config-select');
-    const loadConfigButton = document.getElementById('load-config-button');
-    const saveConfigButton = document.getElementById('save-config-button');
+            // Preprocessing Controls
+            const enableGrayscale = document.getElementById('enableGrayscale');
+            const grayscaleSlider = document.getElementById('grayscaleSlider');
+            const enableDenoise = document.getElementById('enableDenoise');
+            const denoiseSlider = document.getElementById('denoiseSlider');
+            const enableSharpen = document.getElementById('enableSharpen');
+            const sharpenSlider = document.getElementById('sharpenSlider');
+            const enableBrightness = document.getElementById('enableBrightness');
+            const brightnessSlider = document.getElementById('brightnessSlider');
+            const enableContrast = document.getElementById('enableContrast');
+            const contrastSlider = document.getElementById('contrastSlider');
+            const enableClarity = document.getElementById('enableClarity');
+            const claritySlider = document.getElementById('claritySlider');
+            const enableHighlights = document.getElementById('enableHighlights');
+            const highlightsSlider = document.getElementById('highlightsSlider');
 
-    // Offscreen Canvases
-    const videoCanvas = document.createElement('canvas');
-    const roiCanvas = document.createElement('canvas');
-    const scaledCanvas = document.createElement('canvas');
+            // Configuration Management Elements
+            const configSelect = document.getElementById('config-select');
+            const loadConfigButton = document.getElementById('load-config-button');
+            const saveConfigButton = document.getElementById('save-config-button');
 
-    // Initialize WebGL for Preprocessing
-    function initWebGL() {
-        if (glInitialized) return;
-        const webglCanvas = document.getElementById('webglCanvas');
-        gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('experimental-webgl');
-        if (!gl) {
-            showError('WebGL not supported in this browser.');
-            return;
-        }
+            // Offscreen Canvases
+            const videoCanvas = document.createElement('canvas');
+            const roiCanvas = document.createElement('canvas');
+            const scaledCanvas = document.createElement('canvas');
 
-        // Vertex Shader
-        const vertexShaderSource = `
-            attribute vec2 a_position;
-            attribute vec2 a_texCoord;
-            varying vec2 v_texCoord;
-            void main(void) {
-                gl_Position = vec4(a_position, 0.0, 1.0);
-                v_texCoord = a_texCoord;
-            }
-        `;
-
-        // Fragment Shader
-        const fragmentShaderSource = `
-            precision mediump float;
-            varying vec2 v_texCoord;
-            uniform sampler2D u_texture;
-            uniform bool u_grayscaleEnabled;
-            uniform float u_grayscaleAmount;
-            uniform bool u_denoiseEnabled;
-            uniform float u_denoiseAmount;
-            uniform bool u_sharpenEnabled;
-            uniform float u_sharpenAmount;
-            uniform bool u_brightnessEnabled;
-            uniform float u_brightnessAmount;
-            uniform bool u_contrastEnabled;
-            uniform float u_contrastAmount;
-            uniform bool u_clarityEnabled;
-            uniform float u_clarityAmount;
-            uniform bool u_highlightsEnabled;
-            uniform float u_highlightsAmount;
-
-            // Denoise Function
-            vec4 denoise(sampler2D tex, vec2 uv, float strength) {
-                float offset = 1.0 / 300.0 * strength;
-                vec4 center = texture2D(tex, uv);
-                vec4 sum = center;
-                sum += texture2D(tex, uv + vec2(-offset, 0.0));
-                sum += texture2D(tex, uv + vec2(offset, 0.0));
-                sum += texture2D(tex, uv + vec2(0.0, -offset));
-                sum += texture2D(tex, uv + vec2(0.0, offset));
-                return sum / 5.0; 
-            }
-
-            // Sharpen Function
-            vec4 sharpen(sampler2D tex, vec2 uv, float strength) {
-                float offset = 1.0 / 300.0 * strength;
-                vec4 center = texture2D(tex, uv);
-                vec4 sum = center;
-                sum += texture2D(tex, uv + vec2(-offset, 0.0));
-                sum += texture2D(tex, uv + vec2(offset, 0.0));
-                sum += texture2D(tex, uv + vec2(0.0, -offset));
-                sum += texture2D(tex, uv + vec2(0.0, offset));
-                float a = strength * 0.5;
-                vec4 blurColor = sum / 5.0;
-                return center * (1.0 + a) - blurColor * a;
-            }
-
-            // Brightness Adjustment
-            vec4 applyBrightness(vec4 color, float amount) {
-                float factor = (amount - 50.0) / 50.0;
-                color.rgb += factor; 
-                return color;
-            }
-
-            // Contrast Adjustment
-            vec4 applyContrast(vec4 color, float amount) {
-                float factor = amount / 50.0;
-                color.rgb = (color.rgb - 0.5) * factor + 0.5;
-                return color;
-            }
-
-            // Clarity Adjustment
-            vec4 applyClarity(vec4 color, float amount) {
-                float factor = (amount - 50.0) / 50.0;
-                color.r = (color.r - 0.5) * (1.0 + factor) + 0.5;
-                color.g = (color.g - 0.5) * (1.0 + factor) + 0.5;
-                color.b = (color.b - 0.5) * (1.0 + factor) + 0.5;
-                return color;
-            }
-
-            // Highlights Adjustment
-            vec4 applyHighlights(vec4 color, float amount) {
-                float factor = (amount - 50.0) / 50.0;
-                if(color.r > 0.5) color.r += factor * (color.r - 0.5);
-                if(color.g > 0.5) color.g += factor * (color.g - 0.5);
-                if(color.b > 0.5) color.b += factor * (color.b - 0.5);
-                return color;
-            }
-
-            void main(void) {
-                vec4 color = texture2D(u_texture, v_texCoord);
-
-                // Apply Denoise
-                if (u_denoiseEnabled) {
-                    color = denoise(u_texture, v_texCoord, u_denoiseAmount);
+            // Initialize WebGL for Preprocessing
+            function initWebGL() {
+                if (glInitialized) return;
+                const webglCanvas = document.getElementById('webglCanvas');
+                gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('experimental-webgl');
+                if (!gl) {
+                    showError('WebGL not supported in this browser.');
+                    return;
                 }
 
-                // Apply Sharpen
-                if (u_sharpenEnabled) {
-                    color = sharpen(u_texture, v_texCoord, u_sharpenAmount);
+                // Vertex Shader
+                const vertexShaderSource = `
+                    attribute vec2 a_position;
+                    attribute vec2 a_texCoord;
+                    varying vec2 v_texCoord;
+                    void main(void) {
+                        gl_Position = vec4(a_position, 0.0, 1.0);
+                        v_texCoord = a_texCoord;
+                    }
+                `;
+
+                // Fragment Shader
+                const fragmentShaderSource = `
+                    precision mediump float;
+                    varying vec2 v_texCoord;
+                    uniform sampler2D u_texture;
+                    uniform bool u_grayscaleEnabled;
+                    uniform float u_grayscaleAmount;
+                    uniform bool u_denoiseEnabled;
+                    uniform float u_denoiseAmount;
+                    uniform bool u_sharpenEnabled;
+                    uniform float u_sharpenAmount;
+                    uniform bool u_brightnessEnabled;
+                    uniform float u_brightnessAmount;
+                    uniform bool u_contrastEnabled;
+                    uniform float u_contrastAmount;
+                    uniform bool u_clarityEnabled;
+                    uniform float u_clarityAmount;
+                    uniform bool u_highlightsEnabled;
+                    uniform float u_highlightsAmount;
+
+                    // Denoise Function
+                    vec4 denoise(sampler2D tex, vec2 uv, float strength) {
+                        float offset = 1.0 / 300.0 * strength;
+                        vec4 center = texture2D(tex, uv);
+                        vec4 sum = center;
+                        sum += texture2D(tex, uv + vec2(-offset, 0.0));
+                        sum += texture2D(tex, uv + vec2(offset, 0.0));
+                        sum += texture2D(tex, uv + vec2(0.0, -offset));
+                        sum += texture2D(tex, uv + vec2(0.0, offset));
+                        return sum / 5.0; 
+                    }
+
+                    // Sharpen Function
+                    vec4 sharpen(sampler2D tex, vec2 uv, float strength) {
+                        float offset = 1.0 / 300.0 * strength;
+                        vec4 center = texture2D(tex, uv);
+                        vec4 sum = center;
+                        sum += texture2D(tex, uv + vec2(-offset, 0.0));
+                        sum += texture2D(tex, uv + vec2(offset, 0.0));
+                        sum += texture2D(tex, uv + vec2(0.0, -offset));
+                        sum += texture2D(tex, uv + vec2(0.0, offset));
+                        float a = strength * 0.5;
+                        vec4 blurColor = sum / 5.0;
+                        return center * (1.0 + a) - blurColor * a;
+                    }
+
+                    // Brightness Adjustment
+                    vec4 applyBrightness(vec4 color, float amount) {
+                        float factor = (amount - 50.0) / 50.0;
+                        color.rgb += factor; 
+                        return color;
+                    }
+
+                    // Contrast Adjustment
+                    vec4 applyContrast(vec4 color, float amount) {
+                        float factor = amount / 50.0;
+                        color.rgb = (color.rgb - 0.5) * factor + 0.5;
+                        return color;
+                    }
+
+                    // Clarity Adjustment
+                    vec4 applyClarity(vec4 color, float amount) {
+                        float factor = (amount - 50.0) / 50.0;
+                        color.r = (color.r - 0.5) * (1.0 + factor) + 0.5;
+                        color.g = (color.g - 0.5) * (1.0 + factor) + 0.5;
+                        color.b = (color.b - 0.5) * (1.0 + factor) + 0.5;
+                        return color;
+                    }
+
+                    // Highlights Adjustment
+                    vec4 applyHighlights(vec4 color, float amount) {
+                        float factor = (amount - 50.0) / 50.0;
+                        if(color.r > 0.5) color.r += factor * (color.r - 0.5);
+                        if(color.g > 0.5) color.g += factor * (color.g - 0.5);
+                        if(color.b > 0.5) color.b += factor * (color.b - 0.5);
+                        return color;
+                    }
+
+                    void main(void) {
+                        vec4 color = texture2D(u_texture, v_texCoord);
+
+                        // Apply Denoise
+                        if (u_denoiseEnabled) {
+                            color = denoise(u_texture, v_texCoord, u_denoiseAmount);
+                        }
+
+                        // Apply Sharpen
+                        if (u_sharpenEnabled) {
+                            color = sharpen(u_texture, v_texCoord, u_sharpenAmount);
+                        }
+
+                        // Apply Brightness
+                        if (u_brightnessEnabled) {
+                            color = applyBrightness(color, u_brightnessAmount);
+                        }
+
+                        // Apply Contrast
+                        if (u_contrastEnabled) {
+                            color = applyContrast(color, u_contrastAmount);
+                        }
+
+                        // Apply Clarity
+                        if (u_clarityEnabled) {
+                            color = applyClarity(color, u_clarityAmount);
+                        }
+
+                        // Apply Highlights
+                        if (u_highlightsEnabled) {
+                            color = applyHighlights(color, u_highlightsAmount);
+                        }
+
+                        // Apply Grayscale
+                        if (u_grayscaleEnabled) {
+                            float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                            color = mix(color, vec4(vec3(gray), color.a), u_grayscaleAmount);
+                        }
+
+                        gl_FragColor = color;
+                    }
+                `;
+
+                // Helper Function to Compile Shaders
+                function compileShader(type, source) {
+                    const shader = gl.createShader(type);
+                    gl.shaderSource(shader, source);
+                    gl.compileShader(shader);
+                    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                        const info = gl.getShaderInfoLog(shader);
+                        showError(`Shader compilation failed: ${info}`);
+                        gl.deleteShader(shader);
+                        return null;
+                    }
+                    return shader;
                 }
 
-                // Apply Brightness
-                if (u_brightnessEnabled) {
-                    color = applyBrightness(color, u_brightnessAmount);
+                // Compile Shaders
+                const vs = compileShader(gl.VERTEX_SHADER, vertexShaderSource);
+                const fs = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
+                if (!vs || !fs) return;
+
+                // Create and Link Program
+                glProgram = gl.createProgram();
+                gl.attachShader(glProgram, vs);
+                gl.attachShader(glProgram, fs);
+                gl.linkProgram(glProgram);
+                if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
+                    const info = gl.getProgramInfoLog(glProgram);
+                    showError(`Program linking failed: ${info}`);
+                    gl.deleteProgram(glProgram);
+                    return;
                 }
+                gl.useProgram(glProgram);
 
-                // Apply Contrast
-                if (u_contrastEnabled) {
-                    color = applyContrast(color, u_contrastAmount);
-                }
+                // Define Geometry
+                glBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
+                const vertices = new Float32Array([
+                    -1.0, -1.0, 0.0, 0.0,
+                     1.0, -1.0, 1.0, 0.0,
+                    -1.0,  1.0, 0.0, 1.0,
+                     1.0,  1.0, 1.0, 1.0
+                ]);
+                gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-                // Apply Clarity
-                if (u_clarityEnabled) {
-                    color = applyClarity(color, u_clarityAmount);
-                }
+                const FSIZE = vertices.BYTES_PER_ELEMENT;
+                const aPosition = gl.getAttribLocation(glProgram, 'a_position');
+                gl.enableVertexAttribArray(aPosition);
+                gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, FSIZE * 4, 0);
 
-                // Apply Highlights
-                if (u_highlightsEnabled) {
-                    color = applyHighlights(color, u_highlightsAmount);
-                }
+                const aTexCoord = gl.getAttribLocation(glProgram, 'a_texCoord');
+                gl.enableVertexAttribArray(aTexCoord);
+                gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
 
-                // Apply Grayscale
-                if (u_grayscaleEnabled) {
-                    float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-                    color = mix(color, vec4(vec3(gray), color.a), u_grayscaleAmount);
-                }
+                // Create and Bind Texture
+                glTexture = gl.createTexture();
+                gl.bindTexture(gl.TEXTURE_2D, glTexture);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-                gl_FragColor = color;
-            }
-        `;
+                // Get Uniform Locations
+                window.uLocations = {
+                    grayscaleEnabled: gl.getUniformLocation(glProgram, "u_grayscaleEnabled"),
+                    grayscaleAmount: gl.getUniformLocation(glProgram, "u_grayscaleAmount"),
+                    denoiseEnabled: gl.getUniformLocation(glProgram, "u_denoiseEnabled"),
+                    denoiseAmount: gl.getUniformLocation(glProgram, "u_denoiseAmount"),
+                    sharpenEnabled: gl.getUniformLocation(glProgram, "u_sharpenEnabled"),
+                    sharpenAmount: gl.getUniformLocation(glProgram, "u_sharpenAmount"),
+                    brightnessEnabled: gl.getUniformLocation(glProgram, "u_brightnessEnabled"),
+                    brightnessAmount: gl.getUniformLocation(glProgram, "u_brightnessAmount"),
+                    contrastEnabled: gl.getUniformLocation(glProgram, "u_contrastEnabled"),
+                    contrastAmount: gl.getUniformLocation(glProgram, "u_contrastAmount"),
+                    clarityEnabled: gl.getUniformLocation(glProgram, "u_clarityEnabled"),
+                    clarityAmount: gl.getUniformLocation(glProgram, "u_clarityAmount"),
+                    highlightsEnabled: gl.getUniformLocation(glProgram, "u_highlightsEnabled"),
+                    highlightsAmount: gl.getUniformLocation(glProgram, "u_highlightsAmount"),
+                };
 
-        // Helper Function to Compile Shaders
-        function compileShader(type, source) {
-            const shader = gl.createShader(type);
-            gl.shaderSource(shader, source);
-            gl.compileShader(shader);
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                const info = gl.getShaderInfoLog(shader);
-                showError(`Shader compilation failed: ${info}`);
-                gl.deleteShader(shader);
-                return null;
-            }
-            return shader;
-        }
-
-        // Compile Shaders
-        const vs = compileShader(gl.VERTEX_SHADER, vertexShaderSource);
-        const fs = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
-        if (!vs || !fs) return;
-
-        // Create and Link Program
-        glProgram = gl.createProgram();
-        gl.attachShader(glProgram, vs);
-        gl.attachShader(glProgram, fs);
-        gl.linkProgram(glProgram);
-        if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
-            const info = gl.getProgramInfoLog(glProgram);
-            showError(`Program linking failed: ${info}`);
-            gl.deleteProgram(glProgram);
-            return;
-        }
-        gl.useProgram(glProgram);
-
-        // Define Geometry
-        glBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
-        const vertices = new Float32Array([
-            -1.0, -1.0, 0.0, 0.0,
-             1.0, -1.0, 1.0, 0.0,
-            -1.0,  1.0, 0.0, 1.0,
-             1.0,  1.0, 1.0, 1.0
-        ]);
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-        const FSIZE = vertices.BYTES_PER_ELEMENT;
-        const aPosition = gl.getAttribLocation(glProgram, 'a_position');
-        gl.enableVertexAttribArray(aPosition);
-        gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, FSIZE * 4, 0);
-
-        const aTexCoord = gl.getAttribLocation(glProgram, 'a_texCoord');
-        gl.enableVertexAttribArray(aTexCoord);
-        gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
-
-        // Create and Bind Texture
-        glTexture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, glTexture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-        // Get Uniform Locations
-        window.uLocations = {
-            grayscaleEnabled: gl.getUniformLocation(glProgram, "u_grayscaleEnabled"),
-            grayscaleAmount: gl.getUniformLocation(glProgram, "u_grayscaleAmount"),
-            denoiseEnabled: gl.getUniformLocation(glProgram, "u_denoiseEnabled"),
-            denoiseAmount: gl.getUniformLocation(glProgram, "u_denoiseAmount"),
-            sharpenEnabled: gl.getUniformLocation(glProgram, "u_sharpenEnabled"),
-            sharpenAmount: gl.getUniformLocation(glProgram, "u_sharpenAmount"),
-            brightnessEnabled: gl.getUniformLocation(glProgram, "u_brightnessEnabled"),
-            brightnessAmount: gl.getUniformLocation(glProgram, "u_brightnessAmount"),
-            contrastEnabled: gl.getUniformLocation(glProgram, "u_contrastEnabled"),
-            contrastAmount: gl.getUniformLocation(glProgram, "u_contrastAmount"),
-            clarityEnabled: gl.getUniformLocation(glProgram, "u_clarityEnabled"),
-            clarityAmount: gl.getUniformLocation(glProgram, "u_clarityAmount"),
-            highlightsEnabled: gl.getUniformLocation(glProgram, "u_highlightsEnabled"),
-            highlightsAmount: gl.getUniformLocation(glProgram, "u_highlightsAmount"),
-        };
-
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        glInitialized = true;
-        console.log('WebGL initialized successfully.');
-    }
-
-    // Function to Display Errors
-    function showError(message) {
-        console.error(message);
-        errorMsg.innerText = message;
-        errorMsg.style.display = 'block';
-        setTimeout(() => {
-            errorMsg.style.display = 'none';
-        }, 5000);
-    }
-
-    // Initialize Camera with Given Constraints
-    async function initCamera(resolution = null, cameraId = null) {
-        try {
-            const videoConstraints = {};
-            if (cameraId) {
-                videoConstraints.deviceId = { exact: cameraId };
-            } else {
-                videoConstraints.facingMode = { exact: "environment" };
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                glInitialized = true;
+                console.log('WebGL initialized successfully.');
             }
 
-            // Adjust camera framerate based on OCR frequency
-            const adjustedFrameRate = Math.max(ocrFrequency, 15);
-            videoConstraints.frameRate = { ideal: adjustedFrameRate, max: 30 };
-
-            if (resolution) {
-                videoConstraints.width = { exact: resolution.width };
-                videoConstraints.height = { exact: resolution.height };
-            } else {
-                videoConstraints.width = { ideal: 1280 };
-                videoConstraints.height = { ideal: 720 };
+            // Function to Display Errors
+            function showError(message) {
+                console.error(message);
+                errorMsg.innerText = message;
+                errorMsg.style.display = 'block';
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                }, 5000);
             }
 
-            const constraints = { video: videoConstraints, audio: false };
-            if (stream) {
-                stream.getTracks().forEach(t => t.stop());
-            }
-            stream = await navigator.mediaDevices.getUserMedia(constraints);
-            video.srcObject = stream;
-            await video.play();
-            console.log('Camera initialized with adjusted framerate:', adjustedFrameRate);
-        } catch (err) {
-            showError('Unable to access the camera. Please check permissions and try again.');
-            console.error('initCamera Error:', err);
-            throw err;
-        }
-    }
-
-    // Get Selected Resolution from Dropdown
-    function getSelectedResolution() {
-        const resolutionSelect = document.getElementById('resolution-select');
-        const val = resolutionSelect.value;
-        if (!val) return null;
-        const [width, height] = val.split('x').map(Number);
-        return { width, height };
-    }
-
-    // Initialize Tesseract.js Workers
-    async function initializeTesseract(workersCount) {
-        try {
-            if (workers.length > 0) {
-                await Promise.all(workers.map(w => w.terminate()));
-                workers = [];
-            }
-            for (let i = 0; i < workersCount; i++) {
-                const worker = await Tesseract.createWorker({
-                    lang: 'eng',
-                    logger: m => console.log(`[Worker ${i + 1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
-                });
-                await worker.loadLanguage('eng');
-                await worker.initialize('eng');
-                workers.push(worker);
-                console.log(`Tesseract worker ${i + 1} initialized.`);
-            }
-            isTesseractInitialized = true;
-            console.log('All Tesseract workers initialized successfully.');
-        } catch (err) {
-            showError('Failed to initialize OCR workers.');
-            console.error('initializeTesseract Error:', err);
-            throw err;
-        }
-    }
-
-    // Adjust Number of Workers Based on OCR Frequency
-    function adjustWorkers() {
-        const maxWorkers = parseInt(workersSelect.value);
-        if (ocrFrequency > 5 && workers.length < maxWorkers) {
-            // Add a worker
-            initializeTesseract(workers.length + 1).catch(err => {});
-        } else if (ocrFrequency < 2 && workers.length > 1) {
-            // Remove a worker
-            if (workers.length > 1) {
-                const workerToTerminate = workers.pop();
-                workerToTerminate.terminate().then(() => {
-                    console.log('Tesseract worker terminated.');
-                }).catch(err => {
-                    console.error('Error terminating worker:', err);
-                });
-            }
-        }
-    }
-
-    // Start the Scanning Process
-    async function startScanning() {
-        if (scanning) return; // Prevent multiple scans at the same time
-
-        // Update UI to reflect scanning status
-        startButton.disabled = true;
-        stopButton.disabled = true;
-        restartButton.style.display = 'none';
-        startButton.innerText = 'Starting...';
-
-        // Retrieve selected resolution and camera ID
-        currentResolution = getSelectedResolution();
-        selectedCameraId = document.getElementById('camera-select').value || null;
-
-        try {
-            // Initialize the camera with the selected settings
-            await initCamera(currentResolution, selectedCameraId);
-        } catch (error) {
-            showError('Failed to initialize the camera.');
-            startButton.disabled = false;
-            startButton.innerText = 'Start Scanner';
-            return;
-        }
-
-        // Initialize Tesseract workers if not already done
-        const workersCount = parseInt(workersSelect.value, 10);
-        if (!isTesseractInitialized) {
-            try {
-                await initializeTesseract(workersCount);
-            } catch (error) {
-                showError('Failed to initialize OCR workers.');
-                startButton.disabled = false;
-                startButton.innerText = 'Start Scanner';
-                return;
-            }
-        }
-
-        // Set frame skipping and OCR frequency based on user selections
-        frameSkipping = parseInt(frameSkippingSelect.value, 10);
-        ocrFrequency = parseFloat(frequencySelect.value);
-        updateOcrInfo();
-
-        // Initialize WebGL for preprocessing if not already done
-        if (!glInitialized) {
-            initWebGL();
-            if (!glInitialized) {
-                showError('WebGL initialization failed.');
-                startButton.disabled = false;
-                startButton.innerText = 'Start Scanner';
-                return;
-            }
-        }
-
-        // Update scanning state and UI elements
-        scanning = true;
-        startButton.disabled = true;
-        stopButton.disabled = false;
-        startButton.innerText = 'Scanning...';
-        output.value = ''; // Clear previous OCR output
-
-        // Start processing frames
-        requestAnimationFrame(processFrame);
-        console.log('Scanning started.');
-    }
-
-    // Stop the Scanning Process
-    async function stopScanning() {
-        if (!scanning) return;
-        scanning = false;
-        startButton.disabled = false;
-        stopButton.disabled = true;
-        restartButton.style.display = 'block';
-        startButton.innerText = 'Start Scanner';
-        roiOverlay.style.borderColor = '#00b4d8';
-        if (stream) {
-            stream.getTracks().forEach(t => t.stop());
-            stream = null;
-        }
-        debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-        console.log('Scanning stopped.');
-    }
-
-    // Perform OCR on the Preprocessed Image Blob
-    async function performOCR(blob) {
-        try {
-            const results = await Promise.all(workers.map(worker => worker.recognize(blob)));
-            let aggText = '';
-            let totalConf = 0;
-            results.forEach(r => {
-                aggText += r.data.text + '\n';
-                totalConf += r.data.confidence;
-            });
-            const avgConf = totalConf / workers.length;
-            if (avgConf >= confidenceThreshold && aggText.trim().length > 0) {
-                roiOverlay.style.borderColor = '#2cb67d';
-                if (!output.value.includes(aggText.trim())) {
-                    output.value += aggText.trim() + '\n';
-                }
-            } else {
-                roiOverlay.style.borderColor = '#d00000';
-            }
-            console.log('OCR performed. Average Confidence:', avgConf);
-        } catch (err) {
-            showError('OCR processing failed.');
-            console.error('performOCR Error:', err);
-        }
-    }
-
-    // Process Each Frame from the Video Stream
-    async function processFrame() {
-        if (!scanning) return;
-        const startTime = performance.now();
-        const now = Date.now();
-        const timeSinceLastOcr = now - lastOcrTime;
-        const desiredInterval = 1000 / ocrFrequency;
-        frameCounter++;
-
-        if (frameCounter < frameSkipping) {
-            if (scanning) requestAnimationFrame(processFrame);
-            return;
-        }
-        frameCounter = 0;
-
-        if (timeSinceLastOcr < desiredInterval) {
-            if (scanning) requestAnimationFrame(processFrame);
-            return;
-        }
-        lastOcrTime = now;
-
-        if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-            if (scanning) requestAnimationFrame(processFrame);
-            return;
-        }
-
-        try {
-            const videoWidth = video.videoWidth;
-            const videoHeight = video.videoHeight;
-            videoCanvas.width = videoWidth;
-            videoCanvas.height = videoHeight;
-
-            const ctx = videoCanvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
-
-            const overlayRect = roiOverlay.getBoundingClientRect();
-            const videoRect = video.getBoundingClientRect();
-            const scaleX = videoWidth / videoRect.width;
-            const scaleY = videoHeight / videoRect.height;
-            const roiX = (overlayRect.left - videoRect.left) * scaleX;
-            const roiY = (overlayRect.top - videoRect.top) * scaleY;
-            const roiW = overlayRect.width * scaleX;
-            const roiH = overlayRect.height * scaleY;
-
-            if (roiX < 0 || roiY < 0 || (roiX + roiW) > videoWidth || (roiY + roiH) > videoHeight) {
-                showError('ROI out of frame bounds.');
-                await stopScanning();
-                return;
-            }
-
-            roiCanvas.width = roiW;
-            roiCanvas.height = roiH;
-            const roiCtx = roiCanvas.getContext('2d');
-            roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
-
-            const scaleFactor = 1.5;
-            scaledCanvas.width = roiW * scaleFactor;
-            scaledCanvas.height = roiH * scaleFactor;
-            const scaledCtx = scaledCanvas.getContext('2d');
-            scaledCtx.imageSmoothingEnabled = true;
-            scaledCtx.imageSmoothingQuality = 'high';
-            scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-
-            const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
-            if (!preprocessedBlob) {
-                throw new Error('Preprocessing failed.');
-            }
-
-            debugCanvas.width = scaledCanvas.width;
-            debugCanvas.height = scaledCanvas.height;
-            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-            const img = await createImageBitmap(preprocessedBlob);
-            debugCtx.drawImage(img, 0, 0);
-
-            // Draw effect labels for debugging
-            debugCtx.font = '16px Arial';
-            debugCtx.fillStyle = 'yellow';
-            let yOffset = 20;
-            if (enableGrayscale.checked) { debugCtx.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset += 20; }
-            if (enableDenoise.checked) { debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableSharpen.checked) { debugCtx.fillText(`Sharpen: ${sharpenSlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableBrightness.checked) { debugCtx.fillText(`Brightness: ${brightnessSlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableContrast.checked) { debugCtx.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableClarity.checked) { debugCtx.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableHighlights.checked) { debugCtx.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); }
-
-            // Perform OCR on the preprocessed image
-            await performOCR(preprocessedBlob);
-
-            // Adaptive frame skipping based on processing time
-            const processingTime = performance.now() - startTime;
-            if (dynamicAdjust) {
-                if (processingTime > targetFrameTime && frameSkipping < maxSkipping) {
-                    frameSkipping++;
-                } else if (processingTime < targetFrameTime && frameSkipping > 1) {
-                    frameSkipping--;
-                }
-            }
-
-        } catch (err) {
-            showError('An error occurred during frame processing.');
-            console.error('processFrame Error:', err);
-            await stopScanning();
-            return;
-        }
-
-        if (scanning) requestAnimationFrame(processFrame);
-    }
-
-    // Preprocess Image Using WebGL
-    async function preprocessWithWebGL(sourceCanvas) {
-        try {
-            if (!glInitialized) {
-                initWebGL();
-                if (!glInitialized) {
-                    throw new Error('WebGL initialization failed.');
-                }
-            }
-
-            const width = sourceCanvas.width;
-            const height = sourceCanvas.height;
-
-            const webglCanvas = document.getElementById('webglCanvas');
-            webglCanvas.width = width;
-            webglCanvas.height = height;
-
-            gl.viewport(0, 0, width, height);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-
-            gl.bindTexture(gl.TEXTURE_2D, glTexture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
-
-            // Set Uniforms Based on Preprocessing Settings
-            gl.uniform1i(window.uLocations.grayscaleEnabled, enableGrayscale.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value) / 100.0);
-
-            gl.uniform1i(window.uLocations.denoiseEnabled, enableDenoise.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.denoiseAmount, parseFloat(denoiseSlider.value));
-
-            gl.uniform1i(window.uLocations.sharpenEnabled, enableSharpen.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.sharpenAmount, parseFloat(sharpenSlider.value));
-
-            gl.uniform1i(window.uLocations.brightnessEnabled, enableBrightness.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.brightnessAmount, parseFloat(brightnessSlider.value));
-
-            gl.uniform1i(window.uLocations.contrastEnabled, enableContrast.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.contrastAmount, parseFloat(contrastSlider.value));
-
-            gl.uniform1i(window.uLocations.clarityEnabled, enableClarity.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.clarityAmount, parseFloat(claritySlider.value));
-
-            gl.uniform1i(window.uLocations.highlightsEnabled, enableHighlights.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value));
-
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-            // Read Pixels from WebGL Canvas
-            const pixels = new Uint8ClampedArray(width * height * 4);
-            gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-            // Create ImageData and Draw to Offscreen Canvas
-            const offscreen = document.createElement('canvas');
-            offscreen.width = width;
-            offscreen.height = height;
-            const offCtx = offscreen.getContext('2d');
-            const imageData = new ImageData(pixels, width, height);
-            offCtx.putImageData(imageData, 0, 0);
-
-            // Convert Canvas to Blob
-            return new Promise((resolve, reject) => {
-                offscreen.toBlob((blob) => {
-                    if (blob) {
-                        resolve(blob);
+            // Initialize Camera with Given Constraints
+            async function initCamera(resolution = null, cameraId = null) {
+                try {
+                    const videoConstraints = {};
+                    if (cameraId) {
+                        videoConstraints.deviceId = { exact: cameraId };
                     } else {
-                        reject(new Error('Failed to convert canvas to blob.'));
+                        videoConstraints.facingMode = { exact: "environment" };
                     }
-                }, 'image/png');
-            });
-        } catch (err) {
-            showError('Preprocessing with WebGL failed.');
-            console.error('preprocessWithWebGL Error:', err);
-            return null;
-        }
-    }
 
-    // Update OCR Information Display
-    function updateOcrInfo() {
-        const approximateFPS = 60;
-        const frameBasedFrequency = approximateFPS / frameSkipping;
-        const effectiveFrequency = Math.min(frameBasedFrequency, ocrFrequency);
-        ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
-    }
+                    // Adjust camera framerate based on OCR frequency
+                    const adjustedFrameRate = Math.max(ocrFrequency, 15);
+                    videoConstraints.frameRate = { ideal: adjustedFrameRate, max: 30 };
 
-    // Capture Frame and Perform OCR (Triggered by Click)
-    async function captureFrameAndPerformOCR() {
-        if (!scanning) return;
-        scanning = false; // Temporarily stop scanning to perform manual capture
+                    if (resolution) {
+                        const [width, height] = resolution.split('x').map(Number);
+                        videoConstraints.width = { exact: width };
+                        videoConstraints.height = { exact: height };
+                    } else {
+                        videoConstraints.width = { ideal: 1280 };
+                        videoConstraints.height = { ideal: 720 };
+                    }
 
-        try {
-            const videoWidth = video.videoWidth;
-            const videoHeight = video.videoHeight;
-            videoCanvas.width = videoWidth;
-            videoCanvas.height = videoHeight;
-            const ctx = videoCanvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+                    const constraints = { video: videoConstraints, audio: false };
+                    if (stream) {
+                        stream.getTracks().forEach(t => t.stop());
+                    }
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    video.srcObject = stream;
+                    await video.play();
+                    console.log('Camera initialized with adjusted framerate:', adjustedFrameRate);
+                } catch (err) {
+                    showError('Unable to access the camera. Please check permissions and try again.');
+                    console.error('initCamera Error:', err);
+                    throw err;
+                }
+            }
 
-            const overlayRect = roiOverlay.getBoundingClientRect();
-            const videoRect = video.getBoundingClientRect();
-            const scaleX = videoWidth / videoRect.width;
-            const scaleY = videoHeight / videoRect.height;
-            const roiX = (overlayRect.left - videoRect.left) * scaleX;
-            const roiY = (overlayRect.top - videoRect.top) * scaleY;
-            const roiW = overlayRect.width * scaleX;
-            const roiH = overlayRect.height * scaleY;
+            // Get Selected Resolution from Dropdown
+            function getSelectedResolution() {
+                const resolutionSelect = document.getElementById('resolution-select');
+                const val = resolutionSelect.value;
+                if (!val) return null;
+                return val;
+            }
 
-            if (roiX < 0 || roiY < 0 || (roiX + roiW) > videoWidth || (roiY + roiH) > videoHeight) {
-                showError('ROI out of frame bounds.');
+            // Initialize Tesseract.js Workers
+            async function initializeTesseract(workersCount) {
+                try {
+                    if (workers.length > 0) {
+                        await Promise.all(workers.map(w => w.terminate()));
+                        workers = [];
+                    }
+                    for (let i = 0; i < workersCount; i++) {
+                        const worker = await Tesseract.createWorker({
+                            lang: 'eng',
+                            logger: m => console.log(`[Worker ${i + 1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
+                        });
+                        await worker.loadLanguage('eng');
+                        await worker.initialize('eng');
+                        workers.push(worker);
+                        console.log(`Tesseract worker ${i + 1} initialized.`);
+                    }
+                    isTesseractInitialized = true;
+                    console.log('All Tesseract workers initialized successfully.');
+                } catch (err) {
+                    showError('Failed to initialize OCR workers.');
+                    console.error('initializeTesseract Error:', err);
+                    throw err;
+                }
+            }
+
+            // Adjust Number of Workers Based on OCR Frequency
+            function adjustWorkers() {
+                const maxWorkers = parseInt(workersSelect.value, 10);
+                if (ocrFrequency > 5 && workers.length < maxWorkers) {
+                    // Add a worker
+                    initializeTesseract(workers.length + 1).catch(err => {});
+                } else if (ocrFrequency < 2 && workers.length > 1) {
+                    // Remove a worker
+                    if (workers.length > 1) {
+                        const workerToTerminate = workers.pop();
+                        workerToTerminate.terminate().then(() => {
+                            console.log('Tesseract worker terminated.');
+                        }).catch(err => {
+                            console.error('Error terminating worker:', err);
+                        });
+                    }
+                }
+            }
+
+            // Start the Scanning Process
+            async function startScanning() {
+                if (scanning) return; // Prevent multiple scans at the same time
+
+                // Update UI to reflect scanning status
+                startButton.disabled = true;
+                stopButton.disabled = true;
+                restartButton.style.display = 'none';
+                startButton.innerText = 'Starting...';
+
+                // Retrieve selected resolution and camera ID
+                const selectedResolution = getSelectedResolution();
+                const selectedCameraId = document.getElementById('camera-select').value || null;
+
+                try {
+                    // Initialize the camera with the selected settings
+                    await initCamera(selectedResolution, selectedCameraId);
+                } catch (error) {
+                    showError('Failed to initialize the camera.');
+                    startButton.disabled = false;
+                    startButton.innerText = 'Start Scanner';
+                    return;
+                }
+
+                // Initialize Tesseract workers if not already done
+                const workersCount = parseInt(workersSelect.value, 10);
+                if (!isTesseractInitialized) {
+                    try {
+                        await initializeTesseract(workersCount);
+                    } catch (error) {
+                        showError('Failed to initialize OCR workers.');
+                        startButton.disabled = false;
+                        startButton.innerText = 'Start Scanner';
+                        return;
+                    }
+                }
+
+                // Set frame skipping and OCR frequency based on user selections
+                frameSkipping = parseInt(frameSkippingSelect.value, 10);
+                ocrFrequency = parseFloat(frequencySelect.value);
+                updateOcrInfo();
+
+                // Initialize WebGL for preprocessing if not already done
+                if (!glInitialized) {
+                    initWebGL();
+                    if (!glInitialized) {
+                        showError('WebGL initialization failed.');
+                        startButton.disabled = false;
+                        startButton.innerText = 'Start Scanner';
+                        return;
+                    }
+                }
+
+                // Update scanning state and UI elements
+                scanning = true;
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                startButton.innerText = 'Scanning...';
+                output.value = ''; // Clear previous OCR output
+
+                // Show viewportCanvas when scanning starts
+                const viewportCanvas = document.getElementById('viewportCanvas');
+                viewportCanvas.style.display = 'block';
+
+                // Start processing frames
+                requestAnimationFrame(processFrame);
+                console.log('Scanning started.');
+            }
+
+            // Stop the Scanning Process
+            async function stopScanning() {
+                if (!scanning) return;
                 scanning = false;
-                return;
-            }
-
-            roiCanvas.width = roiW;
-            roiCanvas.height = roiH;
-            const roiCtx = roiCanvas.getContext('2d');
-            roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
-
-            const scaleFactor = 1.5;
-            scaledCanvas.width = roiW * scaleFactor;
-            scaledCanvas.height = roiH * scaleFactor;
-            const scaledCtx = scaledCanvas.getContext('2d');
-            scaledCtx.imageSmoothingEnabled = true;
-            scaledCtx.imageSmoothingQuality = 'high';
-            scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-
-            const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
-            if (!preprocessedBlob) {
-                throw new Error('Preprocessing failed.');
-            }
-
-            debugCanvas.width = scaledCanvas.width;
-            debugCanvas.height = scaledCanvas.height;
-            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-            const img = await createImageBitmap(preprocessedBlob);
-            debugCtx.drawImage(img, 0, 0);
-
-            // Perform OCR on the preprocessed image
-            await performOCR(preprocessedBlob);
-        } catch (err) {
-            showError('Failed to capture and perform OCR.');
-            console.error('captureFrameAndPerformOCR Error:', err);
-        }
-
-        scanning = true; // Resume scanning
-    }
-
-    // Populate Camera Selection Dropdown
-    async function populateCameras() {
-        try {
-            const cameraSelect = document.getElementById('camera-select');
-            cameraSelect.innerHTML = ''; // Clear existing options
-
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.text = 'Select Camera';
-            cameraSelect.appendChild(defaultOption);
-
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const cameras = devices.filter(d => d.kind === 'videoinput');
-
-            cameras.forEach(camera => {
-                const option = document.createElement('option');
-                option.value = camera.deviceId;
-                option.text = camera.label || `Camera ${cameraSelect.length}`;
-                cameraSelect.appendChild(option);
-            });
-
-            if (cameras.length === 0) {
-                const option = document.createElement('option');
-                option.value = '';
-                option.text = 'No cameras found';
-                cameraSelect.appendChild(option);
-            }
-
-            console.log('Camera devices populated successfully.');
-        } catch (err) {
-            console.error('Failed to populate cameras:', err);
-            showError('Failed to retrieve camera devices.');
-        }
-    }
-
-    // Handle Camera Permissions and Populate Cameras
-    async function handleCameraPermissions() {
-        try {
-            const permissionStatus = await navigator.permissions.query({ name: 'camera' });
-            if (permissionStatus.state !== 'granted') {
-                // Request camera access
-                const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                // After granting, stop the stream to release the camera
-                tempStream.getTracks().forEach(track => track.stop());
-                // Notify the user and reload to populate camera labels
-                alert("Camera permissions granted successfully. The page will now reload.");
-                window.location.reload();
-            } else {
-                // Permissions already granted, populate cameras
-                await populateCameras();
-            }
-
-            // Listen for changes in camera permissions
-            permissionStatus.onchange = async () => {
-                if (permissionStatus.state === 'granted') {
-                    await populateCameras();
-                } else {
-                    // Clear camera select if permissions are revoked
-                    const cameraSelect = document.getElementById('camera-select');
-                    cameraSelect.innerHTML = '<option value="">Select Camera</option>';
-                    showError("Camera permissions have been revoked.");
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                restartButton.style.display = 'block';
+                startButton.innerText = 'Start Scanner';
+                roiOverlay.style.borderColor = '#00b4d8';
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop());
+                    stream = null;
                 }
-            };
+                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                const viewportCanvas = document.getElementById('viewportCanvas');
+                viewportCanvas.style.display = 'none'; // Hide viewportCanvas when scanning stops
+                console.log('Scanning stopped.');
+            }
 
-            // Listen for device changes to update camera list dynamically
-            navigator.mediaDevices.addEventListener('devicechange', populateCameras);
-        } catch (err) {
-            console.error('Camera permission denied or error occurred:', err);
-            showError('Camera permissions are required to use this application.');
-        }
-    }
-
-    // Populate Configurations on Page Load
-    async function populateConfigurations() {
-        try {
-            const response = await fetch('./configs/index.json'); // Fetch index.json
-            if (!response.ok) throw new Error('Network response was not ok.');
-            const data = await response.json();
-            const configurations = data.configurations;
-
-            configSelect.innerHTML = '<option value="">Select Config</option>';
-            configurations.forEach(file => {
-                const option = document.createElement('option');
-                option.value = file;
-                option.text = file.replace('.json', ''); // Display name without .json
-                configSelect.appendChild(option);
-            });
-            console.log('Configurations populated successfully.');
-        } catch (err) {
-            console.error('Error loading configuration index:', err);
-            showError('Failed to load configuration index.');
-        }
-    }
-
-    // Load Selected Configuration
-    async function loadConfiguration() {
-        const selectedConfig = configSelect.value; // Get selected configuration
-        if (!selectedConfig) return alert('Please select a configuration to load.');
-
-        try {
-            const response = await fetch(`./configs/${selectedConfig}`); // Fetch the JSON file
-            if (!response.ok) throw new Error('Network response was not ok.');
-            const configData = await response.json();
-
-            // Apply configuration data to UI controls
-            document.getElementById('resolution-select').value = configData.resolution || '';
-
-            // Update camera-select based on device labels
-            const cameraSelect = document.getElementById('camera-select');
-            const cameraLabel = configData.camera || '';
-            if (cameraLabel) {
-                let found = false;
-                for (let i = 0; i < cameraSelect.options.length; i++) {
-                    if (cameraSelect.options[i].text === cameraLabel) {
-                        cameraSelect.selectedIndex = i;
-                        found = true;
-                        break;
+            // Perform OCR on the Preprocessed Image Blob
+            async function performOCR(blob) {
+                try {
+                    const results = await Promise.all(workers.map(worker => worker.recognize(blob)));
+                    let aggText = '';
+                    let totalConf = 0;
+                    results.forEach(r => {
+                        aggText += r.data.text + '\n';
+                        totalConf += r.data.confidence;
+                    });
+                    const avgConf = totalConf / workers.length;
+                    if (avgConf >= confidenceThreshold && aggText.trim().length > 0) {
+                        roiOverlay.style.borderColor = '#2cb67d';
+                        if (!output.value.includes(aggText.trim())) {
+                            output.value += aggText.trim() + '\n';
+                        }
+                    } else {
+                        roiOverlay.style.borderColor = '#d00000';
                     }
+                    console.log('OCR performed. Average Confidence:', avgConf);
+                } catch (err) {
+                    showError('OCR processing failed.');
+                    console.error('performOCR Error:', err);
                 }
-                if (!found) {
-                    // If label not found, reset to default
-                    cameraSelect.value = '';
+            }
+
+            // Process Each Frame from the Video Stream
+            async function processFrame() {
+                if (!scanning) return;
+                const startTime = performance.now();
+                const now = Date.now();
+                const timeSinceLastOcr = now - lastOcrTime;
+                const desiredInterval = 1000 / ocrFrequency;
+                frameCounter++;
+
+                if (frameCounter < frameSkipping) {
+                    if (scanning) requestAnimationFrame(processFrame);
+                    return;
                 }
-            } else {
-                cameraSelect.value = '';
+                frameCounter = 0;
+
+                if (timeSinceLastOcr < desiredInterval) {
+                    if (scanning) requestAnimationFrame(processFrame);
+                    return;
+                }
+                lastOcrTime = now;
+
+                if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+                    if (scanning) requestAnimationFrame(processFrame);
+                    return;
+                }
+
+                try {
+                    const videoWidth = video.videoWidth;
+                    const videoHeight = video.videoHeight;
+                    videoCanvas.width = videoWidth;
+                    videoCanvas.height = videoHeight;
+
+                    const ctx = videoCanvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+
+                    const overlayRect = roiOverlay.getBoundingClientRect();
+                    const videoRect = video.getBoundingClientRect();
+                    const scaleX = videoWidth / videoRect.width;
+                    const scaleY = videoHeight / videoRect.height;
+                    const roiX = (overlayRect.left - videoRect.left) * scaleX;
+                    const roiY = (overlayRect.top - videoRect.top) * scaleY;
+                    const roiW = overlayRect.width * scaleX;
+                    const roiH = overlayRect.height * scaleY;
+
+                    if (roiX < 0 || roiY < 0 || (roiX + roiW) > videoWidth || (roiY + roiH) > videoHeight) {
+                        showError('ROI out of frame bounds.');
+                        await stopScanning();
+                        return;
+                    }
+
+                    roiCanvas.width = roiW;
+                    roiCanvas.height = roiH;
+                    const roiCtx = roiCanvas.getContext('2d');
+                    roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+                    const scaleFactor = 1.5;
+                    scaledCanvas.width = roiW * scaleFactor;
+                    scaledCanvas.height = roiH * scaleFactor;
+                    const scaledCtx = scaledCanvas.getContext('2d');
+                    scaledCtx.imageSmoothingEnabled = true;
+                    scaledCtx.imageSmoothingQuality = 'high';
+                    scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+
+                    const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
+                    if (!preprocessedBlob) {
+                        throw new Error('Preprocessing failed.');
+                    }
+
+                    // Render to debugCanvas
+                    debugCanvas.width = scaledCanvas.width;
+                    debugCanvas.height = scaledCanvas.height;
+                    debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                    const img = await createImageBitmap(preprocessedBlob);
+                    debugCtx.drawImage(img, 0, 0);
+
+                    // Render to viewportCanvas
+                    const viewportCanvas = document.getElementById('viewportCanvas');
+                    const viewportCtx = viewportCanvas.getContext('2d');
+                    viewportCanvas.width = scaledCanvas.width;
+                    viewportCanvas.height = scaledCanvas.height;
+                    viewportCtx.clearRect(0, 0, viewportCanvas.width, viewportCanvas.height);
+                    viewportCtx.drawImage(img, 0, 0);
+
+                    // Draw effect labels for debugging
+                    debugCtx.font = '16px Arial';
+                    debugCtx.fillStyle = 'yellow';
+                    let yOffset = 20;
+                    if (enableGrayscale.checked) { debugCtx.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset += 20; }
+                    if (enableDenoise.checked) { debugCtx.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset); yOffset += 20; }
+                    if (enableSharpen.checked) { debugCtx.fillText(`Sharpen: ${sharpenSlider.value}`, 10, yOffset); yOffset += 20; }
+                    if (enableBrightness.checked) { debugCtx.fillText(`Brightness: ${brightnessSlider.value}`, 10, yOffset); yOffset += 20; }
+                    if (enableContrast.checked) { debugCtx.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset += 20; }
+                    if (enableClarity.checked) { debugCtx.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset += 20; }
+                    if (enableHighlights.checked) { debugCtx.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); }
+
+                    // Perform OCR on the preprocessed image
+                    await performOCR(preprocessedBlob);
+
+                    // Adaptive frame skipping based on processing time
+                    const processingTime = performance.now() - startTime;
+                    if (dynamicAdjust) {
+                        if (processingTime > targetFrameTime && frameSkipping < maxSkipping) {
+                            frameSkipping++;
+                        } else if (processingTime < targetFrameTime && frameSkipping > 1) {
+                            frameSkipping--;
+                        }
+                    }
+
+                } catch (err) {
+                    showError('An error occurred during frame processing.');
+                    console.error('processFrame Error:', err);
+                    await stopScanning();
+                    return;
+                }
+
+                if (scanning) requestAnimationFrame(processFrame);
             }
 
-            document.getElementById('workers-select').value = configData.workers || '1';
-            document.getElementById('frame-skipping-select').value = configData.frameSkipping || '1';
-            document.getElementById('frequency-select').value = configData.frequency || '1';
-            document.getElementById('confidence-threshold-input').value = configData.confidenceThreshold || '60';
-            confidenceThreshold = configData.confidenceThreshold || 60;
+            // Preprocess Image Using WebGL
+            async function preprocessWithWebGL(sourceCanvas) {
+                try {
+                    if (!glInitialized) {
+                        initWebGL();
+                        if (!glInitialized) {
+                            throw new Error('WebGL initialization failed.');
+                        }
+                    }
 
-            // Apply preprocessing options
-            const preprocessing = configData.preprocessing || {};
-            document.getElementById('enableGrayscale').checked = preprocessing.enableGrayscale || false;
-            document.getElementById('grayscaleSlider').value = preprocessing.grayscale || 100;
+                    const width = sourceCanvas.width;
+                    const height = sourceCanvas.height;
 
-            document.getElementById('enableDenoise').checked = preprocessing.enableDenoise || false;
-            document.getElementById('denoiseSlider').value = preprocessing.denoise || 50;
+                    const webglCanvas = document.getElementById('webglCanvas');
+                    webglCanvas.width = width;
+                    webglCanvas.height = height;
 
-            document.getElementById('enableSharpen').checked = preprocessing.enableSharpen || false;
-            document.getElementById('sharpenSlider').value = preprocessing.sharpen || 50;
+                    gl.viewport(0, 0, width, height);
+                    gl.clear(gl.COLOR_BUFFER_BIT);
 
-            document.getElementById('enableBrightness').checked = preprocessing.enableBrightness || false;
-            document.getElementById('brightnessSlider').value = preprocessing.brightness || 50;
+                    gl.bindTexture(gl.TEXTURE_2D, glTexture);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
 
-            document.getElementById('enableContrast').checked = preprocessing.enableContrast || false;
-            document.getElementById('contrastSlider').value = preprocessing.contrast || 50;
+                    // Set Uniforms Based on Preprocessing Settings
+                    gl.uniform1i(window.uLocations.grayscaleEnabled, enableGrayscale.checked ? 1 : 0);
+                    gl.uniform1f(window.uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value) / 100.0);
 
-            document.getElementById('enableClarity').checked = preprocessing.enableClarity || false;
-            document.getElementById('claritySlider').value = preprocessing.clarity || 50;
+                    gl.uniform1i(window.uLocations.denoiseEnabled, enableDenoise.checked ? 1 : 0);
+                    gl.uniform1f(window.uLocations.denoiseAmount, parseFloat(denoiseSlider.value));
 
-            document.getElementById('enableHighlights').checked = preprocessing.enableHighlights || false;
-            document.getElementById('highlightsSlider').value = preprocessing.highlights || 50;
+                    gl.uniform1i(window.uLocations.sharpenEnabled, enableSharpen.checked ? 1 : 0);
+                    gl.uniform1f(window.uLocations.sharpenAmount, parseFloat(sharpenSlider.value));
 
-            updateOcrInfo();
+                    gl.uniform1i(window.uLocations.brightnessEnabled, enableBrightness.checked ? 1 : 0);
+                    gl.uniform1f(window.uLocations.brightnessAmount, parseFloat(brightnessSlider.value));
 
-            alert('Configuration loaded successfully.');
-            console.log('Configuration loaded:', selectedConfig);
-        } catch (err) {
-            console.error('Error loading configuration:', err);
-            showError('Failed to load the selected configuration.');
-        }
-    }
+                    gl.uniform1i(window.uLocations.contrastEnabled, enableContrast.checked ? 1 : 0);
+                    gl.uniform1f(window.uLocations.contrastAmount, parseFloat(contrastSlider.value));
 
-    // Save Current Configuration as JSON File
-    function saveConfiguration() {
-        const cameraSelect = document.getElementById('camera-select');
-        const cameraLabel = cameraSelect.options[cameraSelect.selectedIndex].text;
-        const configData = {
-            resolution: document.getElementById('resolution-select').value,
-            camera: cameraLabel !== 'Select Camera' ? cameraLabel : '',
-            workers: document.getElementById('workers-select').value,
-            frameSkipping: document.getElementById('frame-skipping-select').value,
-            frequency: document.getElementById('frequency-select').value,
-            confidenceThreshold: document.getElementById('confidence-threshold-input').value,
-            preprocessing: {
-                enableGrayscale: document.getElementById('enableGrayscale').checked,
-                grayscale: document.getElementById('grayscaleSlider').value,
-                enableDenoise: document.getElementById('enableDenoise').checked,
-                denoise: document.getElementById('denoiseSlider').value,
-                enableSharpen: document.getElementById('enableSharpen').checked,
-                sharpen: document.getElementById('sharpenSlider').value,
-                enableBrightness: document.getElementById('enableBrightness').checked,
-                brightness: document.getElementById('brightnessSlider').value,
-                enableContrast: document.getElementById('enableContrast').checked,
-                contrast: document.getElementById('contrastSlider').value,
-                enableClarity: document.getElementById('enableClarity').checked,
-                clarity: document.getElementById('claritySlider').value,
-                enableHighlights: document.getElementById('enableHighlights').checked,
-                highlights: document.getElementById('highlightsSlider').value
+                    gl.uniform1i(window.uLocations.clarityEnabled, enableClarity.checked ? 1 : 0);
+                    gl.uniform1f(window.uLocations.clarityAmount, parseFloat(claritySlider.value));
+
+                    gl.uniform1i(window.uLocations.highlightsEnabled, enableHighlights.checked ? 1 : 0);
+                    gl.uniform1f(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value));
+
+                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+                    // Read Pixels from WebGL Canvas
+                    const pixels = new Uint8ClampedArray(width * height * 4);
+                    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+                    // Create ImageData and Draw to Offscreen Canvas
+                    const offscreen = document.createElement('canvas');
+                    offscreen.width = width;
+                    offscreen.height = height;
+                    const offCtx = offscreen.getContext('2d');
+                    const imageData = new ImageData(pixels, width, height);
+                    offCtx.putImageData(imageData, 0, 0);
+
+                    // Convert Canvas to Blob
+                    return new Promise((resolve, reject) => {
+                        offscreen.toBlob((blob) => {
+                            if (blob) {
+                                resolve(blob);
+                            } else {
+                                reject(new Error('Failed to convert canvas to blob.'));
+                            }
+                        }, 'image/png');
+                    });
+                } catch (err) {
+                    showError('Preprocessing with WebGL failed.');
+                    console.error('preprocessWithWebGL Error:', err);
+                    return null;
+                }
             }
-        };
 
-        const configName = prompt('Enter a name for the configuration (e.g., "safe"):'); // Prompt for custom name
-        if (!configName) return;
-
-        if (/[^a-zA-Z0-9-_]/.test(configName)) {
-            alert('Configuration name can only contain letters, numbers, hyphens, and underscores.');
-            return;
-        }
-
-        const blob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${configName}.json`; // Save with custom name
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        alert('Configuration saved as a JSON file. Please upload it to the /configs directory and update index.json to reuse.');
-        console.log('Configuration saved:', configName);
-    }
-
-    // Side Menu Toggle Logic
-    (function(){
-        const menuToggle = document.getElementById('menu-toggle');
-        const sideMenu = document.getElementById('side-menu');
-        const menuOverlay = document.getElementById('menu-overlay');
-        const container = document.getElementById('container');
-        let isMenuOpen = false;
-
-        function openMenu() {
-            sideMenu.classList.add('active');
-            menuOverlay.classList.add('active');
-            container.classList.add('side-menu-open');
-            menuToggle.setAttribute('aria-expanded','true');
-            isMenuOpen = true;
-        }
-
-        function closeMenu() {
-            sideMenu.classList.remove('active');
-            menuOverlay.classList.remove('active');
-            container.classList.remove('side-menu-open');
-            menuToggle.setAttribute('aria-expanded','false');
-            isMenuOpen = false;
-        }
-
-        menuToggle.addEventListener('click', () => { isMenuOpen ? closeMenu() : openMenu(); });
-        menuOverlay.addEventListener('click', closeMenu);
-        document.addEventListener('keydown', (e) => { if(e.key==='Escape' && isMenuOpen) closeMenu(); });
-    })();
-
-    // Theme Toggle Logic
-    (function(){
-        const toggleCheckbox = document.getElementById('theme-checkbox');
-        const currentTheme = localStorage.getItem('theme') || 'light';
-        if (currentTheme === 'dark') {
-            document.documentElement.classList.add('dark-theme');
-            document.body.classList.add('dark-theme');
-            toggleCheckbox.checked = true;
-        }
-        toggleCheckbox.addEventListener('change', function(){
-            if(this.checked) {
-                document.documentElement.classList.add('dark-theme');
-                document.body.classList.add('dark-theme');
-                localStorage.setItem('theme','dark');
-            } else {
-                document.documentElement.classList.remove('dark-theme');
-                document.body.classList.remove('dark-theme');
-                localStorage.setItem('theme','light');
+            // Update OCR Information Display
+            function updateOcrInfo() {
+                const approximateFPS = 60;
+                const frameBasedFrequency = approximateFPS / frameSkipping;
+                const effectiveFrequency = Math.min(frameBasedFrequency, ocrFrequency);
+                ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
             }
-        });
-    })();
 
-    // Debug Console Capture
-    (function(){
-        const debugConsole = document.getElementById('debugConsole');
-        function addLogEntry(type, args) {
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${type}`;
-            entry.textContent = `[${type.toUpperCase()}] ` + Array.from(args).join(' ');
-            // Batch DOM update at next frame
-            requestAnimationFrame(() => {
-                debugConsole.appendChild(entry);
-                debugConsole.scrollTop = debugConsole.scrollHeight;
-            });
-        }
-        const originalLog = console.log;
-        const originalWarn = console.warn;
-        const originalError = console.error;
-        console.log = function(...args){ originalLog.apply(console, args); addLogEntry('log', args); };
-        console.warn = function(...args){ originalWarn.apply(console, args); addLogEntry('warn', args); };
-        console.error = function(...args){ originalError.apply(console, args); addLogEntry('error', args); };
-    })();
+            // Capture Frame and Perform OCR (Manual Trigger)
+            async function captureFrameAndPerformOCR() {
+                if (!scanning) return;
+                scanning = false; // Temporarily stop scanning to perform manual capture
+                focusIndicator.style.display = 'block'; // Show processing indicator
 
-    // Save Logs to a Text File
-    function saveLogs() {
-        const debugConsole = document.getElementById('debugConsole');
-        const logsText = debugConsole.innerText;
-        const blob = new Blob([logsText], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'logs.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        console.log('Logs saved successfully.');
-    }
-    document.getElementById('save-logs-button').addEventListener('click', saveLogs);
+                try {
+                    const videoWidth = video.videoWidth;
+                    const videoHeight = video.videoHeight;
+                    videoCanvas.width = videoWidth;
+                    videoCanvas.height = videoHeight;
+                    const ctx = videoCanvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
-    // Debug Toggle Logic
-    (function(){
-        const debugButton = document.getElementById('debug-button');
-        const debugCanvas = document.getElementById('debugCanvas');
-        const viewportCanvas = document.getElementById('viewportCanvas'); // Reference to viewportCanvas
-        const debugConsole = document.getElementById('debugConsole');
-        const debugControls = document.getElementById('debugControls');
-        debugCanvas.style.display = 'none';
-        viewportCanvas.style.display = 'none'; // Hide viewportCanvas by default
-        debugConsole.style.display = 'none';
-        debugControls.style.display = 'none';
-        let isDebugVisible = false;
+                    const overlayRect = roiOverlay.getBoundingClientRect();
+                    const videoRect = video.getBoundingClientRect();
+                    const scaleX = videoWidth / videoRect.width;
+                    const scaleY = videoHeight / videoRect.height;
+                    const roiX = (overlayRect.left - videoRect.left) * scaleX;
+                    const roiY = (overlayRect.top - videoRect.top) * scaleY;
+                    const roiW = overlayRect.width * scaleX;
+                    const roiH = overlayRect.height * scaleY;
 
-        debugButton.addEventListener('click', function(){
-            isDebugVisible = !isDebugVisible;
-            if(isDebugVisible){
-                debugCanvas.style.display = 'block';
-                viewportCanvas.style.display = 'block'; // Show viewportCanvas
-                debugConsole.style.display = 'block';
-                debugControls.style.display = 'block';
-                debugButton.innerText = 'Hide Debug';
-            } else {
+                    if (roiX < 0 || roiY < 0 || (roiX + roiW) > videoWidth || (roiY + roiH) > videoHeight) {
+                        showError('ROI out of frame bounds.');
+                        scanning = false;
+                        focusIndicator.style.display = 'none';
+                        return;
+                    }
+
+                    roiCanvas.width = roiW;
+                    roiCanvas.height = roiH;
+                    const roiCtx = roiCanvas.getContext('2d');
+                    roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+                    const scaleFactor = 1.5;
+                    scaledCanvas.width = roiW * scaleFactor;
+                    scaledCanvas.height = roiH * scaleFactor;
+                    const scaledCtx = scaledCanvas.getContext('2d');
+                    scaledCtx.imageSmoothingEnabled = true;
+                    scaledCtx.imageSmoothingQuality = 'high';
+                    scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+
+                    const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
+                    if (!preprocessedBlob) {
+                        throw new Error('Preprocessing failed.');
+                    }
+
+                    // Render to debugCanvas
+                    debugCanvas.width = scaledCanvas.width;
+                    debugCanvas.height = scaledCanvas.height;
+                    debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                    const img = await createImageBitmap(preprocessedBlob);
+                    debugCtx.drawImage(img, 0, 0);
+
+                    // Render to viewportCanvas
+                    const viewportCanvas = document.getElementById('viewportCanvas');
+                    const viewportCtx = viewportCanvas.getContext('2d');
+                    viewportCanvas.width = scaledCanvas.width;
+                    viewportCanvas.height = scaledCanvas.height;
+                    viewportCtx.clearRect(0, 0, viewportCanvas.width, viewportCanvas.height);
+                    viewportCtx.drawImage(img, 0, 0);
+
+                    // Perform OCR on the preprocessed image
+                    await performOCR(preprocessedBlob);
+                } catch (err) {
+                    showError('Failed to capture and perform OCR.');
+                    console.error('captureFrameAndPerformOCR Error:', err);
+                }
+
+                focusIndicator.style.display = 'none'; // Hide processing indicator
+                scanning = true; // Resume scanning
+            }
+
+            // Populate Camera Selection Dropdown
+            async function populateCameras() {
+                try {
+                    const cameraSelect = document.getElementById('camera-select');
+                    cameraSelect.innerHTML = ''; // Clear existing options
+
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.text = 'Select Camera';
+                    cameraSelect.appendChild(defaultOption);
+
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    const cameras = devices.filter(d => d.kind === 'videoinput');
+
+                    cameras.forEach(camera => {
+                        const option = document.createElement('option');
+                        option.value = camera.deviceId;
+                        option.text = camera.label || `Camera ${cameraSelect.length}`;
+                        cameraSelect.appendChild(option);
+                    });
+
+                    if (cameras.length === 0) {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.text = 'No cameras found';
+                        cameraSelect.appendChild(option);
+                    }
+
+                    console.log('Camera devices populated successfully.');
+                } catch (err) {
+                    console.error('Failed to populate cameras:', err);
+                    showError('Failed to retrieve camera devices.');
+                }
+            }
+
+            // Handle Camera Permissions and Populate Cameras
+            async function handleCameraPermissions() {
+                try {
+                    const permissionStatus = await navigator.permissions.query({ name: 'camera' });
+                    if (permissionStatus.state !== 'granted') {
+                        // Request camera access
+                        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        // After granting, stop the stream to release the camera
+                        tempStream.getTracks().forEach(track => track.stop());
+                        // Notify the user and reload to populate camera labels
+                        alert("Camera permissions granted successfully. The page will now reload.");
+                        window.location.reload();
+                    } else {
+                        // Permissions already granted, populate cameras
+                        await populateCameras();
+                    }
+
+                    // Listen for changes in camera permissions
+                    permissionStatus.onchange = async () => {
+                        if (permissionStatus.state === 'granted') {
+                            await populateCameras();
+                        } else {
+                            // Clear camera select if permissions are revoked
+                            const cameraSelect = document.getElementById('camera-select');
+                            cameraSelect.innerHTML = '<option value="">Select Camera</option>';
+                            showError("Camera permissions have been revoked.");
+                        }
+                    };
+
+                    // Listen for device changes to update camera list dynamically
+                    navigator.mediaDevices.addEventListener('devicechange', populateCameras);
+                } catch (err) {
+                    console.error('Camera permission denied or error occurred:', err);
+                    showError('Camera permissions are required to use this application.');
+                }
+            }
+
+            // Populate Configurations on Page Load
+            async function populateConfigurations() {
+                try {
+                    const response = await fetch('./configs/index.json'); // Fetch index.json
+                    if (!response.ok) throw new Error('Network response was not ok.');
+                    const data = await response.json();
+                    const configurations = data.configurations;
+
+                    configSelect.innerHTML = '<option value="">Select Config</option>';
+                    configurations.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file;
+                        option.text = file.replace('.json', ''); // Display name without .json
+                        configSelect.appendChild(option);
+                    });
+                    console.log('Configurations populated successfully.');
+                } catch (err) {
+                    console.error('Error loading configuration index:', err);
+                    showError('Failed to load configuration index.');
+                }
+            }
+
+            // Load Selected Configuration
+            async function loadConfiguration() {
+                const selectedConfig = configSelect.value; // Get selected configuration
+                if (!selectedConfig) return alert('Please select a configuration to load.');
+
+                try {
+                    const response = await fetch(`./configs/${selectedConfig}`); // Fetch the JSON file
+                    if (!response.ok) throw new Error('Network response was not ok.');
+                    const configData = await response.json();
+
+                    // Apply configuration data to UI controls
+                    document.getElementById('resolution-select').value = configData.resolution || '';
+
+                    // Update camera-select based on device labels
+                    const cameraSelect = document.getElementById('camera-select');
+                    const cameraLabel = configData.camera || '';
+                    if (cameraLabel) {
+                        let found = false;
+                        for (let i = 0; i < cameraSelect.options.length; i++) {
+                            if (cameraSelect.options[i].text === cameraLabel) {
+                                cameraSelect.selectedIndex = i;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            // If label not found, reset to default
+                            cameraSelect.value = '';
+                        }
+                    } else {
+                        cameraSelect.value = '';
+                    }
+
+                    document.getElementById('workers-select').value = configData.workers || '1';
+                    document.getElementById('frame-skipping-select').value = configData.frameSkipping || '1';
+                    document.getElementById('frequency-select').value = configData.frequency || '1';
+                    document.getElementById('confidence-threshold-input').value = configData.confidenceThreshold || '60';
+                    confidenceThreshold = configData.confidenceThreshold || 60;
+
+                    // Apply preprocessing options
+                    const preprocessing = configData.preprocessing || {};
+                    document.getElementById('enableGrayscale').checked = preprocessing.enableGrayscale || false;
+                    document.getElementById('grayscaleSlider').value = preprocessing.grayscale || 100;
+
+                    document.getElementById('enableDenoise').checked = preprocessing.enableDenoise || false;
+                    document.getElementById('denoiseSlider').value = preprocessing.denoise || 50;
+
+                    document.getElementById('enableSharpen').checked = preprocessing.enableSharpen || false;
+                    document.getElementById('sharpenSlider').value = preprocessing.sharpen || 50;
+
+                    document.getElementById('enableBrightness').checked = preprocessing.enableBrightness || false;
+                    document.getElementById('brightnessSlider').value = preprocessing.brightness || 50;
+
+                    document.getElementById('enableContrast').checked = preprocessing.enableContrast || false;
+                    document.getElementById('contrastSlider').value = preprocessing.contrast || 50;
+
+                    document.getElementById('enableClarity').checked = preprocessing.enableClarity || false;
+                    document.getElementById('claritySlider').value = preprocessing.clarity || 50;
+
+                    document.getElementById('enableHighlights').checked = preprocessing.enableHighlights || false;
+                    document.getElementById('highlightsSlider').value = preprocessing.highlights || 50;
+
+                    updateOcrInfo();
+
+                    alert('Configuration loaded successfully.');
+                    console.log('Configuration loaded:', selectedConfig);
+                } catch (err) {
+                    console.error('Error loading configuration:', err);
+                    showError('Failed to load the selected configuration.');
+                }
+            }
+
+            // Save Current Configuration as JSON File
+            function saveConfiguration() {
+                const cameraSelect = document.getElementById('camera-select');
+                const cameraLabel = cameraSelect.options[cameraSelect.selectedIndex].text;
+                const configData = {
+                    resolution: document.getElementById('resolution-select').value,
+                    camera: cameraLabel !== 'Select Camera' ? cameraLabel : '',
+                    workers: document.getElementById('workers-select').value,
+                    frameSkipping: document.getElementById('frame-skipping-select').value,
+                    frequency: document.getElementById('frequency-select').value,
+                    confidenceThreshold: document.getElementById('confidence-threshold-input').value,
+                    preprocessing: {
+                        enableGrayscale: document.getElementById('enableGrayscale').checked,
+                        grayscale: document.getElementById('grayscaleSlider').value,
+                        enableDenoise: document.getElementById('enableDenoise').checked,
+                        denoise: document.getElementById('denoiseSlider').value,
+                        enableSharpen: document.getElementById('enableSharpen').checked,
+                        sharpen: document.getElementById('sharpenSlider').value,
+                        enableBrightness: document.getElementById('enableBrightness').checked,
+                        brightness: document.getElementById('brightnessSlider').value,
+                        enableContrast: document.getElementById('enableContrast').checked,
+                        contrast: document.getElementById('contrastSlider').value,
+                        enableClarity: document.getElementById('enableClarity').checked,
+                        clarity: document.getElementById('claritySlider').value,
+                        enableHighlights: document.getElementById('enableHighlights').checked,
+                        highlights: document.getElementById('highlightsSlider').value
+                    }
+                };
+
+                const configName = prompt('Enter a name for the configuration (e.g., "safe"):'); // Prompt for custom name
+                if (!configName) return;
+
+                if (/[^a-zA-Z0-9-_]/.test(configName)) {
+                    alert('Configuration name can only contain letters, numbers, hyphens, and underscores.');
+                    return;
+                }
+
+                const blob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${configName}.json`; // Save with custom name
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                alert('Configuration saved as a JSON file. Please upload it to the /configs directory and update index.json to reuse.');
+                console.log('Configuration saved:', configName);
+            }
+
+            // Side Menu Toggle Logic
+            (function(){
+                const menuToggle = document.getElementById('menu-toggle');
+                const sideMenu = document.getElementById('side-menu');
+                const menuOverlay = document.getElementById('menu-overlay');
+                const container = document.getElementById('container');
+                let isMenuOpen = false;
+
+                function openMenu() {
+                    sideMenu.classList.add('active');
+                    menuOverlay.classList.add('active');
+                    container.classList.add('side-menu-open');
+                    menuToggle.setAttribute('aria-expanded','true');
+                    isMenuOpen = true;
+                }
+
+                function closeMenu() {
+                    sideMenu.classList.remove('active');
+                    menuOverlay.classList.remove('active');
+                    container.classList.remove('side-menu-open');
+                    menuToggle.setAttribute('aria-expanded','false');
+                    isMenuOpen = false;
+                }
+
+                menuToggle.addEventListener('click', () => { isMenuOpen ? closeMenu() : openMenu(); });
+                menuOverlay.addEventListener('click', closeMenu);
+                document.addEventListener('keydown', (e) => { if(e.key==='Escape' && isMenuOpen) closeMenu(); });
+            })();
+
+            // Theme Toggle Logic
+            (function(){
+                const toggleCheckbox = document.getElementById('theme-checkbox');
+                const currentTheme = localStorage.getItem('theme') || 'light';
+                if (currentTheme === 'dark') {
+                    document.documentElement.classList.add('dark-theme');
+                    document.body.classList.add('dark-theme');
+                    toggleCheckbox.checked = true;
+                }
+                toggleCheckbox.addEventListener('change', function(){
+                    if(this.checked) {
+                        document.documentElement.classList.add('dark-theme');
+                        document.body.classList.add('dark-theme');
+                        localStorage.setItem('theme','dark');
+                    } else {
+                        document.documentElement.classList.remove('dark-theme');
+                        document.body.classList.remove('dark-theme');
+                        localStorage.setItem('theme','light');
+                    }
+                });
+            })();
+
+            // Debug Console Capture
+            (function(){
+                const debugConsole = document.getElementById('debugConsole');
+                function addLogEntry(type, args) {
+                    const entry = document.createElement('div');
+                    entry.className = `log-entry ${type}`;
+                    entry.textContent = `[${type.toUpperCase()}] ` + Array.from(args).join(' ');
+                    // Batch DOM update at next frame
+                    requestAnimationFrame(() => {
+                        debugConsole.appendChild(entry);
+                        debugConsole.scrollTop = debugConsole.scrollHeight;
+                    });
+                }
+                const originalLog = console.log;
+                const originalWarn = console.warn;
+                const originalError = console.error;
+                console.log = function(...args){ originalLog.apply(console, args); addLogEntry('log', args); };
+                console.warn = function(...args){ originalWarn.apply(console, args); addLogEntry('warn', args); };
+                console.error = function(...args){ originalError.apply(console, args); addLogEntry('error', args); };
+            })();
+
+            // Save Logs to a Text File
+            function saveLogs() {
+                const debugConsole = document.getElementById('debugConsole');
+                const logsText = debugConsole.innerText;
+                const blob = new Blob([logsText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'logs.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                console.log('Logs saved successfully.');
+            }
+            document.getElementById('save-logs-button').addEventListener('click', saveLogs);
+
+            // Debug Toggle Logic
+            (function(){
+                const debugButton = document.getElementById('debug-button');
+                const debugCanvas = document.getElementById('debugCanvas');
+                const debugConsole = document.getElementById('debugConsole');
+                const debugControls = document.getElementById('debugControls');
                 debugCanvas.style.display = 'none';
-                viewportCanvas.style.display = 'none'; // Hide viewportCanvas
                 debugConsole.style.display = 'none';
                 debugControls.style.display = 'none';
-                debugButton.innerText = 'Show Debug';
+                let isDebugVisible = false;
+
+                debugButton.addEventListener('click', function(){
+                    isDebugVisible = !isDebugVisible;
+                    if(isDebugVisible){
+                        debugCanvas.style.display = 'block';
+                        debugConsole.style.display = 'block';
+                        debugControls.style.display = 'block';
+                        debugButton.innerText = 'Hide Debug';
+                    } else {
+                        debugCanvas.style.display = 'none';
+                        debugConsole.style.display = 'none';
+                        debugControls.style.display = 'none';
+                        debugButton.innerText = 'Show Debug';
+                    }
+                });
+            })();
+
+            // Capture Frame and Perform OCR (Manual Trigger)
+            async function captureFrameAndPerformOCR() {
+                if (!scanning) return;
+                scanning = false; // Temporarily stop scanning to perform manual capture
+                focusIndicator.style.display = 'block'; // Show processing indicator
+
+                try {
+                    const videoWidth = video.videoWidth;
+                    const videoHeight = video.videoHeight;
+                    videoCanvas.width = videoWidth;
+                    videoCanvas.height = videoHeight;
+                    const ctx = videoCanvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+
+                    const overlayRect = roiOverlay.getBoundingClientRect();
+                    const videoRect = video.getBoundingClientRect();
+                    const scaleX = videoWidth / videoRect.width;
+                    const scaleY = videoHeight / videoRect.height;
+                    const roiX = (overlayRect.left - videoRect.left) * scaleX;
+                    const roiY = (overlayRect.top - videoRect.top) * scaleY;
+                    const roiW = overlayRect.width * scaleX;
+                    const roiH = overlayRect.height * scaleY;
+
+                    if (roiX < 0 || roiY < 0 || (roiX + roiW) > videoWidth || (roiY + roiH) > videoHeight) {
+                        showError('ROI out of frame bounds.');
+                        scanning = false;
+                        focusIndicator.style.display = 'none';
+                        return;
+                    }
+
+                    roiCanvas.width = roiW;
+                    roiCanvas.height = roiH;
+                    const roiCtx = roiCanvas.getContext('2d');
+                    roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+                    const scaleFactor = 1.5;
+                    scaledCanvas.width = roiW * scaleFactor;
+                    scaledCanvas.height = roiH * scaleFactor;
+                    const scaledCtx = scaledCanvas.getContext('2d');
+                    scaledCtx.imageSmoothingEnabled = true;
+                    scaledCtx.imageSmoothingQuality = 'high';
+                    scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+
+                    const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
+                    if (!preprocessedBlob) {
+                        throw new Error('Preprocessing failed.');
+                    }
+
+                    // Render to debugCanvas
+                    debugCanvas.width = scaledCanvas.width;
+                    debugCanvas.height = scaledCanvas.height;
+                    debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                    const img = await createImageBitmap(preprocessedBlob);
+                    debugCtx.drawImage(img, 0, 0);
+
+                    // Render to viewportCanvas
+                    const viewportCanvas = document.getElementById('viewportCanvas');
+                    const viewportCtx = viewportCanvas.getContext('2d');
+                    viewportCanvas.width = scaledCanvas.width;
+                    viewportCanvas.height = scaledCanvas.height;
+                    viewportCtx.clearRect(0, 0, viewportCanvas.width, viewportCanvas.height);
+                    viewportCtx.drawImage(img, 0, 0);
+
+                    // Perform OCR on the preprocessed image
+                    await performOCR(preprocessedBlob);
+                } catch (err) {
+                    showError('Failed to capture and perform OCR.');
+                    console.error('captureFrameAndPerformOCR Error:', err);
+                }
+
+                focusIndicator.style.display = 'none'; // Hide processing indicator
+                scanning = true; // Resume scanning
             }
-        });
-    })();
 
-    // Capture Frame and Perform OCR (Manual Trigger)
-    async function captureFrameAndPerformOCR() {
-        if(!scanning) return;
-        scanning = false; // Temporarily stop scanning to perform manual capture
-        focusIndicator.style.display = 'block'; // Show processing indicator
+            // Event Listeners
+            roiOverlay.addEventListener('click', captureFrameAndPerformOCR);
+            startButton.addEventListener('click', startScanning);
+            stopButton.addEventListener('click', stopScanning);
+            restartButton.addEventListener('click', startScanning);
+            loadConfigButton.addEventListener('click', loadConfiguration);
+            saveConfigButton.addEventListener('click', saveConfiguration);
+            workersSelect.addEventListener('change', adjustWorkers);
+            frameSkippingSelect.addEventListener('change', () => {
+                frameSkipping = parseInt(frameSkippingSelect.value, 10);
+                updateOcrInfo();
+            });
+            frequencySelect.addEventListener('change', () => {
+                ocrFrequency = parseFloat(frequencySelect.value);
+                updateOcrInfo();
+            });
+            confidenceThresholdInput.addEventListener('change', function() {
+                let val = parseInt(this.value, 10);
+                if (isNaN(val) || val < 1) val = 1;
+                if (val > 100) val = 100;
+                this.value = val;
+                confidenceThreshold = val;
+            });
 
-        try {
-            const videoWidth = video.videoWidth;
-            const videoHeight = video.videoHeight;
-            videoCanvas.width = videoWidth;
-            videoCanvas.height = videoHeight;
-            const ctx = videoCanvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+            // Handle Camera Permissions and Populate Cameras on Page Load
+            document.addEventListener('DOMContentLoaded', async () => {
+                await handleCameraPermissions();
+                await populateConfigurations();
+            });
 
-            const overlayRect = roiOverlay.getBoundingClientRect();
-            const videoRect = video.getBoundingClientRect();
-            const scaleX = videoWidth / videoRect.width;
-            const scaleY = videoHeight / videoRect.height;
-            const roiX = (overlayRect.left - videoRect.left) * scaleX;
-            const roiY = (overlayRect.top - videoRect.top) * scaleY;
-            const roiW = overlayRect.width * scaleX;
-            const roiH = overlayRect.height * scaleY;
+            // Cleanup on Page Unload
+            window.addEventListener('beforeunload', async () => {
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop());
+                }
+                if (workers.length > 0) {
+                    await Promise.all(workers.map(w => w.terminate()));
+                    workers = [];
+                }
+            });
 
-            if (roiX < 0 || roiY < 0 || (roiX + roiW) > videoWidth || (roiY + roiH) > videoHeight) {
-                showError('ROI out of frame bounds.');
-                scanning = false;
-                focusIndicator.style.display = 'none';
-                return;
-            }
+            // FPS Counter
+            (function(){
+                const fpsCounter = document.getElementById('fpsCounter');
+                let frameCount = 0;
+                let fps = 0;
+                let lastTime = performance.now();
 
-            roiCanvas.width = roiW;
-            roiCanvas.height = roiH;
-            const roiCtx = roiCanvas.getContext('2d');
-            roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
-
-            const scaleFactor = 1.5;
-            scaledCanvas.width = roiW * scaleFactor;
-            scaledCanvas.height = roiH * scaleFactor;
-            const scaledCtx = scaledCanvas.getContext('2d');
-            scaledCtx.imageSmoothingEnabled = true;
-            scaledCtx.imageSmoothingQuality = 'high';
-            scaledCtx.drawImage(roiCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-
-            const preprocessedBlob = await preprocessWithWebGL(scaledCanvas);
-            if (!preprocessedBlob) {
-                throw new Error('Preprocessing failed.');
-            }
-
-            debugCanvas.width = scaledCanvas.width;
-            debugCanvas.height = scaledCanvas.height;
-            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-            const img = await createImageBitmap(preprocessedBlob);
-            debugCtx.drawImage(img, 0, 0);
-
-            // Perform OCR on the preprocessed image
-            await performOCR(preprocessedBlob);
-        } catch (err) {
-            showError('Failed to capture and perform OCR.');
-            console.error('captureFrameAndPerformOCR Error:', err);
-        }
-
-        focusIndicator.style.display = 'none'; // Hide processing indicator
-        scanning = true; // Resume scanning
-    }
-
-    // Event Listeners
-    roiOverlay.addEventListener('click', captureFrameAndPerformOCR);
-    startButton.addEventListener('click', startScanning);
-    stopButton.addEventListener('click', stopScanning);
-    restartButton.addEventListener('click', startScanning);
-    loadConfigButton.addEventListener('click', loadConfiguration);
-    saveConfigButton.addEventListener('click', saveConfiguration);
-    workersSelect.addEventListener('change', adjustWorkers);
-    frameSkippingSelect.addEventListener('change', () => {
-        frameSkipping = parseInt(frameSkippingSelect.value);
-        updateOcrInfo();
-    });
-    frequencySelect.addEventListener('change', () => {
-        ocrFrequency = parseFloat(frequencySelect.value);
-        updateOcrInfo();
-    });
-    confidenceThresholdInput.addEventListener('change', function() {
-        let val = parseInt(this.value, 10);
-        if (isNaN(val) || val < 1) val = 1;
-        if (val > 100) val = 100;
-        this.value = val;
-        confidenceThreshold = val;
-    });
-
-    // Handle Camera Permissions and Populate Cameras on Page Load
-    document.addEventListener('DOMContentLoaded', async () => {
-        await handleCameraPermissions();
-        await populateConfigurations();
-    });
-
-    // Cleanup on Page Unload
-    window.addEventListener('beforeunload', async () => {
-        if (stream) {
-            stream.getTracks().forEach(t => t.stop());
-        }
-        if (workers.length > 0) {
-            await Promise.all(workers.map(w => w.terminate()));
-            workers = [];
-        }
-    });
-
-    // FPS Counter
-    (function(){
-        const fpsCounter = document.getElementById('fpsCounter');
-        let frameCount = 0;
-        let fps = 0;
-        let lastTime = performance.now();
-
-        function updateFPS(){
-            const now = performance.now();
-            frameCount++;
-            if(now - lastTime >= 1000){
-                fps = frameCount;
-                frameCount = 0;
-                lastTime = now;
-                fpsCounter.innerText = `FPS: ${fps}`;
-            }
-            requestAnimationFrame(updateFPS);
-        }
-        requestAnimationFrame(updateFPS);
-    })();
-</script>
-
-
-</body>
+                function updateFPS(){
+                    const now = performance.now();
+                    frameCount++;
+                    if(now - lastTime >= 1000){
+                        fps = frameCount;
+                        frameCount = 0;
+                        lastTime = now;
+                        fpsCounter.innerText = `FPS: ${fps}`;
+                    }
+                    requestAnimationFrame(updateFPS);
+                }
+                requestAnimationFrame(updateFPS);
+            })();
+        </script>
+    </body>
 </html>
