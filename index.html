@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Advanced OCR Scanner with Enhanced WebGL Preprocessing</title>
+    <title>Advanced OCR Scanner with Lighting Feedback</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Tesseract.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
@@ -618,91 +618,6 @@
             margin-top: 5px;
         }
 
-        /* New Controls: Smoothing, Thresholding, Edge Detection */
-        /* Smoothing Control */
-        .preprocessing-option.smoothing-control {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 10px;
-        }
-        .preprocessing-option.smoothing-control label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-        }
-        .preprocessing-option.smoothing-control input[type="range"] {
-            width: 100%;
-            margin-top: 5px;
-        }
-        .preprocessing-option.smoothing-control span.value-display {
-            margin-left: 10px;
-            font-weight: 400;
-            font-size: 14px;
-        }
-
-        /* Thresholding Control */
-        .preprocessing-option.thresholding-control {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 10px;
-        }
-        .preprocessing-option.thresholding-control label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-        }
-        .preprocessing-option.thresholding-control input[type="range"] {
-            width: 100%;
-            margin-top: 5px;
-        }
-        .preprocessing-option.thresholding-control span.value-display {
-            margin-left: 10px;
-            font-weight: 400;
-            font-size: 14px;
-        }
-
-        /* Edge Detection Control */
-        .preprocessing-option.edge-detection-control {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 10px;
-        }
-        .preprocessing-option.edge-detection-control label {
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-        .edge-presets {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .edge-presets label {
-            font-weight: 400;
-            cursor: pointer;
-        }
-        .preprocessing-option.edge-intensity-control {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 10px;
-        }
-        .preprocessing-option.edge-intensity-control label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-        }
-        .preprocessing-option.edge-intensity-control input[type="range"] {
-            width: 100%;
-            margin-top: 5px;
-        }
-        .preprocessing-option.edge-intensity-control span.value-display {
-            margin-left: 10px;
-            font-weight: 400;
-            font-size: 14px;
-        }
-
     </style>
 </head>
 <body>
@@ -798,67 +713,66 @@
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableGrayscale">Enable Grayscale</label>
                         <input type="range" id="grayscaleSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
+                        <span id="grayscaleValue">100</span>
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableDenoise">Enable Denoise</label>
                         <input type="range" id="denoiseSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <span id="denoiseValue">50</span>
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableSharpen">Enable Sharpening</label>
                         <input type="range" id="sharpenSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <span id="sharpenValue">50</span>
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableBrightness">Enable Brightness</label>
                         <input type="range" id="brightnessSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <span id="brightnessValue">50</span>
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableContrast">Enable Contrast</label>
                         <input type="range" id="contrastSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <span id="contrastValue">50</span>
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableClarity">Enable Clarity</label>
                         <input type="range" id="claritySlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <span id="clarityValue">50</span>
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableHighlights">Enable Highlights</label>
                         <input type="range" id="highlightsSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <span id="highlightsValue">50</span>
                     </div>
 
-                    <!-- New Controls: Smoothing -->
-                    <div class="preprocessing-option smoothing-control">
-                        <label for="smoothingSlider">
-                            Smoothing
-                            <span class="value-display" id="smoothingValue">0</span>
-                        </label>
+                    <!-- New Smoothing Control -->
+                    <div class="preprocessing-option">
+                        <label for="smoothingSlider">Smoothing</label>
                         <input type="range" id="smoothingSlider" class="preprocessing-option-slider" min="0" max="100" value="0" aria-label="Smoothing Slider">
+                        <span id="smoothingValue">0</span>
                     </div>
 
-                    <!-- New Controls: Thresholding -->
-                    <div class="preprocessing-option thresholding-control">
-                        <label for="thresholdSlider">
-                            Thresholding
-                            <span class="value-display" id="thresholdValue">128</span>
-                        </label>
+                    <!-- New Thresholding Control -->
+                    <div class="preprocessing-option">
+                        <label for="thresholdSlider">Thresholding</label>
                         <input type="range" id="thresholdSlider" class="preprocessing-option-slider" min="0" max="255" value="128" aria-label="Thresholding Slider">
+                        <span id="thresholdValue">128</span>
                     </div>
 
-                    <!-- New Controls: Edge Detection -->
-                    <div class="preprocessing-option edge-detection-control">
+                    <!-- New Edge Detection Control -->
+                    <div class="preprocessing-option">
                         <label>Edge Detection</label>
-                        <div class="edge-presets">
+                        <div class="preprocessing-option" style="display: flex; align-items: center; gap: 10px;">
                             <input type="checkbox" id="sobelCheckbox" name="edgeAlgorithm" value="sobel">
                             <label for="sobelCheckbox">Sobel</label>
-                            
+
                             <input type="checkbox" id="cannyCheckbox" name="edgeAlgorithm" value="canny">
                             <label for="cannyCheckbox">Canny</label>
                         </div>
-                        <div class="preprocessing-option edge-intensity-control">
-                            <label for="edgeIntensitySlider">
-                                Edge Intensity
-                                <span class="value-display" id="edgeIntensityValue">50</span>
-                            </label>
-                            <input type="range" id="edgeIntensitySlider" class="preprocessing-option-slider" min="0" max="100" value="50" aria-label="Edge Intensity Slider">
-                        </div>
+                        <label for="edgeIntensitySlider">Edge Intensity</label>
+                        <input type="range" id="edgeIntensitySlider" class="preprocessing-option-slider" min="0" max="100" value="50" aria-label="Edge Intensity Slider">
+                        <span id="edgeIntensityValue">50</span>
                     </div>
                 </content>
             </details>
@@ -870,10 +784,12 @@
                     <div class="roi-option">
                         <label for="roi-width-slider">ROI Width (%):</label>
                         <input type="range" id="roi-width-slider" class="preprocessing-option-slider" min="10" max="100" value="60">
+                        <span id="roiWidthValue">60</span>
                     </div>
                     <div class="roi-option">
                         <label for="roi-height-slider">ROI Height (%):</label>
                         <input type="range" id="roi-height-slider" class="preprocessing-option-slider" min="10" max="100" value="25">
+                        <span id="roiHeightValue">25</span>
                     </div>
                 </content>
             </details>
@@ -1017,18 +933,25 @@
             // Preprocessing controls
             const enableGrayscale = document.getElementById('enableGrayscale');
             const grayscaleSlider = document.getElementById('grayscaleSlider');
+            const grayscaleValue = document.getElementById('grayscaleValue');
             const enableDenoise = document.getElementById('enableDenoise');
             const denoiseSlider = document.getElementById('denoiseSlider');
+            const denoiseValue = document.getElementById('denoiseValue');
             const enableSharpen = document.getElementById('enableSharpen');
             const sharpenSlider = document.getElementById('sharpenSlider');
+            const sharpenValue = document.getElementById('sharpenValue');
             const enableBrightness = document.getElementById('enableBrightness');
             const brightnessSlider = document.getElementById('brightnessSlider');
+            const brightnessValue = document.getElementById('brightnessValue');
             const enableContrast = document.getElementById('enableContrast');
             const contrastSlider = document.getElementById('contrastSlider');
+            const contrastValue = document.getElementById('contrastValue');
             const enableClarity = document.getElementById('enableClarity');
             const claritySlider = document.getElementById('claritySlider');
+            const clarityValue = document.getElementById('clarityValue');
             const enableHighlights = document.getElementById('enableHighlights');
             const highlightsSlider = document.getElementById('highlightsSlider');
+            const highlightsValue = document.getElementById('highlightsValue');
 
             // New Preprocessing Controls
             const smoothingSlider = document.getElementById('smoothingSlider');
@@ -1042,7 +965,9 @@
 
             // ROI controls
             const roiWidthSlider = document.getElementById('roi-width-slider');
+            const roiWidthValue = document.getElementById('roiWidthValue');
             const roiHeightSlider = document.getElementById('roi-height-slider');
+            const roiHeightValue = document.getElementById('roiHeightValue');
 
             const configSelect = document.getElementById('config-select');
             const loadConfigButton = document.getElementById('load-config-button');
@@ -1121,10 +1046,10 @@
                     varying vec2 v_texCoord;
                     void main(void) {
                         gl_Position = vec4(a_position, 0.0, 1.0);
-                        v_texCoord = v_texCoord;
+                        v_texCoord = a_texCoord;
                     }
                 `;
-                // Updated Fragment Shader to include Smoothing, Thresholding, and Edge Detection
+                // Updated Fragment Shader with new preprocessing controls
                 const fragmentShaderSource = `
                     precision mediump float;
 
@@ -1145,11 +1070,11 @@
                     uniform bool u_highlightsEnabled;
                     uniform float u_highlightsAmount;
 
-                    // New Uniforms for Enhanced Preprocessing
-                    uniform int u_smoothingAmount;      // 0-100
-                    uniform int u_thresholdValue;       // 0-255
-                    uniform int u_edgeDetection;        // 0: None, 1: Sobel, 2: Canny, 3: Both
-                    uniform int u_edgeIntensity;        // 0-100
+                    // New Preprocessing Uniforms
+                    uniform int u_smoothingAmount; // 0-100
+                    uniform int u_thresholdValue; // 0-255
+                    uniform int u_edgeDetection; // 0: None, 1: Sobel, 2: Canny, 3: Both
+                    uniform int u_edgeIntensity; // 0-100
 
                     varying vec2 v_texCoord;
 
@@ -1175,7 +1100,7 @@
                         
                         for(int i = 0; i < 9; i++) {
                             vec2 offset = vec2(float((i % 3) - 1), float((i / 3) - 1)) * stepSize;
-                            float gray = (texture2D(image, coord + offset).r + texture2D(image, coord + offset).g + texture2D(image, coord + offset).b) / 3.0;
+                            float gray = dot(texture2D(image, coord + offset).rgb, vec3(0.299, 0.587, 0.114));
                             edgeX += gray * kernelX[i];
                             edgeY += gray * kernelY[i];
                         }
@@ -1184,15 +1109,18 @@
                         return vec3(magnitude);
                     }
 
-                    // Function to apply Canny operator (simplified placeholder)
+                    // Function to apply Canny operator (simplified as placeholder)
                     vec3 applyCanny(sampler2D image, vec2 coord, float intensity) {
-                        // Placeholder: Using Sobel as a substitute for Canny in this example
+                        // Canny implementation placeholder - using Sobel for demonstration
                         return applySobel(image, coord, intensity);
                     }
 
-                    // Function to apply Smoothing (Simple Blur)
+                    // Function to apply smoothing (simple box blur)
                     vec3 applySmoothing(sampler2D image, vec2 coord, float amount) {
-                        float blurSize = amount / 100.0 * 0.01; // Adjust blur size based on amount
+                        if(amount == 0.0) {
+                            return texture2D(image, coord).rgb;
+                        }
+                        float blurSize = amount / 100.0 * 0.005; // Adjust blur size based on amount
                         vec3 color = vec3(0.0);
                         color += texture2D(image, coord + vec2(-blurSize, -blurSize)).rgb;
                         color += texture2D(image, coord + vec2(blurSize, -blurSize)).rgb;
@@ -1210,12 +1138,66 @@
                             color.rgb = applySmoothing(u_texture, v_texCoord, float(u_smoothingAmount));
                         }
 
+                        // Apply denoise if enabled
+                        if (u_denoiseEnabled) {
+                            float offset = 1.0/300.0 * u_denoiseAmount;
+                            vec4 center = texture2D(u_texture, v_texCoord);
+                            vec4 sum = center;
+                            sum += texture2D(u_texture, v_texCoord + vec2(-offset, 0.0));
+                            sum += texture2D(u_texture, v_texCoord + vec2(offset, 0.0));
+                            sum += texture2D(u_texture, v_texCoord + vec2(0.0, -offset));
+                            sum += texture2D(u_texture, v_texCoord + vec2(0.0, offset));
+                            color = sum / 5.0; 
+                        }
+
+                        // Apply sharpen if enabled
+                        if (u_sharpenEnabled) {
+                            float offset = 1.0 / 300.0 * u_sharpenAmount;
+                            vec4 center = texture2D(u_texture, v_texCoord);
+                            vec4 sum = center;
+                            sum += texture2D(u_texture, v_texCoord + vec2(-offset, 0.0));
+                            sum += texture2D(u_texture, v_texCoord + vec2(offset, 0.0));
+                            sum += texture2D(u_texture, v_texCoord + vec2(0.0, -offset));
+                            sum += texture2D(u_texture, v_texCoord + vec2(0.0, offset));
+                            float a = u_sharpenAmount * 0.5;
+                            vec4 blurColor = sum / 5.0;
+                            color.rgb = center.rgb * (1.0 + a) - blurColor.rgb * a;
+                        }
+
+                        // Apply brightness if enabled
+                        if (u_brightnessEnabled) {
+                            float factor = (u_brightnessAmount - 50.0)/50.0;
+                            color.rgb += vec3(factor);
+                        }
+
+                        // Apply contrast if enabled
+                        if (u_contrastEnabled) {
+                            float factor = u_contrastAmount / 50.0;
+                            color.rgb = (color.rgb - 0.5) * factor + 0.5;
+                        }
+
+                        // Apply clarity if enabled
+                        if (u_clarityEnabled) {
+                            float factor = (u_clarityAmount - 50.0)/50.0;
+                            color.rgb = (color.rgb - 0.5) * (1.0 + factor) + 0.5;
+                        }
+
+                        // Apply highlights if enabled
+                        if (u_highlightsEnabled) {
+                            float factor = (u_highlightsAmount - 50.0)/50.0;
+                            color.r = (color.r > 0.5) ? color.r + factor * (color.r - 0.5) : color.r;
+                            color.g = (color.g > 0.5) ? color.g + factor * (color.g - 0.5) : color.g;
+                            color.b = (color.b > 0.5) ? color.b + factor * (color.b - 0.5) : color.b;
+                        }
+
                         // Apply thresholding
-                        float gray = (color.r + color.g + color.b) / 3.0 * 255.0;
-                        if (gray > float(u_thresholdValue)) {
-                            color = vec4(1.0);
-                        } else {
-                            color = vec4(0.0);
+                        float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114)) * 255.0;
+                        if (float(u_thresholdValue) > 0.0) {
+                            if (gray > float(u_thresholdValue)) {
+                                color.rgb = vec3(1.0);
+                            } else {
+                                color.rgb = vec3(0.0);
+                            }
                         }
 
                         // Apply Edge Detection
@@ -1227,42 +1209,16 @@
                             if (u_edgeDetection == 2 || u_edgeDetection == 3) {
                                 edges += applyCanny(u_texture, v_texCoord, float(u_edgeIntensity));
                             }
-                            // Combine edges with the thresholded image
                             float edgeStrength = (edges.r + edges.g + edges.b) / 3.0;
                             if (edgeStrength > 0.5) {
-                                color = vec4(1.0);
+                                color.rgb = vec3(1.0);
                             }
                         }
 
-                        // Existing preprocessing effects
-                        // Conditional application of existing effects
-                        if (u_denoiseEnabled) {
-                            color = denoise(u_texture, v_texCoord, u_denoiseAmount);
-                        }
-
-                        if (u_sharpenEnabled) {
-                            color = sharpen(u_texture, v_texCoord, u_sharpenAmount);
-                        }
-
-                        if (u_brightnessEnabled) {
-                            color = applyBrightness(color, u_brightnessAmount);
-                        }
-
-                        if (u_contrastEnabled) {
-                            color = applyContrast(color, u_contrastAmount);
-                        }
-
-                        if (u_clarityEnabled) {
-                            color = applyClarity(color, u_clarityAmount);
-                        }
-
-                        if (u_highlightsEnabled) {
-                            color = applyHighlights(color, u_highlightsAmount);
-                        }
-
+                        // Apply grayscale if enabled
                         if (u_grayscaleEnabled) {
-                            float grayFinal = dot(color.rgb, vec3(0.299,0.587,0.114));
-                            color = mix(color, vec4(vec3(grayFinal), color.a), u_grayscaleAmount);
+                            float grayValue = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                            color.rgb = mix(color.rgb, vec3(grayValue), u_grayscaleAmount);
                         }
 
                         gl_FragColor = color;
@@ -1333,7 +1289,7 @@
                     clarityAmount: gl.getUniformLocation(glProgram, "u_clarityAmount"),
                     highlightsEnabled: gl.getUniformLocation(glProgram, "u_highlightsEnabled"),
                     highlightsAmount: gl.getUniformLocation(glProgram, "u_highlightsAmount"),
-                    
+
                     // New Uniforms
                     smoothingAmount: gl.getUniformLocation(glProgram, "u_smoothingAmount"),
                     thresholdValue: gl.getUniformLocation(glProgram, "u_thresholdValue"),
@@ -1476,9 +1432,6 @@
                 // Initialize ROI overlay based on current sliders
                 updateROIOverlay();
 
-                // Initialize Enhanced Preprocessing Controls
-                updatePreprocessingControls();
-
                 scanning = true;
                 startButton.disabled = true;
                 stopButton.disabled = false;
@@ -1601,12 +1554,15 @@
                 if (enableContrast.checked) { debugContext.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset += 20; }
                 if (enableClarity.checked) { debugContext.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset += 20; }
                 if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); yOffset += 20; }
-
-                // New Effect Labels
-                debugContext.fillText(`Smoothing: ${smoothingSlider.value}`, 10, yOffset); yOffset += 20;
-                debugContext.fillText(`Thresholding: ${thresholdSlider.value}`, 10, yOffset); yOffset += 20;
-                debugContext.fillText(`Edge Detection: ${getEdgeDetectionText()}`, 10, yOffset); yOffset += 20;
-                debugContext.fillText(`Edge Intensity: ${edgeIntensitySlider.value}`, 10, yOffset); yOffset += 20;
+                if (smoothingSlider.value > 0) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}`, 10, yOffset); yOffset += 20; }
+                if (thresholdSlider.value >= 0) { debugContext.fillText(`Thresholding: ${thresholdSlider.value}`, 10, yOffset); yOffset += 20; }
+                if (sobelCheckbox.checked || cannyCheckbox.checked) {
+                    let algorithms = [];
+                    if (sobelCheckbox.checked) algorithms.push('Sobel');
+                    if (cannyCheckbox.checked) algorithms.push('Canny');
+                    debugContext.fillText(`Edge Detection: ${algorithms.join(', ')}`, 10, yOffset); yOffset += 20;
+                    debugContext.fillText(`Edge Intensity: ${edgeIntensitySlider.value}`, 10, yOffset); yOffset += 20;
+                }
 
                 console.log(`Average Brightness: ${averageBrightness}`);
 
@@ -1665,10 +1621,15 @@
                 gl.uniform1f(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value));
 
                 // Set new uniform values
-                gl.uniform1i(window.uLocations.smoothingAmount, parseInt(smoothingSlider.value, 10));
-                gl.uniform1i(window.uLocations.thresholdValue, parseInt(thresholdSlider.value, 10));
-                gl.uniform1i(window.uLocations.edgeDetection, getEdgeDetectionValue());
-                gl.uniform1i(window.uLocations.edgeIntensity, parseInt(edgeIntensitySlider.value, 10));
+                gl.uniform1i(window.uLocations.smoothingAmount, parseInt(smoothingSlider.value));
+                gl.uniform1i(window.uLocations.thresholdValue, parseInt(thresholdSlider.value));
+
+                let edgeDetection = 0;
+                if (sobelCheckbox.checked) edgeDetection += 1; // 1 for Sobel
+                if (cannyCheckbox.checked) edgeDetection += 2; // 2 for Canny
+                gl.uniform1i(window.uLocations.edgeDetection, edgeDetection); // 0: None, 1: Sobel, 2: Canny, 3: Both
+
+                gl.uniform1i(window.uLocations.edgeIntensity, parseInt(edgeIntensitySlider.value));
 
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
@@ -1780,42 +1741,52 @@
                     const preprocessing = configData.preprocessing || {};
                     document.getElementById('enableGrayscale').checked = preprocessing.enableGrayscale || false;
                     document.getElementById('grayscaleSlider').value = preprocessing.grayscale || 100;
+                    grayscaleValue.textContent = preprocessing.grayscale || 100;
 
                     document.getElementById('enableDenoise').checked = preprocessing.enableDenoise || false;
                     document.getElementById('denoiseSlider').value = preprocessing.denoise || 50;
+                    denoiseValue.textContent = preprocessing.denoise || 50;
 
                     document.getElementById('enableSharpen').checked = preprocessing.enableSharpen || false;
                     document.getElementById('sharpenSlider').value = preprocessing.sharpen || 50;
+                    sharpenValue.textContent = preprocessing.sharpen || 50;
 
                     document.getElementById('enableBrightness').checked = preprocessing.enableBrightness || false;
                     document.getElementById('brightnessSlider').value = preprocessing.brightness || 50;
+                    brightnessValue.textContent = preprocessing.brightness || 50;
 
                     document.getElementById('enableContrast').checked = preprocessing.enableContrast || false;
                     document.getElementById('contrastSlider').value = preprocessing.contrast || 50;
+                    contrastValue.textContent = preprocessing.contrast || 50;
 
                     document.getElementById('enableClarity').checked = preprocessing.enableClarity || false;
                     document.getElementById('claritySlider').value = preprocessing.clarity || 50;
+                    clarityValue.textContent = preprocessing.clarity || 50;
 
                     document.getElementById('enableHighlights').checked = preprocessing.enableHighlights || false;
                     document.getElementById('highlightsSlider').value = preprocessing.highlights || 50;
+                    highlightsValue.textContent = preprocessing.highlights || 50;
 
-                    // Apply new preprocessing options
+                    // Apply new preprocessing controls
                     document.getElementById('smoothingSlider').value = preprocessing.smoothing || 0;
-                    document.getElementById('smoothingValue').textContent = preprocessing.smoothing || 0;
-                    document.getElementById('thresholdSlider').value = preprocessing.thresholding || 128;
-                    document.getElementById('thresholdValue').textContent = preprocessing.thresholding || 128;
+                    smoothingValue.textContent = preprocessing.smoothing || 0;
 
-                    document.getElementById('sobelCheckbox').checked = preprocessing.edgeDetection?.sobel || false;
-                    document.getElementById('cannyCheckbox').checked = preprocessing.edgeDetection?.canny || false;
+                    document.getElementById('thresholdSlider').value = preprocessing.thresholding || 128;
+                    thresholdValue.textContent = preprocessing.thresholding || 128;
+
+                    document.getElementById('sobelCheckbox').checked = preprocessing.edgeDetectionSobel || false;
+                    document.getElementById('cannyCheckbox').checked = preprocessing.edgeDetectionCanny || false;
                     document.getElementById('edgeIntensitySlider').value = preprocessing.edgeIntensity || 50;
-                    document.getElementById('edgeIntensityValue').textContent = preprocessing.edgeIntensity || 50;
+                    edgeIntensityValue.textContent = preprocessing.edgeIntensity || 50;
 
                     // Apply ROI settings
                     const roiSettings = configData.roi || {};
                     roiWidthPercent = roiSettings.roiWidth || 60;
                     roiHeightPercent = roiSettings.roiHeight || 25;
                     roiWidthSlider.value = roiWidthPercent;
+                    roiWidthValue.textContent = roiWidthPercent;
                     roiHeightSlider.value = roiHeightPercent;
+                    roiHeightValue.textContent = roiHeightPercent;
                     updateROIOverlay();
 
                     updateOcrInfo();
@@ -1853,14 +1824,12 @@
                         enableHighlights: document.getElementById('enableHighlights').checked,
                         highlights: document.getElementById('highlightsSlider').value,
 
-                        // New Preprocessing Options
+                        // New preprocessing controls
                         smoothing: document.getElementById('smoothingSlider').value,
                         thresholding: document.getElementById('thresholdSlider').value,
-                        edgeDetection: {
-                            sobel: document.getElementById('sobelCheckbox').checked,
-                            canny: document.getElementById('cannyCheckbox').checked
-                        },
-                        edgeIntensity: document.getElementById('edgeIntensitySlider').value
+                        edgeDetectionSobel: document.getElementById('sobelCheckbox').checked,
+                        edgeDetectionCanny: document.getElementById('cannyCheckbox').checked,
+                        edgeIntensity: document.getElementById('edgeIntensitySlider').value,
                     },
                     roi: {
                         roiWidth: roiWidthPercent,
@@ -2006,6 +1975,9 @@
                 });
             })();
 
+            
+            
+
             // Function to update ROI overlay based on slider values
             function updateROIOverlay() {
                 const overlayWidthPercent = roiWidthPercent + '%';
@@ -2101,33 +2073,60 @@
                 await populateCameras();
             })();
 
-            // Function to update preprocessing controls (including new controls)
-            function updatePreprocessingControls() {
-                // Initialize smoothing and thresholding displays
-                smoothingValue.textContent = smoothingSlider.value;
-                thresholdValue.textContent = thresholdSlider.value;
-                edgeIntensityValue.textContent = edgeIntensitySlider.value;
+            // Function to initialize the application on DOMContentLoaded
+            document.addEventListener('DOMContentLoaded', () => {
+                // Attach event listeners to start and stop buttons
+                startButton.addEventListener('click', startScanning);
+                stopButton.addEventListener('click', stopScanning);
+                restartButton.addEventListener('click', startScanning); // Assuming restart just starts scanning again
 
-                // Attach event listeners for new controls
+                // Event listeners for brightness controls
+                grayscaleSlider.addEventListener('input', () => {
+                    grayscaleValue.textContent = grayscaleSlider.value;
+                });
+                denoiseSlider.addEventListener('input', () => {
+                    denoiseValue.textContent = denoiseSlider.value;
+                });
+                sharpenSlider.addEventListener('input', () => {
+                    sharpenValue.textContent = sharpenSlider.value;
+                });
+                brightnessSlider.addEventListener('input', () => {
+                    brightnessValue.textContent = brightnessSlider.value;
+                });
+                contrastSlider.addEventListener('input', () => {
+                    contrastValue.textContent = contrastSlider.value;
+                });
+                claritySlider.addEventListener('input', () => {
+                    clarityValue.textContent = claritySlider.value;
+                });
+                highlightsSlider.addEventListener('input', () => {
+                    highlightsValue.textContent = highlightsSlider.value;
+                });
+
+                // Event listeners for new preprocessing controls
                 smoothingSlider.addEventListener('input', () => {
                     smoothingValue.textContent = smoothingSlider.value;
                 });
-
                 thresholdSlider.addEventListener('input', () => {
                     thresholdValue.textContent = thresholdSlider.value;
                 });
-
                 edgeIntensitySlider.addEventListener('input', () => {
                     edgeIntensityValue.textContent = edgeIntensitySlider.value;
                 });
 
-                // Attach event listeners to update preprocessing when new controls change
-                smoothingSlider.addEventListener('input', updatePreprocessing);
-                thresholdSlider.addEventListener('input', updatePreprocessing);
-                sobelCheckbox.addEventListener('change', updatePreprocessing);
-                cannyCheckbox.addEventListener('change', updatePreprocessing);
-                edgeIntensitySlider.addEventListener('input', updatePreprocessing);
-            }
+                // Event listeners for ROI sliders
+                roiWidthSlider.addEventListener('input', function() {
+                    roiWidthPercent = parseInt(this.value);
+                    roiWidthValue.textContent = roiWidthPercent;
+                    updateROIOverlay();
+                });
+
+                roiHeightSlider.addEventListener('input', function() {
+                    roiHeightPercent = parseInt(this.value);
+                    roiHeightValue.textContent = roiHeightPercent;
+                    updateROIOverlay();
+                });
+            });
 
             // Configuration Management System Implementation Continued
 
@@ -2182,64 +2181,6 @@
                 }
                 scanning = true;
             }
-
-            // Function to get edge detection value based on checkboxes
-            function getEdgeDetectionValue() {
-                let value = 0;
-                if (sobelCheckbox.checked) value += 1; // 1 for Sobel
-                if (cannyCheckbox.checked) value += 2; // 2 for Canny
-                return value; // 0: None, 1: Sobel, 2: Canny, 3: Both
-            }
-
-            // Function to get edge detection text for debug display
-            function getEdgeDetectionText() {
-                const sobel = sobelCheckbox.checked;
-                const canny = cannyCheckbox.checked;
-                if (sobel && canny) return 'Sobel & Canny';
-                if (sobel) return 'Sobel';
-                if (canny) return 'Canny';
-                return 'None';
-            }
-
-            // Configuration Management System Implementation Continued
-
-            // Attach event listeners to start and stop buttons
-            document.addEventListener('DOMContentLoaded', () => {
-                startButton.addEventListener('click', startScanning);
-                stopButton.addEventListener('click', stopScanning);
-                restartButton.addEventListener('click', startScanning); // Assuming restart just starts scanning again
-
-                // Event listeners for brightness controls
-                brightnessSlider.addEventListener('input', () => {
-                    // Optional: Display current brightness value if needed
-                    // For example, update a label showing the current brightness value
-                    // brightnessValue.innerText = brightnessSlider.value;
-                });
-
-                // Event listeners for other preprocessing controls can be added similarly
-
-                // Event listener for ROI overlay click (optional functionality)
-                roiOverlay.addEventListener('click', async () => {
-                    if (scanning) {
-                        // Focus request logic (not changed for performance)
-                        // Just capture and OCR once
-                        await captureFrameAndPerformOCR();
-                    }
-                });
-
-                // Event listeners for ROI sliders
-                roiWidthSlider.addEventListener('input', function() {
-                    roiWidthPercent = parseInt(this.value);
-                    updateROIOverlay();
-                });
-
-                roiHeightSlider.addEventListener('input', function() {
-                    roiHeightPercent = parseInt(this.value);
-                    updateROIOverlay();
-                });
-            });
-
-            // Configuration Management System Implementation Continued
 
         </script>
     </body>
