@@ -288,6 +288,7 @@
             position: absolute;
             top: 0;
             left: 0;
+            /* Removed width and height from CSS entirely */
             z-index: 4;
             pointer-events: none;
             border: none;
@@ -833,7 +834,7 @@
     <div id="debugConsole"></div>
 
     <script>
-        /* Comprehensive Corrections Applied */
+        /* Incorporating Blurriness Fixes and Enhancements */
 
         // Brightness thresholds
         const BRIGHTNESS_THRESHOLD_DARK = 80;
@@ -868,8 +869,6 @@
         const restartButton = document.getElementById('restart-button');
         const output = document.getElementById('output');
         const errorMsg = document.getElementById('errorMsg');
-        const debugCanvas = document.getElementById('debugCanvas');
-        const debugCtx = debugCanvas.getContext('2d');
         const focusIndicator = document.getElementById('focusIndicator');
         const workersSelect = document.getElementById('workers-select');
         const frameSkippingSelect = document.getElementById('frame-skipping-select');
@@ -1083,7 +1082,7 @@
             startButton.innerText = 'Scanning...';
             output.value = '';
 
-            if (debugCanvas.style.display === 'block') {
+            if (document.getElementById('debugCanvas').style.display === 'block') {
                 lightbulbIndicator.style.display = 'block';
                 lightingFeedback.style.display = 'block';
             }
@@ -1103,7 +1102,9 @@
                 stream.getTracks().forEach(t => t.stop());
                 stream = null;
             }
-            debugCtx.clearRect(0,0,debugCanvas.width, debugCanvas.height);
+            const debugCanvasElement = document.getElementById('debugCanvas');
+            const debugCtx = debugCanvasElement.getContext('2d');
+            debugCtx.clearRect(0,0,debugCanvasElement.width, debugCanvasElement.height);
             lightbulbIndicator.style.display = 'none';
             lightingFeedback.style.display = 'none';
         }
@@ -1175,7 +1176,10 @@
             const debugContext = debugCanvasElement.getContext('2d');
             debugContext.clearRect(0, 0, debugCanvasElement.width, debugCanvasElement.height);
             const img = await createImageBitmap(preprocessedBlob);
-            debugContext.drawImage(img, 0, 0, debugCanvasElement.width, debugCanvasElement.height);
+
+            // Disable smoothing to avoid blurriness
+            debugContext.imageSmoothingEnabled = false;
+            debugContext.drawImage(img, 0, 0);
 
             const averageBrightness = calculateAverageBrightness(debugCanvasElement);
             updateLightbulb(averageBrightness);
@@ -1496,19 +1500,23 @@
             const overlayWidthPercent = roiWidthPercent + '%';
             const overlayHeightPercent = roiHeightPercent + '%';
 
-            overlay.style.width = overlayWidthPercent;
-            overlay.style.height = overlayHeightPercent;
-            overlay.style.top = '50%';
-            overlay.style.left = '50%';
-            overlay.style.transform = 'translate(-50%, -50%)';
+            roiOverlay.style.width = overlayWidthPercent;
+            roiOverlay.style.height = overlayHeightPercent;
+            roiOverlay.style.top = '50%';
+            roiOverlay.style.left = '50%';
+            roiOverlay.style.transform = 'translate(-50%, -50%)';
 
-            const overlayDisplayWidth = overlay.clientWidth;
-            const overlayDisplayHeight = overlay.clientHeight;
+            const overlayDisplayWidth = roiOverlay.clientWidth;
+            const overlayDisplayHeight = roiOverlay.clientHeight;
             const debugCanvasElement = document.getElementById('debugCanvas');
             debugCanvasElement.width = overlayDisplayWidth;
             debugCanvasElement.height = overlayDisplayHeight;
-            debugCanvasElement.style.width = overlayDisplayWidth + 'px';
-            debugCanvasElement.style.height = overlayDisplayHeight + 'px';
+            debugCanvasElement.style.width = `${overlayDisplayWidth}px`;
+            debugCanvasElement.style.height = `${overlayDisplayHeight}px`;
+
+            console.log(`Overlay Display Size: ${overlayDisplayWidth}px x ${overlayDisplayHeight}px`);
+            console.log(`Debug Canvas Internal Size: ${debugCanvasElement.width}px x ${debugCanvasElement.height}px`);
+            console.log(`Debug Canvas CSS Size: ${debugCanvasElement.style.width} x ${debugCanvasElement.style.height}`);
         }
 
         roiWidthSlider.addEventListener('input', function() {
@@ -1610,10 +1618,11 @@
             const videoRect = video.getBoundingClientRect();
             const scaleX = videoDisplayWidth / videoRect.width;
             const scaleY = videoDisplayHeight / videoRect.height;
-            const roiX = (overlayRect.left - videoRect.left) * scaleX;
-            const roiY = (overlayRect.top - videoRect.top) * scaleY;
-            const roiW = overlayRect.width * scaleX;
-            const roiH = overlayRect.height * scaleY;
+            const roiX = Math.round((overlayRect.left - videoRect.left) * scaleX);
+            const roiY = Math.round((overlayRect.top - videoRect.top) * scaleY);
+            const roiW = Math.round(overlayRect.width * scaleX);
+            const roiH = Math.round(overlayRect.height * scaleY);
+
             if(roiX < 0 || roiY < 0 || (roiX + roiW) > videoDisplayWidth || (roiY + roiH) > videoDisplayHeight){
                 showError('ROI out of frame bounds');
                 scanning = true;
@@ -1628,9 +1637,15 @@
             const preprocessedBlob = await preprocessWithWebGL(roiCanvas);
 
             const debugCanvasElement = document.getElementById('debugCanvas');
-            debugCanvasElement.getContext('2d').clearRect(0,0,debugCanvasElement.width, debugCanvasElement.height);
+            debugCanvasElement.width = debugCanvasElement.width; // Reset (no change in size, just a re-assign)
+            debugCanvasElement.height = debugCanvasElement.height; 
+            const debugContext = debugCanvasElement.getContext('2d');
+            debugContext.clearRect(0,0,debugCanvasElement.width, debugCanvasElement.height);
             const img = await createImageBitmap(preprocessedBlob);
-            debugCanvasElement.getContext('2d').drawImage(img,0,0, debugCanvasElement.width, debugCanvasElement.height);
+
+            // Disable smoothing to avoid blurriness
+            debugContext.imageSmoothingEnabled = false;
+            debugContext.drawImage(img,0,0, debugCanvasElement.width, debugCanvasElement.height);
 
             const averageBrightness = calculateAverageBrightness(debugCanvasElement);
             updateLightbulb(averageBrightness);
@@ -1674,6 +1689,7 @@
                 }
             `;
 
+            // Using highp for better accuracy
             const fragmentShaderSource = `
                 precision highp float;
 
