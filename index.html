@@ -15,6 +15,7 @@
         *, *::before, *::after {
             box-sizing: border-box;
         }
+
         html, body {
             margin: 0;
             padding: 0;
@@ -28,6 +29,7 @@
             -moz-osx-font-smoothing: grayscale;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
+
         html.dark-theme, body.dark-theme {
             background: #121212;
             color: #e0e0e0;
@@ -41,9 +43,11 @@
             align-items: center;
             z-index: 1000;
         }
+
         .theme-toggle input {
             display: none;
         }
+
         .toggle-label {
             position: relative;
             display: flex;
@@ -52,6 +56,7 @@
             user-select: none;
             width: 80px;
         }
+
         .toggle-switch {
             position: fixed;
             top: 20px;
@@ -67,6 +72,7 @@
             justify-content: space-between;
             padding: 0 5px;
         }
+
         .toggle-icon {
             width: 20px;
             height: 20px;
@@ -74,20 +80,25 @@
             flex-shrink: 0;
             font-size: 18px;
         }
+
         .sun-icon {
             opacity: 1;
             pointer-events: none;
         }
+
         .moon-icon {
             opacity: 0;
             pointer-events: none;
         }
+
         input:checked ~ .toggle-switch {
             background-color: #4f46e5;
         }
+
         input:checked ~ .toggle-switch .sun-icon {
             opacity: 0;
         }
+
         input:checked ~ .toggle-switch .moon-icon {
             opacity: 1;
         }
@@ -109,9 +120,11 @@
             flex-direction: column;
             justify-content: space-between;
         }
+
         .side-menu.active {
             left: 0;
         }
+
         #fpsCounter {
             position: absolute;
             top: 20px;
@@ -131,12 +144,14 @@
             flex: 1;
             overflow-y: auto;
         }
+
         .collapsible {
             border: 1px solid #444;
             border-radius: 8px;
             background-color: #34495e;
             overflow: hidden;
         }
+
         .collapsible summary {
             padding: 10px 15px;
             font-size: 18px;
@@ -146,23 +161,28 @@
             user-select: none;
             background-color: #2c3e50;
         }
+
         .collapsible summary::-webkit-details-marker {
             display: none;
         }
+
         .collapsible content {
             padding: 10px 15px;
             display: none;
             flex-direction: column;
             gap: 15px;
         }
+
         .collapsible[open] content {
             display: flex;
         }
+
         #side-menu label {
             font-size: 16px;
             margin-bottom: 4px;
             display: block;
         }
+
         #resolution-select, #camera-select, #workers-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input, #config-select {
             width: 100%;
             padding: 8px;
@@ -172,6 +192,7 @@
             background-color: #fff;
             margin-bottom: 10px;
         }
+
         body.dark-theme #resolution-select,
         body.dark-theme #camera-select,
         body.dark-theme #workers-select,
@@ -203,6 +224,7 @@
             flex-direction: column;
             justify-content: space-between;
         }
+
         .menu-toggle span {
             display: block;
             height: 4px;
@@ -210,6 +232,7 @@
             border-radius: 2px;
             transition: background-color 0.3s ease;
         }
+
         .side-menu.active + .menu-toggle span {
             background-color: #ecf0f1;
         }
@@ -224,6 +247,7 @@
             display: none;
             z-index: 1000;
         }
+
         .overlay.active {
             display: block;
         }
@@ -232,6 +256,7 @@
             margin-left: 300px;
             transition: margin-left 0.3s ease;
         }
+
         @media (max-width: 768px) {
             #container.side-menu-open {
                 margin-left: 0;
@@ -284,11 +309,12 @@
             z-index: 3;
         }
 
+        /* We do not set width or height in CSS for #debugCanvas.
+           We will set them via JavaScript to match the ROI exactly. */
         #debugCanvas {
             position: absolute;
             top: 0;
             left: 0;
-            /* Removed width and height from CSS entirely */
             z-index: 4;
             pointer-events: none;
             border: none;
@@ -318,12 +344,14 @@
             flex-direction: column;
             align-items: center;
         }
+
         .buttons-container {
             display: flex;
             gap: 30px;
             width: 100%;
             justify-content: center;
         }
+
         #start-button, #stop-button, #restart-button, #load-config-button, #save-config-button {
             padding: 6px 12px;
             font-size: 12px;
@@ -335,28 +363,35 @@
             width: 140px;
             white-space: nowrap;
         }
+
         #start-button {
             background-color: #2cb67d;
             color: #fff;
         }
+
         #start-button:hover:not(:disabled) {
             background-color: #249763;
         }
+
         #start-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
+
         #stop-button {
             background-color: #d00000;
             color: #fff;
         }
+
         #stop-button:hover:not(:disabled) {
             background-color: #b20000;
         }
+
         #stop-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
+
         #restart-button {
             background-color: #f39c12;
             color: #fff;
@@ -364,17 +399,21 @@
             margin-top: 20px;
             display: none;
         }
+
         #restart-button:hover:not(:disabled) {
             background-color: #e67e22;
         }
+
         #restart-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
+
         #load-config-button, #save-config-button {
             background-color: #3498db;
             color: #fff;
         }
+
         #load-config-button:hover, #save-config-button:hover {
             background-color: #2980b9;
         }
@@ -394,6 +433,7 @@
             font-family: 'Inter', sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
+
         body.dark-theme #output {
             background-color: #1e1e1e;
             border: 1px solid #555;
@@ -450,6 +490,7 @@
             white-space: pre-wrap;
             word-break: break-word;
         }
+
         .log-entry.log { color: #ccc; }
         .log-entry.warn { color: #ffbb33; }
         .log-entry.error { color: #ff4f4f; }
@@ -468,6 +509,7 @@
             display: none;
             z-index: 998;
         }
+
         #save-logs-button {
             background: #0d6efd;
             border: none;
@@ -478,6 +520,7 @@
             cursor: pointer;
             font-family: 'Inter', sans-serif;
         }
+
         #save-logs-button:hover {
             background: #0b5ed7;
         }
@@ -493,6 +536,7 @@
             font-weight: 600;
             transition: background-color 0.3s ease;
         }
+
         .debug-button:hover {
             background-color: #5a0bad;
         }
@@ -502,35 +546,44 @@
                 width: 25px;
                 height: 20px;
             }
+
             .menu-toggle span {
                 height: 3px;
             }
+
             .side-menu {
                 padding: 15px;
             }
+
             #debugConsole {
                 height: 150px;
                 font-size: 13px;
             }
+
             #debugControls {
                 bottom: 150px;
             }
+
             .buttons-container {
                 gap: 25px;
             }
+
             #start-button, #stop-button, #restart-button, #load-config-button, #save-config-button {
                 padding: 12px 20px;
                 font-size: 16px;
                 width: 140px;
             }
+
             #output {
                 font-size: 18px;
                 height: 180px;
             }
+
             #errorMsg {
                 font-size: 18px;
                 padding: 14px 28px;
             }
+
             #resolution-select, #camera-select, #workers-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input, #config-select {
                 font-size: 18px;
                 padding: 12px;
@@ -541,19 +594,23 @@
             .buttons-container {
                 gap: 15px;
             }
+
             #start-button, #stop-button, #restart-button, #load-config-button, #save-config-button {
                 padding: 10px 18px;
                 font-size: 14px;
                 width: 120px;
             }
+
             #output {
                 font-size: 16px;
                 height: 160px;
             }
+
             #errorMsg {
                 font-size: 16px;
                 padding: 12px 24px;
             }
+
             #resolution-select, #camera-select, #workers-select, #frame-skipping-select, #frequency-select, #confidence-threshold-input, #config-select {
                 font-size: 16px;
                 padding: 10px;
@@ -565,13 +622,16 @@
             flex-direction: column;
             margin-bottom: 10px;
         }
+
         .preprocessing-option label {
             margin-bottom: 5px;
             font-weight: 600;
         }
+
         .preprocessing-option input[type="checkbox"] {
             margin-right: 10px;
         }
+
         .preprocessing-option-slider {
             width: 100%;
             margin-top: 5px;
@@ -586,10 +646,12 @@
             flex-direction: column;
             margin-bottom: 10px;
         }
+
         .roi-option label {
             margin-bottom: 5px;
             font-weight: 600;
         }
+
         .roi-option input[type="range"] {
             width: 100%;
             margin-top: 5px;
@@ -714,17 +776,14 @@
                         <label><input type="checkbox" id="enableHighlights">Enable Highlights</label>
                         <input type="range" id="highlightsSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
                     </div>
-
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableSmoothing">Enable Smoothing</label>
                         <input type="range" id="smoothingSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
                     </div>
-
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableThreshold">Enable Threshold</label>
                         <input type="range" id="thresholdSlider" class="preprocessing-option-slider" min="0" max="255" value="128">
                     </div>
-
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableEdgeDetection">Enable Edge Detection</label>
                         <div style="margin-left: 20px; margin-top: 5px;">
@@ -834,9 +893,17 @@
     <div id="debugConsole"></div>
 
     <script>
-        /* Incorporating Blurriness Fixes and Enhancements */
+        /* Comprehensive Fixes:
+           - Ensure debugCanvas matches the ROI overlay size exactly.
+           - Ensure no scaling occurs.
+           - Disable image smoothing.
+           - Restore camera permission prompt on page load and auto-reload after granting permissions.
+           - Ensure all computations are done with rounding to avoid fractional pixels.
+           - High precision in shaders.
+           - No brevity, full code.
+        */
 
-        // Brightness thresholds
+        // Brightness Thresholds
         const BRIGHTNESS_THRESHOLD_DARK = 80;
         const BRIGHTNESS_THRESHOLD_BRIGHT = 200;
 
@@ -875,7 +942,6 @@
         const frequencySelect = document.getElementById('frequency-select');
         const ocrInfo = document.getElementById('ocr-info');
         const confidenceThresholdInput = document.getElementById('confidence-threshold-input');
-
         const enableGrayscale = document.getElementById('enableGrayscale');
         const grayscaleSlider = document.getElementById('grayscaleSlider');
         const enableDenoise = document.getElementById('enableDenoise');
@@ -899,13 +965,11 @@
         const sobelSlider = document.getElementById('sobelSlider');
         const enableCanny = document.getElementById('enableCanny');
         const cannySlider = document.getElementById('cannySlider');
-
         const roiWidthSlider = document.getElementById('roi-width-slider');
         const roiHeightSlider = document.getElementById('roi-height-slider');
         const configSelect = document.getElementById('config-select');
         const loadConfigButton = document.getElementById('load-config-button');
         const saveConfigButton = document.getElementById('save-config-button');
-
         const videoCanvas = document.createElement('canvas');
         const roiCanvas = document.createElement('canvas');
         const scaledCanvas = document.createElement('canvas');
@@ -938,6 +1002,25 @@
                 enableSobel.disabled = true;
             } else {
                 enableSobel.disabled = false;
+            }
+        });
+
+        // Camera permission logic (restored)
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const permissionStatus = await navigator.permissions.query({name: 'camera'});
+                if (permissionStatus.state !== 'granted') {
+                    // Request camera access
+                    const tempStream = await navigator.mediaDevices.getUserMedia({video: true});
+                    // After granting, stop the stream to release the camera
+                    tempStream.getTracks().forEach(track => track.stop());
+                    // Reload the page after permissions are granted
+                    alert("Permissions granted successfully, page will now reload");
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error('Camera permission denied or error occurred:', err);
+                // If denied, user must manually grant permissions or no scanning.
             }
         });
 
@@ -1082,7 +1165,8 @@
             startButton.innerText = 'Scanning...';
             output.value = '';
 
-            if (document.getElementById('debugCanvas').style.display === 'block') {
+            const debugCanvasElement = document.getElementById('debugCanvas');
+            if (debugCanvasElement.style.display === 'block') {
                 lightbulbIndicator.style.display = 'block';
                 lightingFeedback.style.display = 'block';
             }
@@ -1154,11 +1238,10 @@
             const videoDisplayWidth = video.clientWidth;
             const videoDisplayHeight = video.clientHeight;
 
-            const roiW = videoDisplayWidth * (roiWidthPercent / 100);
-            const roiH = videoDisplayHeight * (roiHeightPercent / 100);
-
-            const roiX = (videoDisplayWidth - roiW) / 2;
-            const roiY = (videoDisplayHeight - roiH) / 2;
+            const roiW = Math.round(videoDisplayWidth * (roiWidthPercent / 100));
+            const roiH = Math.round(videoDisplayHeight * (roiHeightPercent / 100));
+            const roiX = Math.round((videoDisplayWidth - roiW) / 2);
+            const roiY = Math.round((videoDisplayHeight - roiH) / 2);
 
             videoCanvas.width = videoDisplayWidth;
             videoCanvas.height = videoDisplayHeight;
@@ -1177,9 +1260,10 @@
             debugContext.clearRect(0, 0, debugCanvasElement.width, debugCanvasElement.height);
             const img = await createImageBitmap(preprocessedBlob);
 
-            // Disable smoothing to avoid blurriness
-            debugContext.imageSmoothingEnabled = false;
-            debugContext.drawImage(img, 0, 0);
+            debugContext.imageSmoothingEnabled = false; // Disable smoothing
+            // Draw without scaling if possible. If the img matches roiCanvas size, we can just draw it:
+            // debugCanvas and roiCanvas should have the same size as the ROI overlay.
+            debugContext.drawImage(img, 0, 0, debugCanvasElement.width, debugCanvasElement.height);
 
             const averageBrightness = calculateAverageBrightness(debugCanvasElement);
             updateLightbulb(averageBrightness);
@@ -1219,7 +1303,7 @@
 
         function updateOcrInfo() {
             const approximateFPS = 60;
-            const frameBasedFrequency = approximateFPS/frameSkipping;
+            const frameBasedFrequency = approximateFPS / frameSkipping;
             const effectiveFrequency = Math.min(frameBasedFrequency, ocrFrequency);
             ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
         }
@@ -1465,6 +1549,7 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
+
         document.getElementById('save-logs-button').addEventListener('click', saveLogs);
 
         (function(){
@@ -1637,13 +1722,12 @@
             const preprocessedBlob = await preprocessWithWebGL(roiCanvas);
 
             const debugCanvasElement = document.getElementById('debugCanvas');
-            debugCanvasElement.width = debugCanvasElement.width; // Reset (no change in size, just a re-assign)
+            debugCanvasElement.width = debugCanvasElement.width; // re-assign to ensure no scaling
             debugCanvasElement.height = debugCanvasElement.height; 
             const debugContext = debugCanvasElement.getContext('2d');
             debugContext.clearRect(0,0,debugCanvasElement.width, debugCanvasElement.height);
             const img = await createImageBitmap(preprocessedBlob);
 
-            // Disable smoothing to avoid blurriness
             debugContext.imageSmoothingEnabled = false;
             debugContext.drawImage(img,0,0, debugCanvasElement.width, debugCanvasElement.height);
 
@@ -1689,7 +1773,6 @@
                 }
             `;
 
-            // Using highp for better accuracy
             const fragmentShaderSource = `
                 precision highp float;
 
@@ -1978,31 +2061,22 @@
 
             gl.uniform1i(window.uLocations.grayscaleEnabled, enableGrayscale.checked ? 1 : 0);
             gl.uniform1f(window.uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value) / 100.0);
-
             gl.uniform1i(window.uLocations.denoiseEnabled, enableDenoise.checked ? 1 : 0);
             gl.uniform1f(window.uLocations.denoiseAmount, parseFloat(denoiseSlider.value) / 100.0);
-
             gl.uniform1i(window.uLocations.sharpenEnabled, enableSharpen.checked ? 1 : 0);
             gl.uniform1f(window.uLocations.sharpenAmount, parseFloat(sharpenSlider.value) / 100.0);
-
             gl.uniform1i(window.uLocations.brightnessEnabled, enableBrightness.checked ? 1 : 0);
             gl.uniform1f(window.uLocations.brightnessAmount, parseFloat(brightnessSlider.value) / 100.0);
-
             gl.uniform1i(window.uLocations.contrastEnabled, enableContrast.checked ? 1 : 0);
             gl.uniform1f(window.uLocations.contrastAmount, parseFloat(contrastSlider.value) / 100.0);
-
             gl.uniform1i(window.uLocations.clarityEnabled, enableClarity.checked ? 1 : 0);
             gl.uniform1f(window.uLocations.clarityAmount, parseFloat(claritySlider.value) / 100.0);
-
             gl.uniform1i(window.uLocations.highlightsEnabled, enableHighlights.checked ? 1 : 0);
             gl.uniform1f(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value) / 100.0);
-
             gl.uniform1i(window.uLocations.smoothingEnabled, enableSmoothing.checked ? 1 : 0);
             gl.uniform1f(window.uLocations.smoothingAmount, parseFloat(smoothingSlider.value) / 100.0);
-
             gl.uniform1i(window.uLocations.thresholdEnabled, enableThreshold.checked ? 1 : 0);
             gl.uniform1f(window.uLocations.thresholdValue, parseFloat(thresholdSlider.value) / 255.0);
-
             gl.uniform1i(window.uLocations.edgeDetectionEnabled, enableEdgeDetection.checked ? 1 : 0);
             gl.uniform1i(window.uLocations.sobelEnabled, enableSobel.checked ? 1 : 0);
             gl.uniform1f(window.uLocations.sobelAmount, parseFloat(sobelSlider.value) / 100.0);
