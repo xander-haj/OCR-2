@@ -1584,41 +1584,44 @@
             currentResolution = getSelectedResolution();
             selectedCameraId = document.getElementById('camera-select').value || null;
             await initCamera(currentResolution, selectedCameraId);
-
+        
             // Adjust workers based on pixel density
             adjustWorkersBasedOnPixelDensity();
-
+        
             // Lazy init workers if needed
             const workersCount = parseInt(workersSelect.value);
             if (!isTesseractInitialized) {
                 await initializeTesseract(workersCount);
             }
-
+        
             frameSkipping = parseInt(frameSkippingSelect.value);
             ocrFrequency = parseFloat(frequencySelect.value);
             confidenceThreshold = parseInt(confidenceThresholdInput.value);
             updateOcrInfo();
-
+        
             // Init WebGL if not done yet and fallback is not set
             if (!glInitialized && !useCanvas2DPreprocessing) {
                 initWebGL();
             }
-
+        
             // Initialize ROI overlay based on current sliders
             updateROIOverlay();
-
+        
+            // **Add the following line to ensure preprocessing uniforms are set**
+            updatePreprocessing();
+        
             scanning = true;
             startButton.disabled = true;
             stopButton.disabled = false;
             startButton.innerText = 'Scanning...';
             output.value = '';
-
+        
             // Show debug elements if they are active
             if (debugCanvas.style.visibility === 'visible') {
                 lightbulbIndicator.style.display = 'block';
                 lightingFeedback.style.display = 'block';
             }
-
+        
             requestAnimationFrame(processFrame);
         }
 
