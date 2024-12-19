@@ -801,470 +801,480 @@
         </div>
 
         <button id="debug-button" class="debug-button">Show Debug</button>
+    </div>
 
-        <div class="overlay" id="menu-overlay"></div>
-        <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
-            <span></span><span></span><span></span>
-        </div>
+    <div class="overlay" id="menu-overlay"></div>
+    <div class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+    </div>
 
-        <div class="theme-toggle">
-            <label class="toggle-label">
-                <input type="checkbox" id="theme-checkbox">
-                <div class="toggle-switch">
-                    <span class="toggle-icon sun-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 64 64" fill="#FFD700">
-                            <circle cx="32" cy="32" r="12"/>
-                            <g stroke="#FFD700" stroke-width="4">
-                                <line x1="32" y1="4" x2="32" y2="16"/>
-                                <line x1="32" y1="48" x2="32" y2="60"/>
-                                <line x1="4" y1="32" x2="16" y2="32"/>
-                                <line x1="48" y1="32" x2="60" y2="32"/>
-                                <line x1="11.31" y1="11.31" x2="20.49" y2="20.49"/>
-                                <line x1="43.51" y1="43.51" x2="52.69" y2="52.69"/>
-                                <line x1="11.31" y1="52.69" x2="20.49" y2="43.51"/>
-                                <line x1="43.51" y1="20.49" x2="52.69" y2="11.31"/>
-                            </g>
-                        </svg>
-                    </span>
-                    <span class="toggle-icon moon-icon">&#127765;</span>
-                </div>
-            </label>
-        </div>
-
-        <div id="errorMsg"></div>
-        <div id="container">
-            <div id="videoWrapper">
-                <video id="video" playsinline></video>
-                <div id="overlay">
-                    <canvas id="webglCanvas"></canvas>
-                    <canvas id="debugCanvas"></canvas> <!-- Moved inside overlay -->
-                </div>
-                <div id="focusIndicator">Processing...</div>
-
-                <!-- Lightbulb Indicator -->
-                <svg id="lightbulbIndicator" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 64 64" style="position: absolute; bottom: 10px; right: 10px; z-index: 4; display: none;" aria-label="Lighting Indicator" role="img">
-                    <title>Lighting Indicator</title>
-                    <path d="M32 2C20.954 2 12 10.954 12 22c0 6.627 4.567 12.212 10.793 13.775V38c0 3.314 2.686 6 6 6h4c3.314 0 6-2.686 6-6v-2.225C47.433 34.212 52 28.627 52 22 52 10.954 43.046 2 32 2z" fill="#00FF00" stroke="#000" stroke-width="2"/>
-                    <path d="M32 58c-2.209 0-4-1.791-4-4h8c0 2.209-1.791 4-4 4z" fill="#00FF00" stroke="#000" stroke-width="2"/>
-                </svg>
+    <div class="theme-toggle">
+        <label class="toggle-label">
+            <input type="checkbox" id="theme-checkbox">
+            <div class="toggle-switch">
+                <span class="toggle-icon sun-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 64 64" fill="#FFD700">
+                        <circle cx="32" cy="32" r="12"/>
+                        <g stroke="#FFD700" stroke-width="4">
+                            <line x1="32" y1="4" x2="32" y2="16"/>
+                            <line x1="32" y1="48" x2="32" y2="60"/>
+                            <line x1="4" y1="32" x2="16" y2="32"/>
+                            <line x1="48" y1="32" x2="60" y2="32"/>
+                            <line x1="11.31" y1="11.31" x2="20.49" y2="20.49"/>
+                            <line x1="43.51" y1="43.51" x2="52.69" y2="52.69"/>
+                            <line x1="11.31" y1="52.69" x2="20.49" y2="43.51"/>
+                            <line x1="43.51" y1="20.49" x2="52.69" y2="11.31"/>
+                        </g>
+                    </svg>
+                </span>
+                <span class="toggle-icon moon-icon">&#127765;</span>
             </div>
-            <div id="controls">
-                <div class="buttons-container">
-                    <button id="start-button">Start Scanner</button>
-                    <button id="stop-button" disabled>Stop Scanner</button>
-                </div>
-                <button id="restart-button">Restart Scanner</button>
-                <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
+        </label>
+    </div>
+
+    <div id="errorMsg"></div>
+    <div id="container">
+        <div id="videoWrapper">
+            <video id="video" playsinline></video>
+            <div id="overlay">
+                <canvas id="webglCanvas"></canvas>
+                <canvas id="debugCanvas"></canvas> <!-- Moved inside overlay -->
             </div>
-            <!-- Removed the original debugCanvas from here -->
+            <div id="focusIndicator">Processing...</div>
+
+            <!-- Lightbulb Indicator -->
+            <svg id="lightbulbIndicator" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 64 64" style="position: absolute; bottom: 10px; right: 10px; z-index: 4; display: none;" aria-label="Lighting Indicator" role="img">
+                <title>Lighting Indicator</title>
+                <path d="M32 2C20.954 2 12 10.954 12 22c0 6.627 4.567 12.212 10.793 13.775V38c0 3.314 2.686 6 6 6h4c3.314 0 6-2.686 6-6v-2.225C47.433 34.212 52 28.627 52 22 52 10.954 43.046 2 32 2z" fill="#00FF00" stroke="#000" stroke-width="2"/>
+                <path d="M32 58c-2.209 0-4-1.791-4-4h8c0 2.209-1.791 4-4 4z" fill="#00FF00" stroke="#000" stroke-width="2"/>
+            </svg>
         </div>
-        <div id="debugControls">
-            <button id="save-logs-button">Save Logs</button>
+        <div id="controls">
+            <div class="buttons-container">
+                <button id="start-button">Start Scanner</button>
+                <button id="stop-button" disabled>Stop Scanner</button>
+            </div>
+            <button id="restart-button">Restart Scanner</button>
+            <textarea id="output" placeholder="Extracted text will appear here..." readonly></textarea>
         </div>
-        <div id="debugConsole"></div>
+        <!-- Removed the original debugCanvas from here -->
+    </div>
+    <div id="debugControls">
+        <button id="save-logs-button">Save Logs</button>
+    </div>
+    <div id="debugConsole"></div>
 
-        <script>
-            /* Performance-Focused Enhancements and Initialization */
+    <script>
+        /* Performance-Focused Enhancements and Initialization */
 
-            // Brightness Thresholds
-            const BRIGHTNESS_THRESHOLD_DARK = 80;    // Below this, it's too dark (Yellow)
-            const BRIGHTNESS_THRESHOLD_BRIGHT = 200; // Above this, it's too bright (Red)
+        // Brightness Thresholds
+        const BRIGHTNESS_THRESHOLD_DARK = 80;    // Below this, it's too dark (Yellow)
+        const BRIGHTNESS_THRESHOLD_BRIGHT = 200; // Above this, it's too bright (Red)
 
-            // Flags for lazy initialization
-            let isTesseractInitialized = false;
-            let gl = null;
-            let glProgram = null;
-            let glTexture = null;
-            let glBuffer = null;
-            let workers = [];
-            let stream = null;
+        // Flags for lazy initialization
+        let isTesseractInitialized = false;
+        let gl = null;
+        let glProgram = null;
+        let glTexture = null;
+        let glBuffer = null;
+        let workers = [];
+        let stream = null;
 
-            let scanning = false;
-            let frameSkipping = 1;
-            let ocrFrequency = 1;
-            let confidenceThreshold = 60;
-            let lastOcrTime = 0;
-            let frameCounter = 0;
-            
-            // Adaptive frame skipping variables
-            let targetFrameTime = 1000 / 30; // target ~30 fps processing
-            let maxSkipping = 60; 
-            let dynamicAdjust = true;
+        let scanning = false;
+        let frameSkipping = 1;
+        let ocrFrequency = 1;
+        let confidenceThreshold = 60;
+        let lastOcrTime = 0;
+        let frameCounter = 0;
+        
+        // Adaptive frame skipping variables
+        let targetFrameTime = 1000 / 30; // target ~30 fps processing
+        let maxSkipping = 60; 
+        let dynamicAdjust = true;
 
-            // Dynamic camera frame rate and adaptive resolution suggestions
-            let currentResolution = null;
-            let selectedCameraId = null;
+        // Dynamic camera frame rate and adaptive resolution suggestions
+        let currentResolution = null;
+        let selectedCameraId = null;
 
-            // ROI Variables
-            let roiWidthPercent = 60;  // Initial ROI width percentage
-            let roiHeightPercent = 25; // Initial ROI height percentage
+        // ROI Variables
+        let roiWidthPercent = 60;  // Initial ROI width percentage
+        let roiHeightPercent = 25; // Initial ROI height percentage
 
-            // Keep track of initialization states to lazy load workers, webgl, etc.
-            let glInitialized = false;
+        // Keep track of initialization states to lazy load workers, webgl, etc.
+        let glInitialized = false;
 
-            const video = document.getElementById('video');
-            const roiOverlay = document.getElementById('overlay');
-            const startButton = document.getElementById('start-button');
-            const stopButton = document.getElementById('stop-button');
-            const restartButton = document.getElementById('restart-button');
-            const output = document.getElementById('output');
-            const errorMsg = document.getElementById('errorMsg');
-            const debugCanvas = document.getElementById('debugCanvas');
-            const debugCtx = debugCanvas.getContext('2d');
-            const focusIndicator = document.getElementById('focusIndicator');
-            const workersSelect = document.getElementById('workers-select');
-            const frameSkippingSelect = document.getElementById('frame-skipping-select');
-            const frequencySelect = document.getElementById('frequency-select');
-            const ocrInfo = document.getElementById('ocr-info');
-            const confidenceThresholdInput = document.getElementById('confidence-threshold-input');
+        const video = document.getElementById('video');
+        const roiOverlay = document.getElementById('overlay');
+        const startButton = document.getElementById('start-button');
+        const stopButton = document.getElementById('stop-button');
+        const restartButton = document.getElementById('restart-button');
+        const output = document.getElementById('output');
+        const errorMsg = document.getElementById('errorMsg');
+        const debugCanvas = document.getElementById('debugCanvas');
+        const debugCtx = debugCanvas.getContext('2d');
+        const focusIndicator = document.getElementById('focusIndicator');
+        const workersSelect = document.getElementById('workers-select');
+        const frameSkippingSelect = document.getElementById('frame-skipping-select');
+        const frequencySelect = document.getElementById('frequency-select');
+        const ocrInfo = document.getElementById('ocr-info');
+        const confidenceThresholdInput = document.getElementById('confidence-threshold-input');
 
-            // Preprocessing controls
-            const enableGrayscale = document.getElementById('enableGrayscale');
-            const grayscaleSlider = document.getElementById('grayscaleSlider');
-            const enableDenoise = document.getElementById('enableDenoise');
-            const denoiseSlider = document.getElementById('denoiseSlider');
-            const enableSharpen = document.getElementById('enableSharpen');
-            const sharpenSlider = document.getElementById('sharpenSlider');
-            const enableBrightness = document.getElementById('enableBrightness');
-            const brightnessSlider = document.getElementById('brightnessSlider');
-            const enableContrast = document.getElementById('enableContrast');
-            const contrastSlider = document.getElementById('contrastSlider');
-            const enableClarity = document.getElementById('enableClarity');
-            const claritySlider = document.getElementById('claritySlider');
-            const enableHighlights = document.getElementById('enableHighlights');
-            const highlightsSlider = document.getElementById('highlightsSlider');
+        // Preprocessing controls
+        const enableGrayscale = document.getElementById('enableGrayscale');
+        const grayscaleSlider = document.getElementById('grayscaleSlider');
+        const enableDenoise = document.getElementById('enableDenoise');
+        const denoiseSlider = document.getElementById('denoiseSlider');
+        const enableSharpen = document.getElementById('enableSharpen');
+        const sharpenSlider = document.getElementById('sharpenSlider');
+        const enableBrightness = document.getElementById('enableBrightness');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const enableContrast = document.getElementById('enableContrast');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const enableClarity = document.getElementById('enableClarity');
+        const claritySlider = document.getElementById('claritySlider');
+        const enableHighlights = document.getElementById('enableHighlights');
+        const highlightsSlider = document.getElementById('highlightsSlider');
 
-            // New Preprocessing controls
-            const enableSmoothing = document.getElementById('enableSmoothing');
-            const smoothingSlider = document.getElementById('smoothingSlider');
-            const enableThreshold = document.getElementById('enableThreshold');
-            const thresholdSlider = document.getElementById('thresholdSlider');
-            const enableEdgeDetection = document.getElementById('enableEdgeDetection');
-            const enableSobel = document.getElementById('enableSobel');
-            const sobelSlider = document.getElementById('sobelSlider');
-            const enableCanny = document.getElementById('enableCanny');
-            const cannySlider = document.getElementById('cannySlider');
+        // New Preprocessing controls
+        const enableSmoothing = document.getElementById('enableSmoothing');
+        const smoothingSlider = document.getElementById('smoothingSlider');
+        const enableThreshold = document.getElementById('enableThreshold');
+        const thresholdSlider = document.getElementById('thresholdSlider');
+        const enableEdgeDetection = document.getElementById('enableEdgeDetection');
+        const enableSobel = document.getElementById('enableSobel');
+        const sobelSlider = document.getElementById('sobelSlider');
+        const enableCanny = document.getElementById('enableCanny');
+        const cannySlider = document.getElementById('cannySlider');
 
-            // ROI controls
-            const roiWidthSlider = document.getElementById('roi-width-slider');
-            const roiHeightSlider = document.getElementById('roi-height-slider');
+        // ROI controls
+        const roiWidthSlider = document.getElementById('roi-width-slider');
+        const roiHeightSlider = document.getElementById('roi-height-slider');
 
-            const configSelect = document.getElementById('config-select');
-            const loadConfigButton = document.getElementById('load-config-button');
-            const saveConfigButton = document.getElementById('save-config-button');
+        const configSelect = document.getElementById('config-select');
+        const loadConfigButton = document.getElementById('load-config-button');
+        const saveConfigButton = document.getElementById('save-config-button');
 
-            const videoCanvas = document.createElement('canvas');
-            const roiCanvas = document.createElement('canvas');
-            const scaledCanvas = document.createElement('canvas');
-            
-            // Lightbulb Indicator Elements
-            const lightbulbIndicator = document.getElementById('lightbulbIndicator');
+        const videoCanvas = document.createElement('canvas');
+        const roiCanvas = document.createElement('canvas');
+        const scaledCanvas = document.createElement('canvas');
+        
+        // Lightbulb Indicator Elements
+        const lightbulbIndicator = document.getElementById('lightbulbIndicator');
 
-            // Lightbulb Feedback Text (Optional)
-            const lightingFeedback = document.createElement('div');
-            lightingFeedback.id = 'lightingFeedback';
-            lightingFeedback.style.position = 'absolute';
-            lightingFeedback.style.bottom = '70px';
-            lightingFeedback.style.right = '10px';
-            lightingFeedback.style.zIndex = '4';
-            lightingFeedback.style.color = '#fff';
-            lightingFeedback.style.fontSize = '14px';
-            lightingFeedback.style.display = 'none';
-            lightingFeedback.innerText = 'Good Lighting';
-            document.getElementById('videoWrapper').appendChild(lightingFeedback);
+        // Lightbulb Feedback Text (Optional)
+        const lightingFeedback = document.createElement('div');
+        lightingFeedback.id = 'lightingFeedback';
+        lightingFeedback.style.position = 'absolute';
+        lightingFeedback.style.bottom = '70px';
+        lightingFeedback.style.right = '10px';
+        lightingFeedback.style.zIndex = '4';
+        lightingFeedback.style.color = '#fff';
+        lightingFeedback.style.fontSize = '14px';
+        lightingFeedback.style.display = 'none';
+        lightingFeedback.innerText = 'Good Lighting';
+        document.getElementById('videoWrapper').appendChild(lightingFeedback);
 
-            // Lazy initialization function for Tesseract workers
-            async function initializeTesseract(workersCount) {
-                if (workers.length > 0) {
-                    await Promise.all(workers.map(w => w.terminate()));
-                    workers = [];
+        // Lazy initialization function for Tesseract workers
+        async function initializeTesseract(workersCount) {
+            if (workers.length > 0) {
+                await Promise.all(workers.map(w => w.terminate()));
+                workers = [];
+            }
+            for (let i = 0; i < workersCount; i++) {
+                const worker = await Tesseract.createWorker({
+                    lang: 'eng',
+                    logger: m => console.log(`[Worker ${i+1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
+                });
+                await worker.loadLanguage('eng');
+                await worker.initialize('eng');
+                workers.push(worker);
+            }
+            isTesseractInitialized = true;
+        }
+
+        // Dynamic worker scaling (basic approach)
+        function adjustWorkers() {
+            // Example: if OCR frequency >5 and we have <4 workers, add one
+            // If OCR frequency <2 and we have >1 worker, remove one
+            const maxWorkers = parseInt(workersSelect.value);
+            if (ocrFrequency > 5 && workers.length < maxWorkers) {
+                // Add a worker
+                initializeTesseract(workers.length + 1);
+            } else if (ocrFrequency < 2 && workers.length > 1) {
+                // Remove a worker
+                if (workers.length > 1) {
+                    const workerToTerminate = workers.pop();
+                    workerToTerminate.terminate();
                 }
-                for (let i = 0; i < workersCount; i++) {
-                    const worker = await Tesseract.createWorker({
-                        lang: 'eng',
-                        logger: m => console.log(`[Worker ${i+1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
-                    });
-                    await worker.loadLanguage('eng');
-                    await worker.initialize('eng');
-                    workers.push(worker);
-                }
-                isTesseractInitialized = true;
+            }
+        }
+
+        // Initialize WebGL if needed
+        function initWebGL() {
+            if (glInitialized) return;
+            const webglCanvas = document.getElementById('webglCanvas');
+            // Use high precision for better accuracy
+            gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('experimental-webgl');
+            if (!gl) {
+                showError('WebGL not supported');
+                return;
             }
 
-            // Dynamic worker scaling (basic approach)
-            function adjustWorkers() {
-                // Example: if OCR frequency >5 and we have <4 workers, add one
-                // If OCR frequency <2 and we have >1 worker, remove one
-                const maxWorkers = parseInt(workersSelect.value);
-                if (ocrFrequency > 5 && workers.length < maxWorkers) {
-                    // Add a worker
-                    initializeTesseract(workers.length + 1);
-                } else if (ocrFrequency < 2 && workers.length > 1) {
-                    // Remove a worker
-                    if (workers.length > 1) {
-                        const workerToTerminate = workers.pop();
-                        workerToTerminate.terminate();
-                    }
+            // Vertex and Fragment Shaders (with conditions)
+            const vertexShaderSource = `
+                attribute vec2 a_position;
+                attribute vec2 a_texCoord;
+                varying vec2 v_texCoord;
+                void main(void) {
+                    gl_Position = vec4(a_position, 0.0, 1.0);
+                    v_texCoord = a_texCoord;
                 }
+            `;
+            // Use high precision for better accuracy
+            const fragmentShaderSource = `
+                precision highp float;
+                varying vec2 v_texCoord;
+                uniform sampler2D u_texture;
+
+                // Existing uniforms
+                uniform bool u_grayscaleEnabled;
+                uniform float u_grayscaleAmount;
+                uniform bool u_denoiseEnabled;
+                uniform float u_denoiseAmount;
+                uniform bool u_sharpenEnabled;
+                uniform float u_sharpenAmount;
+                uniform bool u_brightnessEnabled;
+                uniform float u_brightnessAmount;
+                uniform bool u_contrastEnabled;
+                uniform float u_contrastAmount;
+                uniform bool u_clarityEnabled;
+                uniform float u_clarityAmount;
+                uniform bool u_highlightsEnabled;
+                uniform float u_highlightsAmount;
+
+                // New uniforms
+                uniform bool u_smoothingEnabled;
+                uniform float u_smoothingAmount;
+                uniform bool u_thresholdEnabled;
+                uniform float u_thresholdValue;
+                uniform bool u_edgeDetectionEnabled;
+                uniform bool u_sobelEnabled;
+                uniform float u_sobelAmount;
+                uniform bool u_cannyEnabled;
+                uniform float u_cannyAmount;
+
+                // Existing functions
+                vec4 denoise(sampler2D tex, vec2 uv, float strength) {
+                    float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
+                    vec4 center = texture2D(tex, uv);
+                    vec4 sum = center;
+                    sum += texture2D(tex, uv + vec2(-offset, 0.0));
+                    sum += texture2D(tex, uv + vec2(offset, 0.0));
+                    sum += texture2D(tex, uv + vec2(0.0, -offset));
+                    sum += texture2D(tex, uv + vec2(0.0, offset));
+                    return sum / 5.0;
+                }
+
+                vec4 sharpen(sampler2D tex, vec2 uv, float strength) {
+                    float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
+                    vec4 center = texture2D(tex, uv);
+                    vec4 sum = center;
+                    sum += texture2D(tex, uv + vec2(-offset, 0.0));
+                    sum += texture2D(tex, uv + vec2(offset, 0.0));
+                    sum += texture2D(tex, uv + vec2(0.0, -offset));
+                    sum += texture2D(tex, uv + vec2(0.0, offset));
+                    float a = strength * 0.5;
+                    vec4 blurColor = sum / 5.0;
+                    vec4 color = center * (1.0 + a) - blurColor * a;
+                    color.rgb = clamp(color.rgb, 0.0, 1.0);
+                    return color;
+                }
+
+                vec4 applyBrightness(vec4 color, float amount) {
+                    float factor = (amount - 0.5);
+                    color.rgb += factor;
+                    color.rgb = clamp(color.rgb, 0.0, 1.0);
+                    return color;
+                }
+
+                vec4 applyContrast(vec4 color, float amount) {
+                    float factor = amount;
+                    color.rgb = (color.rgb - 0.5) * factor + 0.5;
+                    color.rgb = clamp(color.rgb, 0.0, 1.0);
+                    return color;
+                }
+
+                vec4 applyClarity(vec4 color, float amount) {
+                    float factor = (amount - 0.5);
+                    color.r = (color.r - 0.5) * (1.0 + factor) + 0.5;
+                    color.g = (color.g - 0.5) * (1.0 + factor) + 0.5;
+                    color.b = (color.b - 0.5) * (1.0 + factor) + 0.5;
+                    color.rgb = clamp(color.rgb, 0.0, 1.0);
+                    return color;
+                }
+
+                vec4 applyHighlights(vec4 color, float amount) {
+                    float factor = (amount - 0.5);
+                    if (color.r > 0.5) color.r += factor * (color.r - 0.5);
+                    if (color.g > 0.5) color.g += factor * (color.g - 0.5);
+                    if (color.b > 0.5) color.b += factor * (color.b - 0.5);
+                    color.rgb = clamp(color.rgb, 0.0, 1.0);
+                    return color;
+                }
+
+                // New functions
+                vec4 smooth(sampler2D tex, vec2 uv, float strength) {
+                    float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
+                    vec4 color = texture2D(tex, uv);
+                    color += texture2D(tex, uv + vec2(-offset, -offset));
+                    color += texture2D(tex, uv + vec2(offset, -offset));
+                    color += texture2D(tex, uv + vec2(-offset, offset));
+                    color += texture2D(tex, uv + vec2(offset, offset));
+                    color = color / 5.0;
+                    color.rgb = clamp(color.rgb, 0.0, 1.0);
+                    return color;
+                }
+
+                vec4 applyThreshold(vec4 color, float threshold) {
+                    float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                    float binary = luminance > threshold ? 1.0 : 0.0;
+                    return vec4(vec3(binary), color.a);
+                }
+
+                vec4 applySobel(sampler2D tex, vec2 uv, float strength) {
+                    float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
+                    float Gx = -1.0 * texture2D(tex, uv + vec2(-offset, -offset)).r + 
+                                1.0 * texture2D(tex, uv + vec2(offset, -offset)).r +
+                               -2.0 * texture2D(tex, uv + vec2(-offset, 0.0)).r + 
+                                2.0 * texture2D(tex, uv + vec2(offset, 0.0)).r +
+                               -1.0 * texture2D(tex, uv + vec2(-offset, offset)).r + 
+                                1.0 * texture2D(tex, uv + vec2(offset, offset)).r;
+
+                    float Gy = -1.0 * texture2D(tex, uv + vec2(-offset, -offset)).r + 
+                           -2.0 * texture2D(tex, uv + vec2(0.0, -offset)).r +
+                            1.0 * texture2D(tex, uv + vec2(-offset, offset)).r + 
+                            2.0 * texture2D(tex, uv + vec2(0.0, offset)).r;
+
+                    float edge = length(vec2(Gx, Gy));
+                    edge = clamp(edge, 0.0, 1.0);
+                    return vec4(vec3(edge), 1.0);
+                }
+
+                vec4 applyCanny(sampler2D tex, vec2 uv, float strength) {
+                    // Canny edge detection is complex; this is a simplified version
+                    float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
+                    float Gx = -1.0 * texture2D(tex, uv + vec2(-offset, -offset)).r + 
+                                1.0 * texture2D(tex, uv + vec2(offset, -offset)).r +
+                               -2.0 * texture2D(tex, uv + vec2(-offset, 0.0)).r + 
+                                2.0 * texture2D(tex, uv + vec2(offset, 0.0)).r +
+                               -1.0 * texture2D(tex, uv + vec2(-offset, offset)).r + 
+                                1.0 * texture2D(tex, uv + vec2(offset, offset)).r;
+
+                    float Gy = -1.0 * texture2D(tex, uv + vec2(-offset, -offset)).r + 
+                           -2.0 * texture2D(tex, uv + vec2(0.0, -offset)).r +
+                            1.0 * texture2D(tex, uv + vec2(-offset, offset)).r + 
+                            2.0 * texture2D(tex, uv + vec2(0.0, offset)).r;
+
+                    float edge = length(vec2(Gx, Gy));
+                    edge = clamp(edge, 0.0, 1.0);
+                    // Simplified Canny: No non-maximum suppression or hysteresis
+                    return vec4(vec3(edge), 1.0);
+                }
+
+                void main(void) {
+                    vec4 color = texture2D(u_texture, v_texCoord);
+
+                    // Apply grayscale before other effects
+                    if (u_grayscaleEnabled) {
+                        float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                        color = mix(color, vec4(vec3(gray), color.a), u_grayscaleAmount);
+                    }
+
+                    // Existing preprocessing effects
+                    if (u_denoiseEnabled) {
+                        color = denoise(u_texture, v_texCoord, u_denoiseAmount);
+                    }
+
+                    if (u_sharpenEnabled) {
+                        color = sharpen(u_texture, v_texCoord, u_sharpenAmount);
+                    }
+
+                    if (u_brightnessEnabled) {
+                        color = applyBrightness(color, u_brightnessAmount);
+                    }
+
+                    if (u_contrastEnabled) {
+                        color = applyContrast(color, u_contrastAmount);
+                    }
+
+                    if (u_clarityEnabled) {
+                        color = applyClarity(color, u_clarityAmount);
+                    }
+
+                    if (u_highlightsEnabled) {
+                        color = applyHighlights(color, u_highlightsAmount);
+                    }
+
+                    // New preprocessing effects
+                    if (u_smoothingEnabled) {
+                        color = smooth(u_texture, v_texCoord, u_smoothingAmount);
+                    }
+
+                    if (u_thresholdEnabled) {
+                        color = applyThreshold(color, u_thresholdValue);
+                    }
+
+                    if (u_edgeDetectionEnabled) {
+                        if (u_sobelEnabled) {
+                            color = applySobel(u_texture, v_texCoord, u_sobelAmount);
+                        } else if (u_cannyEnabled) {
+                            color = applyCanny(u_texture, v_texCoord, u_cannyAmount);
+                        }
+                    }
+
+                    gl_FragColor = color;
+                }
+            `;
+
+            function compileShader(type, source) {
+                const shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    const error = gl.getShaderInfoLog(shader);
+                    console.error('Shader compile error:', error);
+                    showError(`Shader compilation failed: ${error}`);
+                    gl.deleteShader(shader);
+                    return null;
+                }
+                return shader;
             }
 
-            // Initialize WebGL if needed
-            function initWebGL() {
-                if (glInitialized) return;
-                const webglCanvas = document.getElementById('webglCanvas');
-                // Use high precision for better accuracy
-                gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('experimental-webgl');
-                if (!gl) {
-                    showError('WebGL not supported');
-                    return;
+            function linkProgram(vs, fs) {
+                const program = gl.createProgram();
+                gl.attachShader(program, vs);
+                gl.attachShader(program, fs);
+                gl.linkProgram(program);
+                if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                    const error = gl.getProgramInfoLog(program);
+                    console.error('Program link error:', error);
+                    showError(`Shader program linking failed: ${error}`);
+                    gl.deleteProgram(program);
+                    return null;
                 }
+                return program;
+            }
 
-                // Vertex and Fragment Shaders (with conditions)
-                const vertexShaderSource = `
-                    attribute vec2 a_position;
-                    attribute vec2 a_texCoord;
-                    varying vec2 v_texCoord;
-                    void main(void) {
-                        gl_Position = vec4(a_position, 0.0, 1.0);
-                        v_texCoord = a_texCoord;
-                    }
-                `;
-                // Use high precision for better accuracy
-                const fragmentShaderSource = `
-                    precision highp float; // Increased precision for better accuracy
-
-                    varying vec2 v_texCoord;
-                    uniform sampler2D u_texture;
-
-                    // Existing uniforms
-                    uniform bool u_grayscaleEnabled;
-                    uniform float u_grayscaleAmount;
-                    uniform bool u_denoiseEnabled;
-                    uniform float u_denoiseAmount;
-                    uniform bool u_sharpenEnabled;
-                    uniform float u_sharpenAmount;
-                    uniform bool u_brightnessEnabled;
-                    uniform float u_brightnessAmount;
-                    uniform bool u_contrastEnabled;
-                    uniform float u_contrastAmount;
-                    uniform bool u_clarityEnabled;
-                    uniform float u_clarityAmount;
-                    uniform bool u_highlightsEnabled;
-                    uniform float u_highlightsAmount;
-
-                    // New uniforms
-                    uniform bool u_smoothingEnabled;
-                    uniform float u_smoothingAmount;
-                    uniform bool u_thresholdEnabled;
-                    uniform float u_thresholdValue;
-                    uniform bool u_edgeDetectionEnabled;
-                    uniform bool u_sobelEnabled;
-                    uniform float u_sobelAmount;
-                    uniform bool u_cannyEnabled;
-                    uniform float u_cannyAmount;
-
-                    // Existing functions
-                    vec4 denoise(sampler2D tex, vec2 uv, float strength) {
-                        float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
-                        vec4 center = texture2D(tex, uv);
-                        vec4 sum = center;
-                        sum += texture2D(tex, uv + vec2(-offset, 0.0));
-                        sum += texture2D(tex, uv + vec2(offset, 0.0));
-                        sum += texture2D(tex, uv + vec2(0.0, -offset));
-                        sum += texture2D(tex, uv + vec2(0.0, offset));
-                        return sum / 5.0;
-                    }
-
-                    vec4 sharpen(sampler2D tex, vec2 uv, float strength) {
-                        float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
-                        vec4 center = texture2D(tex, uv);
-                        vec4 sum = center;
-                        sum += texture2D(tex, uv + vec2(-offset, 0.0));
-                        sum += texture2D(tex, uv + vec2(offset, 0.0));
-                        sum += texture2D(tex, uv + vec2(0.0, -offset));
-                        sum += texture2D(tex, uv + vec2(0.0, offset));
-                        float a = strength * 0.5;
-                        vec4 blurColor = sum / 5.0;
-                        vec4 color = center * (1.0 + a) - blurColor * a;
-                        color.rgb = clamp(color.rgb, 0.0, 1.0);
-                        return color;
-                    }
-
-                    vec4 applyBrightness(vec4 color, float amount) {
-                        float factor = (amount - 0.5);
-                        color.rgb += factor;
-                        color.rgb = clamp(color.rgb, 0.0, 1.0);
-                        return color;
-                    }
-
-                    vec4 applyContrast(vec4 color, float amount) {
-                        float factor = amount;
-                        color.rgb = (color.rgb - 0.5) * factor + 0.5;
-                        color.rgb = clamp(color.rgb, 0.0, 1.0);
-                        return color;
-                    }
-
-                    vec4 applyClarity(vec4 color, float amount) {
-                        float factor = (amount - 0.5);
-                        color.r = (color.r - 0.5) * (1.0 + factor) + 0.5;
-                        color.g = (color.g - 0.5) * (1.0 + factor) + 0.5;
-                        color.b = (color.b - 0.5) * (1.0 + factor) + 0.5;
-                        color.rgb = clamp(color.rgb, 0.0, 1.0);
-                        return color;
-                    }
-
-                    vec4 applyHighlights(vec4 color, float amount) {
-                        float factor = (amount - 0.5);
-                        if (color.r > 0.5) color.r += factor * (color.r - 0.5);
-                        if (color.g > 0.5) color.g += factor * (color.g - 0.5);
-                        if (color.b > 0.5) color.b += factor * (color.b - 0.5);
-                        color.rgb = clamp(color.rgb, 0.0, 1.0);
-                        return color;
-                    }
-
-                    // New functions
-                    vec4 smooth(sampler2D tex, vec2 uv, float strength) {
-                        float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
-                        vec4 color = texture2D(tex, uv);
-                        color += texture2D(tex, uv + vec2(-offset, -offset));
-                        color += texture2D(tex, uv + vec2(offset, -offset));
-                        color += texture2D(tex, uv + vec2(-offset, offset));
-                        color += texture2D(tex, uv + vec2(offset, offset));
-                        color = color / 5.0;
-                        color.rgb = clamp(color.rgb, 0.0, 1.0);
-                        return color;
-                    }
-
-                    vec4 applyThreshold(vec4 color, float threshold) {
-                        float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-                        float binary = luminance > threshold ? 1.0 : 0.0;
-                        return vec4(vec3(binary), color.a);
-                    }
-
-                    vec4 applySobel(sampler2D tex, vec2 uv, float strength) {
-                        float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
-                        float Gx = -1.0 * texture2D(tex, uv + vec2(-offset, -offset)).r + 
-                                    1.0 * texture2D(tex, uv + vec2(offset, -offset)).r +
-                                   -2.0 * texture2D(tex, uv + vec2(-offset, 0.0)).r + 
-                                    2.0 * texture2D(tex, uv + vec2(offset, 0.0)).r +
-                                   -1.0 * texture2D(tex, uv + vec2(-offset, offset)).r + 
-                                    1.0 * texture2D(tex, uv + vec2(offset, offset)).r;
-
-                        float Gy = -1.0 * texture2D(tex, uv + vec2(-offset, -offset)).r + 
-                               -2.0 * texture2D(tex, uv + vec2(0.0, -offset)).r +
-                                1.0 * texture2D(tex, uv + vec2(-offset, offset)).r + 
-                                2.0 * texture2D(tex, uv + vec2(0.0, offset)).r;
-
-                        float edge = length(vec2(Gx, Gy));
-                        edge = clamp(edge, 0.0, 1.0);
-                        return vec4(vec3(edge), 1.0);
-                    }
-
-                    vec4 applyCanny(sampler2D tex, vec2 uv, float strength) {
-                        // Canny edge detection is complex; this is a simplified version
-                        float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
-                        float Gx = -1.0 * texture2D(tex, uv + vec2(-offset, -offset)).r + 
-                                    1.0 * texture2D(tex, uv + vec2(offset, -offset)).r +
-                                   -2.0 * texture2D(tex, uv + vec2(-offset, 0.0)).r + 
-                                    2.0 * texture2D(tex, uv + vec2(offset, 0.0)).r +
-                                   -1.0 * texture2D(tex, uv + vec2(-offset, offset)).r + 
-                                    1.0 * texture2D(tex, uv + vec2(offset, offset)).r;
-
-                        float Gy = -1.0 * texture2D(tex, uv + vec2(-offset, -offset)).r + 
-                               -2.0 * texture2D(tex, uv + vec2(0.0, -offset)).r +
-                                1.0 * texture2D(tex, uv + vec2(-offset, offset)).r + 
-                                2.0 * texture2D(tex, uv + vec2(0.0, offset)).r;
-
-                        float edge = length(vec2(Gx, Gy));
-                        edge = clamp(edge, 0.0, 1.0);
-                        // Simplified Canny: No non-maximum suppression or hysteresis
-                        return vec4(vec3(edge), 1.0);
-                    }
-
-                    void main(void) {
-                        vec4 color = texture2D(u_texture, v_texCoord);
-
-                        // Apply grayscale before other effects
-                        if (u_grayscaleEnabled) {
-                            float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-                            color = mix(color, vec4(vec3(gray), color.a), u_grayscaleAmount);
-                        }
-
-                        // Existing preprocessing effects
-                        if (u_denoiseEnabled) {
-                            color = denoise(u_texture, v_texCoord, u_denoiseAmount);
-                        }
-
-                        if (u_sharpenEnabled) {
-                            color = sharpen(u_texture, v_texCoord, u_sharpenAmount);
-                        }
-
-                        if (u_brightnessEnabled) {
-                            color = applyBrightness(color, u_brightnessAmount);
-                        }
-
-                        if (u_contrastEnabled) {
-                            color = applyContrast(color, u_contrastAmount);
-                        }
-
-                        if (u_clarityEnabled) {
-                            color = applyClarity(color, u_clarityAmount);
-                        }
-
-                        if (u_highlightsEnabled) {
-                            color = applyHighlights(color, u_highlightsAmount);
-                        }
-
-                        // New preprocessing effects
-                        if (u_smoothingEnabled) {
-                            color = smooth(u_texture, v_texCoord, u_smoothingAmount);
-                        }
-
-                        if (u_thresholdEnabled) {
-                            color = applyThreshold(color, u_thresholdValue);
-                        }
-
-                        if (u_edgeDetectionEnabled) {
-                            if (u_sobelEnabled) {
-                                color = applySobel(u_texture, v_texCoord, u_sobelAmount);
-                            } else if (u_cannyEnabled) {
-                                color = applyCanny(u_texture, v_texCoord, u_cannyAmount);
-                            }
-                        }
-
-                        gl_FragColor = color;
-                    }
-                `;
-
-                function compileShader(type, source) {
-                    const shader = gl.createShader(type);
-                    gl.shaderSource(shader, source);
-                    gl.compileShader(shader);
-                    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                        const error = gl.getShaderInfoLog(shader);
-                        console.error('Shader compile error:', error);
-                        showError(`Shader compilation failed: ${error}`);
-                        gl.deleteShader(shader);
-                        return null;
-                    }
-                    return shader;
-                }
-
+            function initShaders() {
                 const vs = compileShader(gl.VERTEX_SHADER, vertexShaderSource);
                 if (!vs) return;
+
                 const fs = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
                 if (!fs) return;
 
-                glProgram = gl.createProgram();
-                gl.attachShader(glProgram, vs);
-                gl.attachShader(glProgram, fs);
-                gl.linkProgram(glProgram);
-                if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
-                    const error = gl.getProgramInfoLog(glProgram);
-                    console.error('Program link error:', error);
-                    showError(`Shader program linking failed: ${error}`);
-                    return;
-                }
+                glProgram = linkProgram(vs, fs);
+                if (!glProgram) return;
+
                 gl.useProgram(glProgram);
 
                 glBuffer = gl.createBuffer();
@@ -1349,9 +1359,8 @@
                     videoConstraints.frameRate = { ideal: adjustedFrameRate, max: 30 };
 
                     if (resolution) {
-                        const [width, height] = resolution.split('x').map(Number);
-                        videoConstraints.width = { exact: width };
-                        videoConstraints.height = { exact: height };
+                        videoConstraints.width = { exact: resolution.width };
+                        videoConstraints.height = { exact: resolution.height };
                     } else {
                         videoConstraints.width = { ideal: 1280 };
                         videoConstraints.height = { ideal: 720 };
@@ -1376,7 +1385,8 @@
                 const resolutionSelect = document.getElementById('resolution-select');
                 const val = resolutionSelect.value;
                 if (!val) return null;
-                return val; // Return as string "widthxheight"
+                const [width, height] = val.split('x').map(Number);
+                return {width, height};
             }
 
             // Function to calculate average brightness
@@ -1438,6 +1448,11 @@
                 selectedCameraId = document.getElementById('camera-select').value || null;
                 await initCamera(currentResolution, selectedCameraId);
 
+                // Initialize shaders if not already done
+                if (!glInitialized) {
+                    initShaders();
+                }
+
                 // Lazy init workers if needed
                 const workersCount = parseInt(workersSelect.value);
                 if (!isTesseractInitialized) {
@@ -1448,11 +1463,6 @@
                 ocrFrequency = parseFloat(frequencySelect.value);
                 confidenceThreshold = parseInt(confidenceThresholdInput.value);
                 updateOcrInfo();
-
-                // Init WebGL if not done yet
-                if (!glInitialized) {
-                    initWebGL();
-                }
 
                 // Initialize ROI overlay based on current sliders
                 updateROIOverlay();
@@ -1581,11 +1591,11 @@
                 if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); yOffset += 20; }
 
                 // Add new controls to debugCanvas
-                if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}%`, 10, yOffset); yOffset += 20; }
+                if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}`, 10, yOffset); yOffset += 20; }
                 if (enableThreshold.checked) { debugContext.fillText(`Threshold: ${thresholdSlider.value}`, 10, yOffset); yOffset += 20; }
                 if (enableEdgeDetection.checked) {
-                    if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}%`, 10, yOffset); yOffset += 20; }
-                    if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}%`, 10, yOffset); yOffset += 20; }
+                    if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}`, 10, yOffset); yOffset += 20; }
+                    if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}`, 10, yOffset); yOffset += 20; }
                 }
 
                 console.log(`Average Brightness: ${averageBrightness}`);
@@ -1616,7 +1626,7 @@
                 webglCanvas.width = width;
                 webglCanvas.height = height;
 
-                gl.viewport(0, 0, width, height);
+                gl.viewport(0,0,width,height);
                 gl.clear(gl.COLOR_BUFFER_BIT);
 
                 gl.bindTexture(gl.TEXTURE_2D, glTexture);
@@ -1667,7 +1677,7 @@
                 offscreen.height = height;
                 const offCtx = offscreen.getContext('2d');
                 const imageData = new ImageData(pixels, width, height);
-                offCtx.putImageData(imageData, 0, 0);
+                offCtx.putImageData(imageData,0,0);
 
                 return new Promise(resolve => {
                     offscreen.toBlob((blob) => {
@@ -1678,7 +1688,7 @@
 
             function updateOcrInfo() {
                 const approximateFPS = 60;
-                const frameBasedFrequency = approximateFPS / frameSkipping;
+                const frameBasedFrequency = approximateFPS/frameSkipping;
                 const effectiveFrequency = Math.min(frameBasedFrequency, ocrFrequency);
                 ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
             }
@@ -1995,7 +2005,31 @@
                 });
             })();
 
-            
+            // Mutual Exclusivity for Edge Detection Controls
+            (function(){
+                // Get elements
+                const enableSobel = document.getElementById('enableSobel');
+                const enableCanny = document.getElementById('enableCanny');
+
+                // Event listeners for mutual exclusivity
+                enableSobel.addEventListener('change', function() {
+                    if (this.checked) {
+                        enableCanny.checked = false;
+                        enableCanny.disabled = true;
+                    } else {
+                        enableCanny.disabled = false;
+                    }
+                });
+
+                enableCanny.addEventListener('change', function() {
+                    if (this.checked) {
+                        enableSobel.checked = false;
+                        enableSobel.disabled = true;
+                    } else {
+                        enableSobel.disabled = false;
+                    }
+                });
+            })();
 
             // Function to update ROI overlay based on slider values
             function updateROIOverlay() {
@@ -2077,7 +2111,7 @@
                 function updateFPS(){
                     const now=performance.now();
                     frameCount++;
-                    if(now - lastTime >= 1000){
+                    if(now-lastTime>=1000){
                         fps=frameCount;
                         frameCount=0;
                         lastTime=now;
@@ -2126,25 +2160,6 @@
                 roiHeightSlider.addEventListener('input', function() {
                     roiHeightPercent = parseInt(this.value);
                     updateROIOverlay();
-                });
-
-                // Event listeners for mutual exclusivity between Sobel and Canny
-                enableSobel.addEventListener('change', function() {
-                    if (this.checked) {
-                        enableCanny.checked = false;
-                        enableCanny.disabled = true;
-                    } else {
-                        enableCanny.disabled = false;
-                    }
-                });
-
-                enableCanny.addEventListener('change', function() {
-                    if (this.checked) {
-                        enableSobel.checked = false;
-                        enableSobel.disabled = true;
-                    } else {
-                        enableSobel.disabled = false;
-                    }
                 });
             });
 
