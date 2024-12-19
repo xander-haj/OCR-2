@@ -748,7 +748,7 @@
 
                     <!-- New Threshold Control -->
                     <div class="preprocessing-option">
-                        <label for="enableThreshold"><input type="checkbox" id="enableThreshold">Enable Threshold</label>
+                        <label><input type="checkbox" id="enableThreshold">Enable Threshold</label>
                         <input type="range" id="thresholdSlider" class="preprocessing-option-slider" min="0" max="255" value="128">
                     </div>
 
@@ -801,6 +801,7 @@
         </div>
 
         <button id="debug-button" class="debug-button">Show Debug</button>
+
     </div>
 
     <div class="overlay" id="menu-overlay"></div>
@@ -1013,7 +1014,7 @@
         function initWebGL() {
             if (glInitialized) return;
             const webglCanvas = document.getElementById('webglCanvas');
-            // Use high precision for better accuracy
+            // Use mediump precision for performance on mobile
             gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('experimental-webgl');
             if (!gl) {
                 showError('WebGL not supported');
@@ -1030,9 +1031,10 @@
                     v_texCoord = a_texCoord;
                 }
             `;
-            // Use high precision for better accuracy
+            // Corrected Fragment Shader as per instructions
             const fragmentShaderSource = `
-                precision highp float;
+                precision highp float; // Increased precision for better accuracy
+
                 varying vec2 v_texCoord;
                 uniform sampler2D u_texture;
 
@@ -1250,973 +1252,971 @@
                 return shader;
             }
 
-            function linkProgram(vs, fs) {
-                const program = gl.createProgram();
-                gl.attachShader(program, vs);
-                gl.attachShader(program, fs);
-                gl.linkProgram(program);
-                if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                    const error = gl.getProgramInfoLog(program);
-                    console.error('Program link error:', error);
-                    showError(`Shader program linking failed: ${error}`);
-                    gl.deleteProgram(program);
+            function compileShaderSafe(type, source) {
+                const shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    const error = gl.getShaderInfoLog(shader);
+                    console.error('Shader compile error:', error);
+                    showError(`Shader compilation failed: ${error}`);
+                    gl.deleteShader(shader);
                     return null;
                 }
-                return program;
+                return shader;
             }
 
-            function initShaders() {
-                const vs = compileShader(gl.VERTEX_SHADER, vertexShaderSource);
-                if (!vs) return;
+            const vs = compileShader(type.VERTEX_SHADER, vertexShaderSource);
+            const fs = compileShaderSafe(type.FRAGMENT_SHADER, fragmentShaderSource);
 
-                const fs = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
-                if (!fs) return;
-
-                glProgram = linkProgram(vs, fs);
-                if (!glProgram) return;
-
-                gl.useProgram(glProgram);
-
-                glBuffer = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
-                const vertices = new Float32Array([
-                    -1.0, -1.0, 0.0, 0.0,
-                     1.0, -1.0, 1.0, 0.0,
-                    -1.0,  1.0, 0.0, 1.0,
-                     1.0,  1.0, 1.0, 1.0
-                ]);
-                gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-                const FSIZE = vertices.BYTES_PER_ELEMENT;
-                const aPosition = gl.getAttribLocation(glProgram, 'a_position');
-                gl.enableVertexAttribArray(aPosition);
-                gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, FSIZE*4, 0);
-
-                const aTexCoord = gl.getAttribLocation(glProgram, 'a_texCoord');
-                gl.enableVertexAttribArray(aTexCoord);
-                gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, FSIZE*4, FSIZE*2);
-
-                glTexture = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, glTexture);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-                // Get Uniform locations once
-                window.uLocations = {
-                    grayscaleEnabled: gl.getUniformLocation(glProgram, "u_grayscaleEnabled"),
-                    grayscaleAmount: gl.getUniformLocation(glProgram, "u_grayscaleAmount"),
-                    denoiseEnabled: gl.getUniformLocation(glProgram, "u_denoiseEnabled"),
-                    denoiseAmount: gl.getUniformLocation(glProgram, "u_denoiseAmount"),
-                    sharpenEnabled: gl.getUniformLocation(glProgram, "u_sharpenEnabled"),
-                    sharpenAmount: gl.getUniformLocation(glProgram, "u_sharpenAmount"),
-                    brightnessEnabled: gl.getUniformLocation(glProgram, "u_brightnessEnabled"),
-                    brightnessAmount: gl.getUniformLocation(glProgram, "u_brightnessAmount"),
-                    contrastEnabled: gl.getUniformLocation(glProgram, "u_contrastEnabled"),
-                    contrastAmount: gl.getUniformLocation(glProgram, "u_contrastAmount"),
-                    clarityEnabled: gl.getUniformLocation(glProgram, "u_clarityEnabled"),
-                    clarityAmount: gl.getUniformLocation(glProgram, "u_clarityAmount"),
-                    highlightsEnabled: gl.getUniformLocation(glProgram, "u_highlightsEnabled"),
-                    highlightsAmount: gl.getUniformLocation(glProgram, "u_highlightsAmount"),
-
-                    // New uniforms
-                    smoothingEnabled: gl.getUniformLocation(glProgram, "u_smoothingEnabled"),
-                    smoothingAmount: gl.getUniformLocation(glProgram, "u_smoothingAmount"),
-                    thresholdEnabled: gl.getUniformLocation(glProgram, "u_thresholdEnabled"),
-                    thresholdValue: gl.getUniformLocation(glProgram, "u_thresholdValue"),
-                    edgeDetectionEnabled: gl.getUniformLocation(glProgram, "u_edgeDetectionEnabled"),
-                    sobelEnabled: gl.getUniformLocation(glProgram, "u_sobelEnabled"),
-                    sobelAmount: gl.getUniformLocation(glProgram, "u_sobelAmount"),
-                    cannyEnabled: gl.getUniformLocation(glProgram, "u_cannyEnabled"),
-                    cannyAmount: gl.getUniformLocation(glProgram, "u_cannyAmount"),
-                };
-
-                gl.clearColor(0.0,0.0,0.0,1.0);
-                glInitialized = true;
+            glProgram = gl.createProgram();
+            gl.attachShader(glProgram, vs);
+            gl.attachShader(glProgram, fs);
+            gl.linkProgram(glProgram);
+            if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
+                const error = gl.getProgramInfoLog(glProgram);
+                console.error('Program link error:', error);
+                showError(`Shader program linking failed: ${error}`);
+                return;
             }
+            gl.useProgram(glProgram);
 
-            function showError(message) {
-                console.error(message);
-                errorMsg.innerText = message;
-                errorMsg.style.display = 'block';
-                setTimeout(() => {
-                    errorMsg.style.display = 'none';
-                }, 5000);
-            }
+            glBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
+            const vertices = new Float32Array([
+                -1.0, -1.0, 0.0, 0.0,
+                 1.0, -1.0, 1.0, 0.0,
+                -1.0,  1.0, 0.0, 1.0,
+                 1.0,  1.0, 1.0, 1.0
+            ]);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-            async function initCamera(resolution = null, cameraId = null) {
-                try {
-                    const videoConstraints = {};
-                    if (cameraId) {
-                        videoConstraints.deviceId = { exact: cameraId };
-                    } else {
-                        videoConstraints.facingMode = { exact: "environment" };
-                    }
+            const FSIZE = vertices.BYTES_PER_ELEMENT;
+            const aPosition = gl.getAttribLocation(glProgram, 'a_position');
+            gl.enableVertexAttribArray(aPosition);
+            gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, FSIZE*4, 0);
 
-                    // Adjust camera framerate based on OCR frequency
-                    const adjustedFrameRate = Math.max(ocrFrequency, 15);
-                    videoConstraints.frameRate = { ideal: adjustedFrameRate, max: 30 };
+            const aTexCoord = gl.getAttribLocation(glProgram, 'a_texCoord');
+            gl.enableVertexAttribArray(aTexCoord);
+            gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, FSIZE*4, FSIZE*2);
 
-                    if (resolution) {
-                        videoConstraints.width = { exact: resolution.width };
-                        videoConstraints.height = { exact: resolution.height };
-                    } else {
-                        videoConstraints.width = { ideal: 1280 };
-                        videoConstraints.height = { ideal: 720 };
-                    }
+            glTexture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, glTexture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-                    const constraints = { video: videoConstraints, audio: false };
-                    if (stream) {
-                        stream.getTracks().forEach(t => t.stop());
-                    }
-                    stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    video.srcObject = stream;
-                    await video.play();
-                    console.log('Camera initialized with adjusted framerate:', adjustedFrameRate);
+            // Get Uniform locations once
+            window.uLocations = {
+                grayscaleEnabled: gl.getUniformLocation(glProgram, "u_grayscaleEnabled"),
+                grayscaleAmount: gl.getUniformLocation(glProgram, "u_grayscaleAmount"),
+                denoiseEnabled: gl.getUniformLocation(glProgram, "u_denoiseEnabled"),
+                denoiseAmount: gl.getUniformLocation(glProgram, "u_denoiseAmount"),
+                sharpenEnabled: gl.getUniformLocation(glProgram, "u_sharpenEnabled"),
+                sharpenAmount: gl.getUniformLocation(glProgram, "u_sharpenAmount"),
+                brightnessEnabled: gl.getUniformLocation(glProgram, "u_brightnessEnabled"),
+                brightnessAmount: gl.getUniformLocation(glProgram, "u_brightnessAmount"),
+                contrastEnabled: gl.getUniformLocation(glProgram, "u_contrastEnabled"),
+                contrastAmount: gl.getUniformLocation(glProgram, "u_contrastAmount"),
+                clarityEnabled: gl.getUniformLocation(glProgram, "u_clarityEnabled"),
+                clarityAmount: gl.getUniformLocation(glProgram, "u_clarityAmount"),
+                highlightsEnabled: gl.getUniformLocation(glProgram, "u_highlightsEnabled"),
+                highlightsAmount: gl.getUniformLocation(glProgram, "u_highlightsAmount"),
 
-                } catch (err) {
-                    showError('Unable to access camera.');
-                    throw err;
-                }
-            }
+                // New uniforms
+                smoothingEnabled: gl.getUniformLocation(glProgram, "u_smoothingEnabled"),
+                smoothingAmount: gl.getUniformLocation(glProgram, "u_smoothingAmount"),
+                thresholdEnabled: gl.getUniformLocation(glProgram, "u_thresholdEnabled"),
+                thresholdValue: gl.getUniformLocation(glProgram, "u_thresholdValue"),
+                edgeDetectionEnabled: gl.getUniformLocation(glProgram, "u_edgeDetectionEnabled"),
+                sobelEnabled: gl.getUniformLocation(glProgram, "u_sobelEnabled"),
+                sobelAmount: gl.getUniformLocation(glProgram, "u_sobelAmount"),
+                cannyEnabled: gl.getUniformLocation(glProgram, "u_cannyEnabled"),
+                cannyAmount: gl.getUniformLocation(glProgram, "u_cannyAmount"),
+            };
 
-            function getSelectedResolution() {
-                const resolutionSelect = document.getElementById('resolution-select');
-                const val = resolutionSelect.value;
-                if (!val) return null;
-                const [width, height] = val.split('x').map(Number);
-                return {width, height};
-            }
+            gl.clearColor(0.0,0.0,0.0,1.0);
+            glInitialized = true;
+        }
 
-            // Function to calculate average brightness
-            function calculateAverageBrightness(canvas) {
-                const ctx = canvas.getContext('2d');
-                // Optionally, resize for faster processing
-                const tempCanvas = document.createElement('canvas');
-                const scaleFactor = 0.25; // Reduce to 25% of original size
-                tempCanvas.width = Math.floor(canvas.width * scaleFactor);
-                tempCanvas.height = Math.floor(canvas.height * scaleFactor);
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
-                const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-                const data = imageData.data;
-                let totalLuminance = 0;
-                const pixelCount = tempCanvas.width * tempCanvas.height;
+        function showError(message) {
+            console.error(message);
+            errorMsg.innerText = message;
+            errorMsg.style.display = 'block';
+            setTimeout(() => {
+                errorMsg.style.display = 'none';
+            }, 5000);
+        }
 
-                for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i];
-                    const g = data[i + 1];
-                    const b = data[i + 2];
-                    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                    totalLuminance += luminance;
-                }
-
-                const averageLuminance = totalLuminance / pixelCount;
-                return averageLuminance; // Value between 0 (dark) and 255 (bright)
-            }
-
-            // Function to update lightbulb color and feedback text
-            function updateLightbulb(averageBrightness) {
-                if (!lightbulbIndicator || !lightingFeedback) return;
-
-                if (averageBrightness < BRIGHTNESS_THRESHOLD_DARK) {
-                    // Too Dark - Yellow
-                    lightbulbIndicator.querySelector('path').setAttribute('fill', '#FFFF00'); // Yellow
-                    lightingFeedback.innerText = 'Too Dark - Please increase lighting';
-                    lightingFeedback.style.display = 'block';
-                } else if (averageBrightness > BRIGHTNESS_THRESHOLD_BRIGHT) {
-                    // Too Bright - Red
-                    lightbulbIndicator.querySelector('path').setAttribute('fill', '#FF0000'); // Red
-                    lightingFeedback.innerText = 'Too Bright - Please reduce lighting';
-                    lightingFeedback.style.display = 'block';
+        async function initCamera(resolution = null, cameraId = null) {
+            try {
+                const videoConstraints = {};
+                if (cameraId) {
+                    videoConstraints.deviceId = { exact: cameraId };
                 } else {
-                    // Good Lighting - Green
-                    lightbulbIndicator.querySelector('path').setAttribute('fill', '#00FF00'); // Green
-                    lightingFeedback.innerText = 'Good Lighting';
-                    lightingFeedback.style.display = 'block';
-                }
-            }
-
-            async function startScanning() {
-                if (scanning) return;
-                startButton.disabled = true;
-                stopButton.disabled = true;
-                restartButton.style.display = 'none';
-                startButton.innerText = 'Starting...';
-                currentResolution = getSelectedResolution();
-                selectedCameraId = document.getElementById('camera-select').value || null;
-                await initCamera(currentResolution, selectedCameraId);
-
-                // Initialize shaders if not already done
-                if (!glInitialized) {
-                    initShaders();
+                    videoConstraints.facingMode = { exact: "environment" };
                 }
 
-                // Lazy init workers if needed
-                const workersCount = parseInt(workersSelect.value);
-                if (!isTesseractInitialized) {
-                    await initializeTesseract(workersCount);
+                // Adjust camera framerate based on OCR frequency
+                const adjustedFrameRate = Math.max(ocrFrequency, 15);
+                videoConstraints.frameRate = { ideal: adjustedFrameRate, max: 30 };
+
+                if (resolution) {
+                    videoConstraints.width = { exact: resolution.width };
+                    videoConstraints.height = { exact: resolution.height };
+                } else {
+                    videoConstraints.width = { ideal: 1280 };
+                    videoConstraints.height = { ideal: 720 };
                 }
 
-                frameSkipping = parseInt(frameSkippingSelect.value);
-                ocrFrequency = parseFloat(frequencySelect.value);
-                confidenceThreshold = parseInt(confidenceThresholdInput.value);
-                updateOcrInfo();
-
-                // Initialize ROI overlay based on current sliders
-                updateROIOverlay();
-
-                scanning = true;
-                startButton.disabled = true;
-                stopButton.disabled = false;
-                startButton.innerText = 'Scanning...';
-                output.value = '';
-
-                // Show debug elements if they are active
-                if (debugCanvas.style.display === 'block') {
-                    lightbulbIndicator.style.display = 'block';
-                    lightingFeedback.style.display = 'block';
-                }
-
-                requestAnimationFrame(processFrame);
-            }
-
-            async function stopScanning() {
-                if (!scanning) return;
-                scanning = false;
-                startButton.disabled = false;
-                stopButton.disabled = true;
-                restartButton.style.display = 'block';
-                startButton.innerText = 'Start Scanner';
-                roiOverlay.style.borderColor = '#00b4d8';
+                const constraints = { video: videoConstraints, audio: false };
                 if (stream) {
                     stream.getTracks().forEach(t => t.stop());
-                    stream = null;
                 }
-                debugCtx.clearRect(0,0,debugCanvas.width, debugCanvas.height);
-                lightbulbIndicator.style.display = 'none';
-                lightingFeedback.style.display = 'none';
-                console.log('Scanning stopped.');
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                await video.play();
+                console.log('Camera initialized with adjusted framerate:', adjustedFrameRate);
+
+            } catch (err) {
+                showError('Unable to access camera.');
+                throw err;
+            }
+        }
+
+        function getSelectedResolution() {
+            const resolutionSelect = document.getElementById('resolution-select');
+            const val = resolutionSelect.value;
+            if (!val) return null;
+            const [width, height] = val.split('x').map(Number);
+            return {width, height};
+        }
+
+        // Function to calculate average brightness
+        function calculateAverageBrightness(canvas) {
+            const ctx = canvas.getContext('2d');
+            // Optionally, resize for faster processing
+            const tempCanvas = document.createElement('canvas');
+            const scaleFactor = 0.25; // Reduce to 25% of original size
+            tempCanvas.width = Math.floor(canvas.width * scaleFactor);
+            tempCanvas.height = Math.floor(canvas.height * scaleFactor);
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+            const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const data = imageData.data;
+            let totalLuminance = 0;
+            const pixelCount = tempCanvas.width * tempCanvas.height;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                totalLuminance += luminance;
             }
 
-            async function performOCR(blob) {
-                const results = await Promise.all(workers.map(worker => worker.recognize(blob)));
-                let aggText = '';
-                let totalConf = 0;
-                results.forEach(r => {
-                    aggText += r.data.text + '\n';
-                    totalConf += r.data.confidence;
-                });
-                const avgConf = totalConf / workers.length;
-                if (avgConf >= confidenceThreshold && aggText.trim().length > 0) {
-                    roiOverlay.style.borderColor = '#2cb67d';
-                    if (!output.value.includes(aggText.trim())) {
-                        output.value += aggText.trim() + '\n';
-                    }
-                } else {
-                    roiOverlay.style.borderColor = '#d00000';
-                }
+            const averageLuminance = totalLuminance / pixelCount;
+            return averageLuminance; // Value between 0 (dark) and 255 (bright)
+        }
+
+        // Function to update lightbulb color and feedback text
+        function updateLightbulb(averageBrightness) {
+            if (!lightbulbIndicator || !lightingFeedback) return;
+
+            if (averageBrightness < BRIGHTNESS_THRESHOLD_DARK) {
+                // Too Dark - Yellow
+                lightbulbIndicator.querySelector('path').setAttribute('fill', '#FFFF00'); // Yellow
+                lightingFeedback.innerText = 'Too Dark - Please increase lighting';
+                lightingFeedback.style.display = 'block';
+            } else if (averageBrightness > BRIGHTNESS_THRESHOLD_BRIGHT) {
+                // Too Bright - Red
+                lightbulbIndicator.querySelector('path').setAttribute('fill', '#FF0000'); // Red
+                lightingFeedback.innerText = 'Too Bright - Please reduce lighting';
+                lightingFeedback.style.display = 'block';
+            } else {
+                // Good Lighting - Green
+                lightbulbIndicator.querySelector('path').setAttribute('fill', '#00FF00'); // Green
+                lightingFeedback.innerText = 'Good Lighting';
+                lightingFeedback.style.display = 'block';
+            }
+        }
+
+        async function startScanning() {
+            if (scanning) return;
+            startButton.disabled = true;
+            stopButton.disabled = true;
+            restartButton.style.display = 'none';
+            startButton.innerText = 'Starting...';
+            currentResolution = getSelectedResolution();
+            selectedCameraId = document.getElementById('camera-select').value || null;
+            await initCamera(currentResolution, selectedCameraId);
+
+            // Lazy init workers if needed
+            const workersCount = parseInt(workersSelect.value);
+            if (!isTesseractInitialized) {
+                await initializeTesseract(workersCount);
             }
 
-            async function processFrame() {
-                if (!scanning) return;
-                const startTime = performance.now();
-                const now = Date.now();
-                const timeSinceLastOcr = now - lastOcrTime;
-                const desiredInterval = 1000 / ocrFrequency;
-                frameCounter++;
-                if (frameCounter < frameSkipping) {
-                    if (scanning) requestAnimationFrame(processFrame);
-                    return;
-                }
-                frameCounter = 0;
-                if (timeSinceLastOcr < desiredInterval) {
-                    if (scanning) requestAnimationFrame(processFrame);
-                    return;
-                }
-                lastOcrTime = now;
+            frameSkipping = parseInt(frameSkippingSelect.value);
+            ocrFrequency = parseFloat(frequencySelect.value);
+            confidenceThreshold = parseInt(confidenceThresholdInput.value);
+            updateOcrInfo();
 
-                if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-                    if (scanning) requestAnimationFrame(processFrame);
-                    return;
-                }
-
-                // Use displayed video dimensions
-                const videoDisplayWidth = video.clientWidth;
-                const videoDisplayHeight = video.clientHeight;
-
-                const roiW = videoDisplayWidth * (roiWidthPercent / 100);
-                const roiH = videoDisplayHeight * (roiHeightPercent / 100);
-
-                const roiX = (videoDisplayWidth - roiW) / 2;
-                const roiY = (videoDisplayHeight - roiH) / 2;
-
-                // Draw the video frame onto videoCanvas using displayed dimensions
-                videoCanvas.width = videoDisplayWidth;
-                videoCanvas.height = videoDisplayHeight;
-                const ctx = videoCanvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, videoDisplayWidth, videoDisplayHeight);
-
-                // Crop the ROI based on displayed dimensions
-                roiCanvas.width = roiW;
-                roiCanvas.height = roiH;
-                const roiCtx = roiCanvas.getContext('2d');
-                roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
-
-                // Preprocess with WebGL
-                const preprocessedBlob = await preprocessWithWebGL(roiCanvas);
-
-                // Draw to debugCanvas without scaling
-                const debugCanvasElement = document.getElementById('debugCanvas');
-                const debugContext = debugCanvasElement.getContext('2d');
-                debugContext.clearRect(0, 0, debugCanvasElement.width, debugCanvasElement.height);
-                const img = await createImageBitmap(preprocessedBlob);
-                debugContext.drawImage(img, 0, 0, debugCanvasElement.width, debugCanvasElement.height);
-
-                // Calculate average brightness
-                const averageBrightness = calculateAverageBrightness(debugCanvasElement);
-                updateLightbulb(averageBrightness);
-
-                // Draw effect labels including new controls
-                debugContext.font = '16px Arial';
-                debugContext.fillStyle = 'yellow';
-                let yOffset = 20;
-                if (enableGrayscale.checked) { debugContext.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset += 20; }
-                if (enableDenoise.checked) { debugContext.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset); yOffset += 20; }
-                if (enableSharpen.checked) { debugContext.fillText(`Sharpen: ${sharpenSlider.value}`, 10, yOffset); yOffset += 20; }
-                if (enableBrightness.checked) { debugContext.fillText(`Brightness: ${brightnessSlider.value}`, 10, yOffset); yOffset += 20; }
-                if (enableContrast.checked) { debugContext.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset += 20; }
-                if (enableClarity.checked) { debugContext.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset += 20; }
-                if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); yOffset += 20; }
-
-                // Add new controls to debugCanvas
-                if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}`, 10, yOffset); yOffset += 20; }
-                if (enableThreshold.checked) { debugContext.fillText(`Threshold: ${thresholdSlider.value}`, 10, yOffset); yOffset += 20; }
-                if (enableEdgeDetection.checked) {
-                    if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}`, 10, yOffset); yOffset += 20; }
-                    if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}`, 10, yOffset); yOffset += 20; }
-                }
-
-                console.log(`Average Brightness: ${averageBrightness}`);
-
-                if (preprocessedBlob && scanning) {
-                    await performOCR(preprocessedBlob);
-                }
-
-                // Adaptive frame skipping based on processing time
-                const processingTime = performance.now() - startTime;
-                if (dynamicAdjust) {
-                    if (processingTime > targetFrameTime && frameSkipping < maxSkipping) {
-                        frameSkipping++;
-                    } else if (processingTime < targetFrameTime && frameSkipping > 1) {
-                        frameSkipping--;
-                    }
-                }
-
-                if (scanning) requestAnimationFrame(processFrame);
-            }
-
-            async function preprocessWithWebGL(sourceCanvas) {
+            // Init WebGL if not done yet
+            if (!glInitialized) {
                 initWebGL();
-                const width = sourceCanvas.width;
-                const height = sourceCanvas.height;
-
-                const webglCanvas = document.getElementById('webglCanvas');
-                webglCanvas.width = width;
-                webglCanvas.height = height;
-
-                gl.viewport(0,0,width,height);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-
-                gl.bindTexture(gl.TEXTURE_2D, glTexture);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
-
-                // Set existing uniform values (normalized)
-                gl.uniform1i(window.uLocations.grayscaleEnabled, enableGrayscale.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value) / 100.0);
-
-                gl.uniform1i(window.uLocations.denoiseEnabled, enableDenoise.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.denoiseAmount, parseFloat(denoiseSlider.value) / 100.0);
-
-                gl.uniform1i(window.uLocations.sharpenEnabled, enableSharpen.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.sharpenAmount, parseFloat(sharpenSlider.value) / 100.0);
-
-                gl.uniform1i(window.uLocations.brightnessEnabled, enableBrightness.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.brightnessAmount, parseFloat(brightnessSlider.value) / 100.0);
-
-                gl.uniform1i(window.uLocations.contrastEnabled, enableContrast.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.contrastAmount, parseFloat(contrastSlider.value) / 100.0);
-
-                gl.uniform1i(window.uLocations.clarityEnabled, enableClarity.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.clarityAmount, parseFloat(claritySlider.value) / 100.0);
-
-                gl.uniform1i(window.uLocations.highlightsEnabled, enableHighlights.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value) / 100.0);
-
-                // Set new uniform values (normalized)
-                gl.uniform1i(window.uLocations.smoothingEnabled, enableSmoothing.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.smoothingAmount, parseFloat(smoothingSlider.value) / 100.0);
-
-                gl.uniform1i(window.uLocations.thresholdEnabled, enableThreshold.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.thresholdValue, parseFloat(thresholdSlider.value) / 255.0);
-
-                gl.uniform1i(window.uLocations.edgeDetectionEnabled, enableEdgeDetection.checked ? 1 : 0);
-                gl.uniform1i(window.uLocations.sobelEnabled, enableSobel.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.sobelAmount, parseFloat(sobelSlider.value) / 100.0);
-                gl.uniform1i(window.uLocations.cannyEnabled, enableCanny.checked ? 1 : 0);
-                gl.uniform1f(window.uLocations.cannyAmount, parseFloat(cannySlider.value) / 100.0);
-
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-                const pixels = new Uint8ClampedArray(width * height * 4);
-                gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-                const offscreen = document.createElement('canvas');
-                offscreen.width = width;
-                offscreen.height = height;
-                const offCtx = offscreen.getContext('2d');
-                const imageData = new ImageData(pixels, width, height);
-                offCtx.putImageData(imageData,0,0);
-
-                return new Promise(resolve => {
-                    offscreen.toBlob((blob) => {
-                        resolve(blob);
-                    }, 'image/png');
-                });
             }
 
-            function updateOcrInfo() {
-                const approximateFPS = 60;
-                const frameBasedFrequency = approximateFPS/frameSkipping;
-                const effectiveFrequency = Math.min(frameBasedFrequency, ocrFrequency);
-                ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
+            // Initialize ROI overlay based on current sliders
+            updateROIOverlay();
+
+            scanning = true;
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            startButton.innerText = 'Scanning...';
+            output.value = '';
+
+            // Show debug elements if they are active
+            if (debugCanvas.style.display === 'block') {
+                lightbulbIndicator.style.display = 'block';
+                lightingFeedback.style.display = 'block';
             }
 
-            // Configuration Management System Implementation
+            requestAnimationFrame(processFrame);
+        }
 
-            // Populate Configurations on Page Load
-            document.addEventListener('DOMContentLoaded', populateConfigurations);
+        async function stopScanning() {
+            if (!scanning) return;
+            scanning = false;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            restartButton.style.display = 'block';
+            startButton.innerText = 'Start Scanner';
+            roiOverlay.style.borderColor = '#00b4d8';
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+            debugCtx.clearRect(0,0,debugCanvas.width, debugCanvas.height);
+            lightbulbIndicator.style.display = 'none';
+            lightingFeedback.style.display = 'none';
+            console.log('Scanning stopped.');
+        }
 
-            // New Camera Permissions Logic
-            document.addEventListener('DOMContentLoaded', async () => {
-                try {
-                    const permissionStatus = await navigator.permissions.query({name: 'camera'});
-                    if (permissionStatus.state !== 'granted') {
-                        // Request camera access
-                        const stream = await navigator.mediaDevices.getUserMedia({video: true});
-                        // After granting, stop the stream to release the camera
-                        stream.getTracks().forEach(track => track.stop());
-                        // Show prompt and reload
-                        alert("Permissions granted successfully, page will now reload");
-                        window.location.reload();
-                    }
-                } catch (err) {
-                    console.error('Camera permission denied or error occurred:', err);
-                    // Optionally show error to user
-                }
+        async function performOCR(blob) {
+            const results = await Promise.all(workers.map(worker => worker.recognize(blob)));
+            let aggText = '';
+            let totalConf = 0;
+            results.forEach(r => {
+                aggText += r.data.text + '\n';
+                totalConf += r.data.confidence;
             });
+            const avgConf = totalConf / workers.length;
+            if (avgConf >= confidenceThreshold && aggText.trim().length > 0) {
+                roiOverlay.style.borderColor = '#2cb67d';
+                if (!output.value.includes(aggText.trim())) {
+                    output.value += aggText.trim() + '\n';
+                }
+            } else {
+                roiOverlay.style.borderColor = '#d00000';
+            }
+        }
 
-            async function populateConfigurations() {
-                try {
-                    const response = await fetch('./configs/index.json'); // Fetch index.json
-                    const data = await response.json();
-                    const configurations = data.configurations;
+        async function processFrame() {
+            if (!scanning) return;
+            const startTime = performance.now();
+            const now = Date.now();
+            const timeSinceLastOcr = now - lastOcrTime;
+            const desiredInterval = 1000 / ocrFrequency;
+            frameCounter++;
+            if (frameCounter < frameSkipping) {
+                if (scanning) requestAnimationFrame(processFrame);
+                return;
+            }
+            frameCounter = 0;
+            if (timeSinceLastOcr < desiredInterval) {
+                if (scanning) requestAnimationFrame(processFrame);
+                return;
+            }
+            lastOcrTime = now;
 
-                    configSelect.innerHTML = '<option value="">Select Config</option>';
-                    configurations.forEach(file => {
-                        const option = document.createElement('option');
-                        option.value = file;
-                        option.text = file.replace('.json', ''); // Display name without .json
-                        configSelect.appendChild(option);
-                    });
-                } catch (err) {
-                    console.error('Error loading configuration index:', err);
-                    showError('Failed to load configuration index.');
+            if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+                if (scanning) requestAnimationFrame(processFrame);
+                return;
+            }
+
+            // Use displayed video dimensions
+            const videoDisplayWidth = video.clientWidth;
+            const videoDisplayHeight = video.clientHeight;
+
+            const roiW = videoDisplayWidth * (roiWidthPercent / 100);
+            const roiH = videoDisplayHeight * (roiHeightPercent / 100);
+
+            const roiX = (videoDisplayWidth - roiW) / 2;
+            const roiY = (videoDisplayHeight - roiH) / 2;
+
+            // Draw the video frame onto videoCanvas using displayed dimensions
+            videoCanvas.width = videoDisplayWidth;
+            videoCanvas.height = videoDisplayHeight;
+            const ctx = videoCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, videoDisplayWidth, videoDisplayHeight);
+
+            // Crop the ROI based on displayed dimensions
+            roiCanvas.width = roiW;
+            roiCanvas.height = roiH;
+            const roiCtx = roiCanvas.getContext('2d');
+            roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+            // Preprocess with WebGL
+            const preprocessedBlob = await preprocessWithWebGL(roiCanvas);
+
+            // Draw to debugCanvas without scaling
+            const debugCanvasElement = document.getElementById('debugCanvas');
+            const debugContext = debugCanvasElement.getContext('2d');
+            debugContext.clearRect(0, 0, debugCanvasElement.width, debugCanvasElement.height);
+            const img = await createImageBitmap(preprocessedBlob);
+            debugContext.drawImage(img, 0, 0, debugCanvasElement.width, debugCanvasElement.height);
+
+            // Calculate average brightness
+            const averageBrightness = calculateAverageBrightness(debugCanvasElement);
+            updateLightbulb(averageBrightness);
+
+            // Draw effect labels including new controls
+            debugContext.font = '16px Arial';
+            debugContext.fillStyle = 'yellow';
+            let yOffset = 20;
+            if (enableGrayscale.checked) { debugContext.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableDenoise.checked) { debugContext.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableSharpen.checked) { debugContext.fillText(`Sharpen: ${sharpenSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableBrightness.checked) { debugContext.fillText(`Brightness: ${brightnessSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableContrast.checked) { debugContext.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableClarity.checked) { debugContext.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); yOffset += 20; }
+
+            // Add new controls to debugCanvas
+            if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableThreshold.checked) { debugContext.fillText(`Threshold: ${thresholdSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableEdgeDetection.checked) {
+                if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}`, 10, yOffset); yOffset += 20; }
+                if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}`, 10, yOffset); yOffset += 20; }
+            }
+
+            console.log(`Average Brightness: ${averageBrightness}`);
+
+            if (preprocessedBlob && scanning) {
+                await performOCR(preprocessedBlob);
+            }
+
+            // Adaptive frame skipping based on processing time
+            const processingTime = performance.now() - startTime;
+            if (dynamicAdjust) {
+                if (processingTime > targetFrameTime && frameSkipping < maxSkipping) {
+                    frameSkipping++;
+                } else if (processingTime < targetFrameTime && frameSkipping > 1) {
+                    frameSkipping--;
                 }
             }
 
-            async function loadConfiguration() {
-                const selectedConfig = configSelect.value; // Get selected configuration
-                if (!selectedConfig) return alert('Please select a configuration to load.');
+            if (scanning) requestAnimationFrame(processFrame);
+        }
 
-                try {
-                    const response = await fetch(`./configs/${selectedConfig}`); // Fetch the JSON file
-                    const configData = await response.json();
+        async function preprocessWithWebGL(sourceCanvas) {
+            initWebGL();
+            const width = sourceCanvas.width;
+            const height = sourceCanvas.height;
 
-                    // Apply configuration data to UI controls
-                    document.getElementById('resolution-select').value = configData.resolution || '';
+            const webglCanvas = document.getElementById('webglCanvas');
+            webglCanvas.width = width;
+            webglCanvas.height = height;
 
-                    // Update camera-select based on device labels
-                    const cameraSelect = document.getElementById('camera-select');
-                    const cameraLabel = configData.camera || '';
-                    if (cameraLabel) {
-                        let found = false;
-                        for (let i = 0; i < cameraSelect.options.length; i++) {
-                            if (cameraSelect.options[i].text === cameraLabel) {
-                                cameraSelect.selectedIndex = i;
-                                found = true;
-                                break;
-                            }
+            gl.viewport(0, 0, width, height);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gl.bindTexture(gl.TEXTURE_2D, glTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
+
+            // Set existing uniform values (normalized)
+            gl.uniform1i(window.uLocations.grayscaleEnabled, enableGrayscale.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value) / 100.0);
+
+            gl.uniform1i(window.uLocations.denoiseEnabled, enableDenoise.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.denoiseAmount, parseFloat(denoiseSlider.value) / 100.0);
+
+            gl.uniform1i(window.uLocations.sharpenEnabled, enableSharpen.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.sharpenAmount, parseFloat(sharpenSlider.value) / 100.0);
+
+            gl.uniform1i(window.uLocations.brightnessEnabled, enableBrightness.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.brightnessAmount, parseFloat(brightnessSlider.value) / 100.0);
+
+            gl.uniform1i(window.uLocations.contrastEnabled, enableContrast.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.contrastAmount, parseFloat(contrastSlider.value) / 100.0);
+
+            gl.uniform1i(window.uLocations.clarityEnabled, enableClarity.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.clarityAmount, parseFloat(claritySlider.value) / 100.0);
+
+            gl.uniform1i(window.uLocations.highlightsEnabled, enableHighlights.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value) / 100.0);
+
+            // Set new uniform values (normalized)
+            gl.uniform1i(window.uLocations.smoothingEnabled, enableSmoothing.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.smoothingAmount, parseFloat(smoothingSlider.value) / 100.0);
+
+            gl.uniform1i(window.uLocations.thresholdEnabled, enableThreshold.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.thresholdValue, parseFloat(thresholdSlider.value) / 255.0);
+
+            gl.uniform1i(window.uLocations.edgeDetectionEnabled, enableEdgeDetection.checked ? 1 : 0);
+            gl.uniform1i(window.uLocations.sobelEnabled, enableSobel.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.sobelAmount, parseFloat(sobelSlider.value) / 100.0);
+            gl.uniform1i(window.uLocations.cannyEnabled, enableCanny.checked ? 1 : 0);
+            gl.uniform1f(window.uLocations.cannyAmount, parseFloat(cannySlider.value) / 100.0);
+
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            const pixels = new Uint8ClampedArray(width * height * 4);
+            gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+            const offscreen = document.createElement('canvas');
+            offscreen.width = width;
+            offscreen.height = height;
+            const offCtx = offscreen.getContext('2d');
+            const imageData = new ImageData(pixels, width, height);
+            offCtx.putImageData(imageData,0,0);
+
+            return new Promise(resolve => {
+                offscreen.toBlob((blob) => {
+                    resolve(blob);
+                }, 'image/png');
+            });
+        }
+
+        function updateOcrInfo() {
+            const approximateFPS = 60;
+            const frameBasedFrequency = approximateFPS/frameSkipping;
+            const effectiveFrequency = Math.min(frameBasedFrequency, ocrFrequency);
+            ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
+        }
+
+        // Configuration Management System Implementation
+
+        // Populate Configurations on Page Load
+        document.addEventListener('DOMContentLoaded', populateConfigurations);
+
+        // New Camera Permissions Logic
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const permissionStatus = await navigator.permissions.query({name: 'camera'});
+                if (permissionStatus.state !== 'granted') {
+                    // Request camera access
+                    const stream = await navigator.mediaDevices.getUserMedia({video: true});
+                    // After granting, stop the stream to release the camera
+                    stream.getTracks().forEach(track => track.stop());
+                    // Show prompt and reload
+                    alert("Permissions granted successfully, page will now reload");
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error('Camera permission denied or error occurred:', err);
+                // Optionally show error to user
+            }
+        });
+
+        async function populateConfigurations() {
+            try {
+                const response = await fetch('./configs/index.json'); // Fetch index.json
+                const data = await response.json();
+                const configurations = data.configurations;
+
+                configSelect.innerHTML = '<option value="">Select Config</option>';
+                configurations.forEach(file => {
+                    const option = document.createElement('option');
+                    option.value = file;
+                    option.text = file.replace('.json', ''); // Display name without .json
+                    configSelect.appendChild(option);
+                });
+            } catch (err) {
+                console.error('Error loading configuration index:', err);
+                showError('Failed to load configuration index.');
+            }
+        }
+
+        async function loadConfiguration() {
+            const selectedConfig = configSelect.value; // Get selected configuration
+            if (!selectedConfig) return alert('Please select a configuration to load.');
+
+            try {
+                const response = await fetch(`./configs/${selectedConfig}`); // Fetch the JSON file
+                const configData = await response.json();
+
+                // Apply configuration data to UI controls
+                document.getElementById('resolution-select').value = configData.resolution || '';
+
+                // Update camera-select based on device labels
+                const cameraSelect = document.getElementById('camera-select');
+                const cameraLabel = configData.camera || '';
+                if (cameraLabel) {
+                    let found = false;
+                    for (let i = 0; i < cameraSelect.options.length; i++) {
+                        if (cameraSelect.options[i].text === cameraLabel) {
+                            cameraSelect.selectedIndex = i;
+                            found = true;
+                            break;
                         }
-                        if (!found) {
-                            // If label not found, reset to default
-                            cameraSelect.value = '';
-                        }
-                    } else {
+                    }
+                    if (!found) {
+                        // If label not found, reset to default
                         cameraSelect.value = '';
                     }
-
-                    document.getElementById('workers-select').value = configData.workers || '1';
-                    document.getElementById('frame-skipping-select').value = configData.frameSkipping || '1';
-                    document.getElementById('frequency-select').value = configData.frequency || '1';
-                    document.getElementById('confidence-threshold-input').value = configData.confidenceThreshold || '60';
-                    confidenceThreshold = configData.confidenceThreshold || 60;
-
-                    // Apply preprocessing options
-                    const preprocessing = configData.preprocessing || {};
-                    document.getElementById('enableGrayscale').checked = preprocessing.enableGrayscale || false;
-                    document.getElementById('grayscaleSlider').value = preprocessing.grayscale || 100;
-
-                    document.getElementById('enableDenoise').checked = preprocessing.enableDenoise || false;
-                    document.getElementById('denoiseSlider').value = preprocessing.denoise || 50;
-
-                    document.getElementById('enableSharpen').checked = preprocessing.enableSharpen || false;
-                    document.getElementById('sharpenSlider').value = preprocessing.sharpen || 50;
-
-                    document.getElementById('enableBrightness').checked = preprocessing.enableBrightness || false;
-                    document.getElementById('brightnessSlider').value = preprocessing.brightness || 50;
-
-                    document.getElementById('enableContrast').checked = preprocessing.enableContrast || false;
-                    document.getElementById('contrastSlider').value = preprocessing.contrast || 50;
-
-                    document.getElementById('enableClarity').checked = preprocessing.enableClarity || false;
-                    document.getElementById('claritySlider').value = preprocessing.clarity || 50;
-
-                    document.getElementById('enableHighlights').checked = preprocessing.enableHighlights || false;
-                    document.getElementById('highlightsSlider').value = preprocessing.highlights || 50;
-
-                    // Apply new preprocessing options
-                    document.getElementById('enableSmoothing').checked = preprocessing.enableSmoothing || false;
-                    document.getElementById('smoothingSlider').value = preprocessing.smoothing || 50;
-
-                    document.getElementById('enableThreshold').checked = preprocessing.enableThreshold || false;
-                    document.getElementById('thresholdSlider').value = preprocessing.threshold || 128;
-
-                    document.getElementById('enableEdgeDetection').checked = preprocessing.enableEdgeDetection || false;
-                    document.getElementById('enableSobel').checked = preprocessing.enableSobel || false;
-                    document.getElementById('sobelSlider').value = preprocessing.sobel || 50;
-                    document.getElementById('enableCanny').checked = preprocessing.enableCanny || false;
-                    document.getElementById('cannySlider').value = preprocessing.canny || 50;
-
-                    // Apply ROI settings
-                    const roiSettings = configData.roi || {};
-                    roiWidthPercent = roiSettings.roiWidth || 60;
-                    roiHeightPercent = roiSettings.roiHeight || 25;
-                    roiWidthSlider.value = roiWidthPercent;
-                    roiHeightSlider.value = roiHeightPercent;
-                    updateROIOverlay();
-
-                    updateOcrInfo();
-
-                    alert('Configuration loaded successfully.');
-                } catch (err) {
-                    console.error('Error loading configuration:', err);
-                    showError('Failed to load the selected configuration.');
+                } else {
+                    cameraSelect.value = '';
                 }
+
+                document.getElementById('workers-select').value = configData.workers || '1';
+                document.getElementById('frame-skipping-select').value = configData.frameSkipping || '1';
+                document.getElementById('frequency-select').value = configData.frequency || '1';
+                document.getElementById('confidence-threshold-input').value = configData.confidenceThreshold || '60';
+                confidenceThreshold = configData.confidenceThreshold || 60;
+
+                // Apply preprocessing options
+                const preprocessing = configData.preprocessing || {};
+                document.getElementById('enableGrayscale').checked = preprocessing.enableGrayscale || false;
+                document.getElementById('grayscaleSlider').value = preprocessing.grayscale || 100;
+
+                document.getElementById('enableDenoise').checked = preprocessing.enableDenoise || false;
+                document.getElementById('denoiseSlider').value = preprocessing.denoise || 50;
+
+                document.getElementById('enableSharpen').checked = preprocessing.enableSharpen || false;
+                document.getElementById('sharpenSlider').value = preprocessing.sharpen || 50;
+
+                document.getElementById('enableBrightness').checked = preprocessing.enableBrightness || false;
+                document.getElementById('brightnessSlider').value = preprocessing.brightness || 50;
+
+                document.getElementById('enableContrast').checked = preprocessing.enableContrast || false;
+                document.getElementById('contrastSlider').value = preprocessing.contrast || 50;
+
+                document.getElementById('enableClarity').checked = preprocessing.enableClarity || false;
+                document.getElementById('claritySlider').value = preprocessing.clarity || 50;
+
+                document.getElementById('enableHighlights').checked = preprocessing.enableHighlights || false;
+                document.getElementById('highlightsSlider').value = preprocessing.highlights || 50;
+
+                // Apply new preprocessing options
+                document.getElementById('enableSmoothing').checked = preprocessing.enableSmoothing || false;
+                document.getElementById('smoothingSlider').value = preprocessing.smoothing || 50;
+
+                document.getElementById('enableThreshold').checked = preprocessing.enableThreshold || false;
+                document.getElementById('thresholdSlider').value = preprocessing.threshold || 128;
+
+                document.getElementById('enableEdgeDetection').checked = preprocessing.enableEdgeDetection || false;
+                document.getElementById('enableSobel').checked = preprocessing.enableSobel || false;
+                document.getElementById('sobelSlider').value = preprocessing.sobel || 50;
+                document.getElementById('enableCanny').checked = preprocessing.enableCanny || false;
+                document.getElementById('cannySlider').value = preprocessing.canny || 50;
+
+                // Apply ROI settings
+                const roiSettings = configData.roi || {};
+                roiWidthPercent = roiSettings.roiWidth || 60;
+                roiHeightPercent = roiSettings.roiHeight || 25;
+                roiWidthSlider.value = roiWidthPercent;
+                roiHeightSlider.value = roiHeightPercent;
+                updateROIOverlay();
+
+                updateOcrInfo();
+
+                alert('Configuration loaded successfully.');
+            } catch (err) {
+                console.error('Error loading configuration:', err);
+                showError('Failed to load the selected configuration.');
+            }
+        }
+
+        function saveConfiguration() {
+            const cameraSelect = document.getElementById('camera-select');
+            const cameraLabel = cameraSelect.options[cameraSelect.selectedIndex].text;
+            const configData = {
+                resolution: document.getElementById('resolution-select').value,
+                camera: cameraLabel !== 'Select Camera' ? cameraLabel : '',
+                workers: document.getElementById('workers-select').value,
+                frameSkipping: document.getElementById('frame-skipping-select').value,
+                frequency: document.getElementById('frequency-select').value,
+                confidenceThreshold: document.getElementById('confidence-threshold-input').value,
+                preprocessing: {
+                    enableGrayscale: document.getElementById('enableGrayscale').checked,
+                    grayscale: document.getElementById('grayscaleSlider').value,
+                    enableDenoise: document.getElementById('enableDenoise').checked,
+                    denoise: document.getElementById('denoiseSlider').value,
+                    enableSharpen: document.getElementById('enableSharpen').checked,
+                    sharpen: document.getElementById('sharpenSlider').value,
+                    enableBrightness: document.getElementById('enableBrightness').checked,
+                    brightness: document.getElementById('brightnessSlider').value,
+                    enableContrast: document.getElementById('enableContrast').checked,
+                    contrast: document.getElementById('contrastSlider').value,
+                    enableClarity: document.getElementById('enableClarity').checked,
+                    clarity: document.getElementById('claritySlider').value,
+                    enableHighlights: document.getElementById('enableHighlights').checked,
+                    highlights: document.getElementById('highlightsSlider').value,
+                    enableSmoothing: document.getElementById('enableSmoothing').checked,
+                    smoothing: document.getElementById('smoothingSlider').value,
+                    enableThreshold: document.getElementById('enableThreshold').checked,
+                    threshold: document.getElementById('thresholdSlider').value,
+                    enableEdgeDetection: document.getElementById('enableEdgeDetection').checked,
+                    enableSobel: document.getElementById('enableSobel').checked,
+                    sobel: document.getElementById('sobelSlider').value,
+                    enableCanny: document.getElementById('enableCanny').checked,
+                    canny: document.getElementById('cannySlider').value
+                },
+                roi: {
+                    roiWidth: roiWidthPercent,
+                    roiHeight: roiHeightPercent
+                }
+            };
+
+            const configName = prompt('Enter a name for the configuration (e.g., "safe"):'); // Prompt for custom name
+            if (!configName) return;
+            if (!/^[a-zA-Z0-9_-]+$/.test(configName)) {
+                alert('Configuration name can only contain letters, numbers, underscores, and hyphens.');
+                return;
             }
 
-            function saveConfiguration() {
-                const cameraSelect = document.getElementById('camera-select');
-                const cameraLabel = cameraSelect.options[cameraSelect.selectedIndex].text;
-                const configData = {
-                    resolution: document.getElementById('resolution-select').value,
-                    camera: cameraLabel !== 'Select Camera' ? cameraLabel : '',
-                    workers: document.getElementById('workers-select').value,
-                    frameSkipping: document.getElementById('frame-skipping-select').value,
-                    frequency: document.getElementById('frequency-select').value,
-                    confidenceThreshold: document.getElementById('confidence-threshold-input').value,
-                    preprocessing: {
-                        enableGrayscale: document.getElementById('enableGrayscale').checked,
-                        grayscale: document.getElementById('grayscaleSlider').value,
-                        enableDenoise: document.getElementById('enableDenoise').checked,
-                        denoise: document.getElementById('denoiseSlider').value,
-                        enableSharpen: document.getElementById('enableSharpen').checked,
-                        sharpen: document.getElementById('sharpenSlider').value,
-                        enableBrightness: document.getElementById('enableBrightness').checked,
-                        brightness: document.getElementById('brightnessSlider').value,
-                        enableContrast: document.getElementById('enableContrast').checked,
-                        contrast: document.getElementById('contrastSlider').value,
-                        enableClarity: document.getElementById('enableClarity').checked,
-                        clarity: document.getElementById('claritySlider').value,
-                        enableHighlights: document.getElementById('enableHighlights').checked,
-                        highlights: document.getElementById('highlightsSlider').value,
-                        enableSmoothing: document.getElementById('enableSmoothing').checked,
-                        smoothing: document.getElementById('smoothingSlider').value,
-                        enableThreshold: document.getElementById('enableThreshold').checked,
-                        threshold: document.getElementById('thresholdSlider').value,
-                        enableEdgeDetection: document.getElementById('enableEdgeDetection').checked,
-                        enableSobel: document.getElementById('enableSobel').checked,
-                        sobel: document.getElementById('sobelSlider').value,
-                        enableCanny: document.getElementById('enableCanny').checked,
-                        canny: document.getElementById('cannySlider').value
-                    },
-                    roi: {
-                        roiWidth: roiWidthPercent,
-                        roiHeight: roiHeightPercent
-                    }
-                };
+            const blob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${configName}.json`; // Save with custom name
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
 
-                const configName = prompt('Enter a name for the configuration (e.g., "safe"):'); // Prompt for custom name
-                if (!configName) return;
-                if (!/^[a-zA-Z0-9_-]+$/.test(configName)) {
-                    alert('Configuration name can only contain letters, numbers, underscores, and hyphens.');
-                    return;
-                }
+            alert('Configuration saved as a JSON file. Please upload it to the /configs directory and update index.json to reuse.');
+        }
 
-                const blob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${configName}.json`; // Save with custom name
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+        // Event Listeners for Configuration Management
+        loadConfigButton.addEventListener('click', loadConfiguration);
+        saveConfigButton.addEventListener('click', saveConfiguration);
 
-                alert('Configuration saved as a JSON file. Please upload it to the /configs directory and update index.json to reuse.');
+        // Side menu logic
+        (function(){
+            const menuToggle = document.getElementById('menu-toggle');
+            const sideMenu = document.getElementById('side-menu');
+            const menuOverlay = document.getElementById('menu-overlay');
+            const container = document.getElementById('container');
+            let isMenuOpen = false;
+            function openMenu() {
+                sideMenu.classList.add('active');
+                menuOverlay.classList.add('active');
+                container.classList.add('side-menu-open');
+                menuToggle.setAttribute('aria-expanded','true');
+                isMenuOpen = true;
             }
+            function closeMenu() {
+                sideMenu.classList.remove('active');
+                menuOverlay.classList.remove('active');
+                container.classList.remove('side-menu-open');
+                menuToggle.setAttribute('aria-expanded','false');
+                isMenuOpen = false;
+            }
+            menuToggle.addEventListener('click', () => { isMenuOpen? closeMenu():openMenu(); });
+            menuOverlay.addEventListener('click', closeMenu);
+            document.addEventListener('keydown', (e) => { if(e.key==='Escape'&& isMenuOpen) closeMenu(); });
+        })();
 
-            // Event Listeners for Configuration Management
-            loadConfigButton.addEventListener('click', loadConfiguration);
-            saveConfigButton.addEventListener('click', saveConfiguration);
-
-            // Side menu logic
-            (function(){
-                const menuToggle = document.getElementById('menu-toggle');
-                const sideMenu = document.getElementById('side-menu');
-                const menuOverlay = document.getElementById('menu-overlay');
-                const container = document.getElementById('container');
-                let isMenuOpen = false;
-                function openMenu() {
-                    sideMenu.classList.add('active');
-                    menuOverlay.classList.add('active');
-                    container.classList.add('side-menu-open');
-                    menuToggle.setAttribute('aria-expanded','true');
-                    isMenuOpen = true;
-                }
-                function closeMenu() {
-                    sideMenu.classList.remove('active');
-                    menuOverlay.classList.remove('active');
-                    container.classList.remove('side-menu-open');
-                    menuToggle.setAttribute('aria-expanded','false');
-                    isMenuOpen = false;
-                }
-                menuToggle.addEventListener('click', () => { isMenuOpen? closeMenu():openMenu(); });
-                menuOverlay.addEventListener('click', closeMenu);
-                document.addEventListener('keydown', (e) => { if(e.key==='Escape'&& isMenuOpen) closeMenu(); });
-            })();
-
-            // Theme logic
-            (function(){
-                const toggleCheckbox = document.getElementById('theme-checkbox');
-                const currentTheme = localStorage.getItem('theme')||'light';
-                if (currentTheme==='dark') {
+        // Theme logic
+        (function(){
+            const toggleCheckbox = document.getElementById('theme-checkbox');
+            const currentTheme = localStorage.getItem('theme')||'light';
+            if (currentTheme==='dark') {
+                document.documentElement.classList.add('dark-theme');
+                document.body.classList.add('dark-theme');
+                toggleCheckbox.checked = true;
+            }
+            toggleCheckbox.addEventListener('change',function(){
+                if(this.checked) {
                     document.documentElement.classList.add('dark-theme');
                     document.body.classList.add('dark-theme');
-                    toggleCheckbox.checked = true;
-                }
-                toggleCheckbox.addEventListener('change',function(){
-                    if(this.checked) {
-                        document.documentElement.classList.add('dark-theme');
-                        document.body.classList.add('dark-theme');
-                        localStorage.setItem('theme','dark');
-                    } else {
-                        document.documentElement.classList.remove('dark-theme');
-                        document.body.classList.remove('dark-theme');
-                        localStorage.setItem('theme','light');
-                    }
-                });
-            })();
-
-            // Debug console capture
-            (function(){
-                const debugConsole = document.getElementById('debugConsole');
-                function addLogEntry(type,args) {
-                    const entry = document.createElement('div');
-                    entry.className=`log-entry ${type}`;
-                    entry.textContent=`[${type.toUpperCase()}] ` + Array.from(args).join(' ');
-                    // Batch DOM update at next frame
-                    requestAnimationFrame(()=>{
-                        debugConsole.appendChild(entry);
-                        debugConsole.scrollTop = debugConsole.scrollHeight;
-                    });
-                }
-                const originalLog = console.log;
-                const originalWarn = console.warn;
-                const originalError = console.error;
-                console.log = function(...args){originalLog.apply(console,args);addLogEntry('log',args);};
-                console.warn=function(...args){originalWarn.apply(console,args);addLogEntry('warn',args);};
-                console.error=function(...args){originalError.apply(console,args);addLogEntry('error',args);};
-            })();
-
-            function saveLogs() {
-                const debugConsole = document.getElementById('debugConsole');
-                const logsText = debugConsole.innerText;
-                const blob = new Blob([logsText],{type:'text/plain'});
-                const url = URL.createObjectURL(blob);
-                const a=document.createElement('a');
-                a.href=url; a.download='logs.txt';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
-            document.getElementById('save-logs-button').addEventListener('click', saveLogs);
-
-            (function(){
-                const debugButton = document.getElementById('debug-button');
-                const debugCanvas = document.getElementById('debugCanvas');
-                const debugConsole = document.getElementById('debugConsole');
-                const debugControls = document.getElementById('debugControls');
-                debugCanvas.style.display='none';
-                debugConsole.style.display='none';
-                debugControls.style.display='none';
-                let isDebugVisible=false;
-                debugButton.addEventListener('click',function(){
-                    isDebugVisible=!isDebugVisible;
-                    if(isDebugVisible){
-                        debugCanvas.style.display='block';
-                        debugConsole.style.display='block';
-                        debugControls.style.display='block';
-                        debugButton.innerText='Hide Debug';
-                        // Show lightbulb indicator
-                        lightbulbIndicator.style.display = 'block';
-                        lightingFeedback.style.display = 'block';
-                    } else {
-                        debugCanvas.style.display='none';
-                        debugConsole.style.display='none';
-                        debugControls.style.display='none';
-                        debugButton.innerText='Show Debug';
-                        // Hide lightbulb indicator
-                        lightbulbIndicator.style.display = 'none';
-                        lightingFeedback.style.display = 'none';
-                    }
-                });
-            })();
-
-            // Mutual Exclusivity for Edge Detection Controls
-            (function(){
-                // Get elements
-                const enableSobel = document.getElementById('enableSobel');
-                const enableCanny = document.getElementById('enableCanny');
-
-                // Event listeners for mutual exclusivity
-                enableSobel.addEventListener('change', function() {
-                    if (this.checked) {
-                        enableCanny.checked = false;
-                        enableCanny.disabled = true;
-                    } else {
-                        enableCanny.disabled = false;
-                    }
-                });
-
-                enableCanny.addEventListener('change', function() {
-                    if (this.checked) {
-                        enableSobel.checked = false;
-                        enableSobel.disabled = true;
-                    } else {
-                        enableSobel.disabled = false;
-                    }
-                });
-            })();
-
-            // Function to update ROI overlay based on slider values
-            function updateROIOverlay() {
-                const overlayWidthPercent = roiWidthPercent + '%';
-                const overlayHeightPercent = roiHeightPercent + '%';
-
-                roiOverlay.style.width = overlayWidthPercent;
-                roiOverlay.style.height = overlayHeightPercent;
-
-                // Center the overlay
-                roiOverlay.style.top = '50%';
-                roiOverlay.style.left = '50%';
-                roiOverlay.style.transform = 'translate(-50%, -50%)';
-
-                // Get the overlay's display size in pixels
-                const overlayDisplayWidth = roiOverlay.clientWidth;
-                const overlayDisplayHeight = roiOverlay.clientHeight;
-
-                // Set debugCanvas internal dimensions to match display size
-                const debugCanvasElement = document.getElementById('debugCanvas');
-                debugCanvasElement.width = overlayDisplayWidth;
-                debugCanvasElement.height = overlayDisplayHeight;
-
-                // Ensure CSS dimensions match internal dimensions
-                debugCanvasElement.style.width = overlayDisplayWidth + 'px';
-                debugCanvasElement.style.height = overlayDisplayHeight + 'px';
-
-                // Log for verification
-                console.log(`Overlay Display Size: ${overlayDisplayWidth}px x ${overlayDisplayHeight}px`);
-                console.log(`Debug Canvas Internal Size: ${debugCanvasElement.width}px x ${debugCanvasElement.height}px`);
-                console.log(`Debug Canvas CSS Size: ${debugCanvasElement.style.width}px x ${debugCanvasElement.style.height}px`);
-            }
-
-            // Configuration Management System Implementation Continued
-
-            async function populateCameras(){
-                try {
-                    const cameraSelect=document.getElementById('camera-select');
-                    cameraSelect.innerHTML='';
-                    const defaultOption=document.createElement('option');
-                    defaultOption.value='';
-                    defaultOption.text='Select Camera';
-                    cameraSelect.appendChild(defaultOption);
-                    const devices = await navigator.mediaDevices.enumerateDevices();
-                    const cameras=devices.filter(d=>d.kind==='videoinput');
-                    cameras.forEach(camera=>{
-                        const option=document.createElement('option');
-                        option.value=camera.deviceId;
-                        option.text=camera.label||`Camera ${cameraSelect.length}`;
-                        cameraSelect.appendChild(option);
-                    });
-                    if(cameras.length===0){
-                        const option=document.createElement('option');
-                        option.value='';
-                        option.text='No cameras found';
-                        cameraSelect.appendChild(option);
-                    }
-                } catch (err) {
-                    console.error('Failed to populate cameras:',err);
-                    showError('Failed to retrieve camera devices.');
-                }
-            }
-
-            window.addEventListener('beforeunload', async ()=>{
-                if(stream) {
-                    stream.getTracks().forEach(t=>t.stop());
-                }
-                if(workers.length>0){
-                    await Promise.all(workers.map(w=>w.terminate()));
-                    workers=[];
+                    localStorage.setItem('theme','dark');
+                } else {
+                    document.documentElement.classList.remove('dark-theme');
+                    document.body.classList.remove('dark-theme');
+                    localStorage.setItem('theme','light');
                 }
             });
+        })();
 
-            (function(){
-                const fpsCounter=document.getElementById('fpsCounter');
-                let frameCount=0;
-                let fps=0;
-                let lastTime=performance.now();
-                function updateFPS(){
-                    const now=performance.now();
-                    frameCount++;
-                    if(now-lastTime>=1000){
-                        fps=frameCount;
-                        frameCount=0;
-                        lastTime=now;
-                        fpsCounter.innerText=`FPS: ${fps}`;
-                    }
-                    requestAnimationFrame(updateFPS);
+        // Debug console capture
+        (function(){
+            const debugConsole = document.getElementById('debugConsole');
+            function addLogEntry(type,args) {
+                const entry = document.createElement('div');
+                entry.className=`log-entry ${type}`;
+                entry.textContent=`[${type.toUpperCase()}] ` + Array.from(args).join(' ');
+                // Batch DOM update at next frame
+                requestAnimationFrame(()=>{
+                    debugConsole.appendChild(entry);
+                    debugConsole.scrollTop = debugConsole.scrollHeight;
+                });
+            }
+            const originalLog = console.log;
+            const originalWarn = console.warn;
+            const originalError = console.error;
+            console.log = function(...args){originalLog.apply(console,args);addLogEntry('log',args);};
+            console.warn=function(...args){originalWarn.apply(console,args);addLogEntry('warn',args);};
+            console.error=function(...args){originalError.apply(console,args);addLogEntry('error',args);};
+        })();
+
+        function saveLogs() {
+            const debugConsole = document.getElementById('debugConsole');
+            const logsText = debugConsole.innerText;
+            const blob = new Blob([logsText],{type:'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const a=document.createElement('a');
+            a.href=url; a.download='logs.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        document.getElementById('save-logs-button').addEventListener('click', saveLogs);
+
+        (function(){
+            const debugButton = document.getElementById('debug-button');
+            const debugCanvas = document.getElementById('debugCanvas');
+            const debugConsole = document.getElementById('debugConsole');
+            const debugControls = document.getElementById('debugControls');
+            debugCanvas.style.display='none';
+            debugConsole.style.display='none';
+            debugControls.style.display='none';
+            let isDebugVisible=false;
+            debugButton.addEventListener('click',function(){
+                isDebugVisible=!isDebugVisible;
+                if(isDebugVisible){
+                    debugCanvas.style.display='block';
+                    debugConsole.style.display='block';
+                    debugControls.style.display='block';
+                    debugButton.innerText='Hide Debug';
+                    // Show lightbulb indicator
+                    lightbulbIndicator.style.display = 'block';
+                    lightingFeedback.style.display = 'block';
+                } else {
+                    debugCanvas.style.display='none';
+                    debugConsole.style.display='none';
+                    debugControls.style.display='none';
+                    debugButton.innerText='Show Debug';
+                    // Hide lightbulb indicator
+                    lightbulbIndicator.style.display = 'none';
+                    lightingFeedback.style.display = 'none';
+                }
+            });
+        })();
+
+        
+    
+
+        // Function to update ROI overlay based on slider values
+        function updateROIOverlay() {
+            const overlayWidthPercent = roiWidthPercent + '%';
+            const overlayHeightPercent = roiHeightPercent + '%';
+
+            roiOverlay.style.width = overlayWidthPercent;
+            roiOverlay.style.height = overlayHeightPercent;
+
+            // Center the overlay
+            roiOverlay.style.top = '50%';
+            roiOverlay.style.left = '50%';
+            roiOverlay.style.transform = 'translate(-50%, -50%)';
+
+            // Get the overlay's display size in pixels
+            const overlayDisplayWidth = roiOverlay.clientWidth;
+            const overlayDisplayHeight = roiOverlay.clientHeight;
+
+            // Set debugCanvas internal dimensions to match display size
+            const debugCanvasElement = document.getElementById('debugCanvas');
+            debugCanvasElement.width = overlayDisplayWidth;
+            debugCanvasElement.height = overlayDisplayHeight;
+
+            // Ensure CSS dimensions match internal dimensions
+            debugCanvasElement.style.width = overlayDisplayWidth + 'px';
+            debugCanvasElement.style.height = overlayDisplayHeight + 'px';
+
+            // Log for verification
+            console.log(`Overlay Display Size: ${overlayDisplayWidth}px x ${overlayDisplayHeight}px`);
+            console.log(`Debug Canvas Internal Size: ${debugCanvasElement.width}px x ${debugCanvasElement.height}px`);
+            console.log(`Debug Canvas CSS Size: ${debugCanvasElement.style.width}px x ${debugCanvasElement.style.height}px`);
+        }
+
+        // Configuration Management System Implementation Continued
+
+        async function populateCameras(){
+            try {
+                const cameraSelect=document.getElementById('camera-select');
+                cameraSelect.innerHTML='';
+                const defaultOption=document.createElement('option');
+                defaultOption.value='';
+                defaultOption.text='Select Camera';
+                cameraSelect.appendChild(defaultOption);
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const cameras=devices.filter(d=>d.kind==='videoinput');
+                cameras.forEach(camera=>{
+                    const option=document.createElement('option');
+                    option.value=camera.deviceId;
+                    option.text=camera.label||`Camera ${cameraSelect.length}`;
+                    cameraSelect.appendChild(option);
+                });
+                if(cameras.length===0){
+                    const option=document.createElement('option');
+                    option.value='';
+                    option.text='No cameras found';
+                    cameraSelect.appendChild(option);
+                }
+            } catch (err) {
+                console.error('Failed to populate cameras:',err);
+                showError('Failed to retrieve camera devices.');
+            }
+        }
+
+        window.addEventListener('beforeunload', async ()=>{
+            if(stream) {
+                stream.getTracks().forEach(t=>t.stop());
+            }
+            if(workers.length>0){
+                await Promise.all(workers.map(w=>w.terminate()));
+                workers=[];
+            }
+        });
+
+        (function(){
+            const fpsCounter=document.getElementById('fpsCounter');
+            let frameCount=0;
+            let fps=0;
+            let lastTime=performance.now();
+            function updateFPS(){
+                const now=performance.now();
+                frameCount++;
+                if(now-lastTime>=1000){
+                    fps=frameCount;
+                    frameCount=0;
+                    lastTime=now;
+                    fpsCounter.innerText=`FPS: ${fps}`;
                 }
                 requestAnimationFrame(updateFPS);
-            })();
+            }
+            requestAnimationFrame(updateFPS);
+        })();
 
-            (async function populateCamerasOnLoad(){
-                await populateCameras();
-            })();
+        (async function populateCamerasOnLoad(){
+            await populateCameras();
+        })();
 
-            // Function to initialize the application on DOMContentLoaded
-            document.addEventListener('DOMContentLoaded', () => {
-                // Attach event listeners to start and stop buttons
-                startButton.addEventListener('click', startScanning);
-                stopButton.addEventListener('click', stopScanning);
-                restartButton.addEventListener('click', startScanning); // Assuming restart just starts scanning again
+        // Function to initialize the application on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Attach event listeners to start and stop buttons
+            startButton.addEventListener('click', startScanning);
+            stopButton.addEventListener('click', stopScanning);
+            restartButton.addEventListener('click', startScanning); // Assuming restart just starts scanning again
 
-                // Event listeners for brightness controls
-                brightnessSlider.addEventListener('input', () => {
-                    // Optional: Display current brightness value if needed
-                    // For example, update a label showing the current brightness value
-                    // brightnessValue.innerText = brightnessSlider.value;
-                });
-
-                // Event listeners for other preprocessing controls can be added similarly
-
-                // Event listener for ROI overlay click (optional functionality)
-                roiOverlay.addEventListener('click', async () => {
-                    if (scanning) {
-                        // Focus request logic (not changed for performance)
-                        // Just capture and OCR once
-                        await captureFrameAndPerformOCR();
-                    }
-                });
-
-                // Event listeners for ROI sliders
-                roiWidthSlider.addEventListener('input', function() {
-                    roiWidthPercent = parseInt(this.value);
-                    updateROIOverlay();
-                });
-
-                roiHeightSlider.addEventListener('input', function() {
-                    roiHeightPercent = parseInt(this.value);
-                    updateROIOverlay();
-                });
+            // Event listeners for brightness controls
+            brightnessSlider.addEventListener('input', () => {
+                // Optional: Display current brightness value if needed
+                // For example, update a label showing the current brightness value
+                // brightnessValue.innerText = brightnessSlider.value;
             });
 
-            // Configuration Management System Implementation Continued
+            // Event listeners for other preprocessing controls can be added similarly
 
-            async function captureFrameAndPerformOCR() {
-                if(!scanning) return;
-                // Just one-off capture
+            // Event listener for ROI overlay click (optional functionality)
+            roiOverlay.addEventListener('click', async () => {
+                if (scanning) {
+                    // Focus request logic (not changed for performance)
+                    // Just capture and OCR once
+                    await captureFrameAndPerformOCR();
+                }
+            });
+
+            // Event listeners for ROI sliders
+            roiWidthSlider.addEventListener('input', function() {
+                roiWidthPercent = parseInt(this.value);
+                updateROIOverlay();
+            });
+
+            roiHeightSlider.addEventListener('input', function() {
+                roiHeightPercent = parseInt(this.value);
+                updateROIOverlay();
+            });
+
+            // Event listeners for mutual exclusivity between Sobel and Canny
+            enableSobel.addEventListener('change', function() {
+                if (this.checked) {
+                    enableCanny.checked = false;
+                    enableCanny.disabled = true;
+                } else {
+                    enableCanny.disabled = false;
+                }
+            });
+
+            enableCanny.addEventListener('change', function() {
+                if (this.checked) {
+                    enableSobel.checked = false;
+                    enableSobel.disabled = true;
+                } else {
+                    enableSobel.disabled = false;
+                }
+            });
+        });
+
+        // Configuration Management System Implementation Continued
+
+        async function captureFrameAndPerformOCR() {
+            if(!scanning) return;
+            // Just one-off capture
+            scanning = false;
+            const videoDisplayWidth = video.clientWidth;
+            const videoDisplayHeight = video.clientHeight;
+            videoCanvas.width = videoDisplayWidth;
+            videoCanvas.height= videoDisplayHeight;
+            const ctx = videoCanvas.getContext('2d');
+            ctx.drawImage(video,0,0,videoDisplayWidth, videoDisplayHeight);
+
+            const overlayRect = roiOverlay.getBoundingClientRect();
+            const videoRect = video.getBoundingClientRect();
+            const scaleX = videoDisplayWidth / videoRect.width;
+            const scaleY = videoDisplayHeight / videoRect.height;
+            const roiX = (overlayRect.left - videoRect.left) * scaleX;
+            const roiY = (overlayRect.top - videoRect.top) * scaleY;
+            const roiW = overlayRect.width * scaleX;
+            const roiH = overlayRect.height * scaleY;
+            if(roiX < 0 || roiY < 0 || (roiX + roiW) > videoDisplayWidth || (roiY + roiH) > videoDisplayHeight){
+                showError('ROI out of frame bounds');
                 scanning = false;
-                const videoDisplayWidth = video.clientWidth;
-                const videoDisplayHeight = video.clientHeight;
-                videoCanvas.width = videoDisplayWidth;
-                videoCanvas.height= videoDisplayHeight;
-                const ctx = videoCanvas.getContext('2d');
-                ctx.drawImage(video,0,0,videoDisplayWidth, videoDisplayHeight);
-
-                const overlayRect = roiOverlay.getBoundingClientRect();
-                const videoRect = video.getBoundingClientRect();
-                const scaleX = videoDisplayWidth / videoRect.width;
-                const scaleY = videoDisplayHeight / videoRect.height;
-                const roiX = (overlayRect.left - videoRect.left) * scaleX;
-                const roiY = (overlayRect.top - videoRect.top) * scaleY;
-                const roiW = overlayRect.width * scaleX;
-                const roiH = overlayRect.height * scaleY;
-                if(roiX < 0 || roiY < 0 || (roiX + roiW) > videoDisplayWidth || (roiY + roiH) > videoDisplayHeight){
-                    showError('ROI out of frame bounds');
-                    scanning = false;
-                    return;
-                }
-
-                roiCanvas.width = roiW;
-                roiCanvas.height = roiH;
-                const roiCtx = roiCanvas.getContext('2d');
-                roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
-
-                // Preprocess with WebGL
-                const preprocessedBlob = await preprocessWithWebGL(roiCanvas);
-
-                // Draw to debugCanvas without scaling
-                const debugCanvasElement = document.getElementById('debugCanvas');
-                debugCanvasElement.width = debugCanvasElement.width; // Reset width to clear previous content
-                debugCanvasElement.height = debugCanvasElement.height; // Reset height to clear previous content
-                const debugContext = debugCanvasElement.getContext('2d');
-                debugContext.clearRect(0,0,debugCanvasElement.width, debugCanvasElement.height);
-                const img = await createImageBitmap(preprocessedBlob);
-                debugContext.drawImage(img,0,0, debugCanvasElement.width, debugCanvasElement.height);
-
-                // Calculate average brightness
-                const averageBrightness = calculateAverageBrightness(debugCanvasElement);
-                updateLightbulb(averageBrightness);
-
-                if(preprocessedBlob){
-                    await performOCR(preprocessedBlob);
-                }
-                scanning = true;
+                return;
             }
 
-        </script>
-    </body>
+            roiCanvas.width = roiW;
+            roiCanvas.height = roiH;
+            const roiCtx = roiCanvas.getContext('2d');
+            roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+            // Preprocess with WebGL
+            const preprocessedBlob = await preprocessWithWebGL(roiCanvas);
+
+            // Draw to debugCanvas without scaling
+            const debugCanvasElement = document.getElementById('debugCanvas');
+            debugCanvasElement.width = debugCanvasElement.width; // Reset width to clear previous content
+            debugCanvasElement.height = debugCanvasElement.height; // Reset height to clear previous content
+            const debugContext = debugCanvasElement.getContext('2d');
+            debugContext.clearRect(0,0,debugCanvasElement.width, debugCanvasElement.height);
+            const img = await createImageBitmap(preprocessedBlob);
+            debugContext.drawImage(img,0,0, debugCanvasElement.width, debugCanvasElement.height);
+
+            // Calculate average brightness
+            const averageBrightness = calculateAverageBrightness(debugCanvasElement);
+            updateLightbulb(averageBrightness);
+
+            if(preprocessedBlob){
+                await performOCR(preprocessedBlob);
+            }
+            scanning = true;
+        }
+
+    </script>
+</body>
 </html>
