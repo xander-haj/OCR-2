@@ -1031,7 +1031,8 @@
                 `;
                 // Use high precision for better accuracy
                 const fragmentShaderSource = `
-                    precision highp float;
+                    precision highp float; // Increased precision for better accuracy
+
                     varying vec2 v_texCoord;
                     uniform sampler2D u_texture;
 
@@ -1250,10 +1251,9 @@
                 }
 
                 const vs = compileShader(gl.VERTEX_SHADER, vertexShaderSource);
-                if (!vs) return; // Exit if vertex shader failed
-
+                if (!vs) return;
                 const fs = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
-                if (!fs) return; // Exit if fragment shader failed
+                if (!fs) return;
 
                 glProgram = gl.createProgram();
                 gl.attachShader(glProgram, vs);
@@ -1349,8 +1349,9 @@
                     videoConstraints.frameRate = { ideal: adjustedFrameRate, max: 30 };
 
                     if (resolution) {
-                        videoConstraints.width = { exact: resolution.width };
-                        videoConstraints.height = { exact: resolution.height };
+                        const [width, height] = resolution.split('x').map(Number);
+                        videoConstraints.width = { exact: width };
+                        videoConstraints.height = { exact: height };
                     } else {
                         videoConstraints.width = { ideal: 1280 };
                         videoConstraints.height = { ideal: 720 };
@@ -1375,8 +1376,7 @@
                 const resolutionSelect = document.getElementById('resolution-select');
                 const val = resolutionSelect.value;
                 if (!val) return null;
-                const [width, height] = val.split('x').map(Number);
-                return {width, height};
+                return val; // Return as string "widthxheight"
             }
 
             // Function to calculate average brightness
@@ -1678,7 +1678,7 @@
 
             function updateOcrInfo() {
                 const approximateFPS = 60;
-                const frameBasedFrequency = approximateFPS/frameSkipping;
+                const frameBasedFrequency = approximateFPS / frameSkipping;
                 const effectiveFrequency = Math.min(frameBasedFrequency, ocrFrequency);
                 ocrInfo.innerText = `Effective OCR Scans per Second: ${effectiveFrequency.toFixed(2)} Hz`;
             }
@@ -1995,6 +1995,8 @@
                 });
             })();
 
+            
+
             // Function to update ROI overlay based on slider values
             function updateROIOverlay() {
                 const overlayWidthPercent = roiWidthPercent + '%';
@@ -2075,7 +2077,7 @@
                 function updateFPS(){
                     const now=performance.now();
                     frameCount++;
-                    if(now-lastTime>=1000){
+                    if(now - lastTime >= 1000){
                         fps=frameCount;
                         frameCount=0;
                         lastTime=now;
