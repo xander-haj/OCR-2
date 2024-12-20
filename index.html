@@ -746,94 +746,71 @@
             <details class="collapsible">
                 <summary>WebGL Preprocessing</summary>
                 <content>
-                    <!-- Grayscale -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableGrayscale">Enable Grayscale</label>
-                        <label>Grayscale Intensity:</label>
+                        <label>Grayscale Intensity (0-100%):</label>
                         <input type="range" id="grayscaleSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
-                        <label>Grayscale Blend:</label>
-                        <input type="range" id="grayscaleBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
-                    <!-- Denoise -->
+
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableDenoise">Enable Denoise</label>
-                        <label>Denoise Strength:</label>
+                        <label>Denoise Strength (0-100%):</label>
                         <input type="range" id="denoiseSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
-                        <label>Denoise Blend:</label>
-                        <input type="range" id="denoiseBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
-                    <!-- Sharpen -->
+
                     <div class="preprocessing-option">
-                        <label><input type="checkbox" id="enableSharpen">Enable Sharpening</label>
-                        <label>Sharpen Strength:</label>
+                        <label><input type="checkbox" id="enableSharpen">Enable Sharpen</label>
+                        <label>Sharpen Strength (0-100%):</label>
                         <input type="range" id="sharpenSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
-                        <label>Sharpen Blend:</label>
-                        <input type="range" id="sharpenBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
-                    <!-- Brightness -->
+
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableBrightness">Enable Brightness</label>
-                        <label>Brightness Amount:</label>
+                        <label>Brightness Amount (0-100%):</label>
                         <input type="range" id="brightnessSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
-                        <label>Brightness Blend:</label>
-                        <input type="range" id="brightnessBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
-                    <!-- Contrast -->
+
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableContrast">Enable Contrast</label>
-                        <label>Contrast Amount:</label>
+                        <label>Contrast Amount (0-100%):</label>
                         <input type="range" id="contrastSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
-                        <label>Contrast Blend:</label>
-                        <input type="range" id="contrastBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
-                    <!-- Clarity -->
+
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableClarity">Enable Clarity</label>
-                        <label>Clarity Amount:</label>
+                        <label>Clarity Amount (0-100%):</label>
                         <input type="range" id="claritySlider" class="preprocessing-option-slider" min="0" max="100" value="50">
-                        <label>Clarity Blend:</label>
-                        <input type="range" id="clarityBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
-                    <!-- Highlights -->
+
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableHighlights">Enable Highlights</label>
-                        <label>Highlights Amount:</label>
+                        <label>Highlights Amount (0-100%):</label>
                         <input type="range" id="highlightsSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
-                        <label>Highlights Blend:</label>
-                        <input type="range" id="highlightsBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
-                    <!-- Smoothing -->
+
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableSmoothing">Enable Smoothing</label>
-                        <label>Smoothing Amount:</label>
+                        <label>Smoothing Amount (0-100%):</label>
                         <input type="range" id="smoothingSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
-                        <label>Smoothing Blend:</label>
-                        <input type="range" id="smoothingBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
-                    <!-- Threshold -->
+
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableThreshold">Enable Threshold</label>
-                        <label>Threshold Value:</label>
+                        <label>Threshold Value (0-255):</label>
                         <input type="range" id="thresholdSlider" class="preprocessing-option-slider" min="0" max="255" value="128">
-                        <label>Threshold Blend:</label>
-                        <input type="range" id="thresholdBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
-                    <!-- Edge Detection -->
+
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableEdgeDetection">Enable Edge Detection</label>
                         <div style="margin-left: 20px; margin-top: 5px;">
                             <label><input type="checkbox" id="enableSobel">Enable Sobel</label>
-                            <label>Sobel Strength:</label>
+                            <label>Sobel Strength (0-100%):</label>
                             <input type="range" id="sobelSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
-                            <label>Sobel Blend:</label>
-                            <input type="range" id="sobelBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                         </div>
                         <div style="margin-left: 20px; margin-top: 5px;">
                             <label><input type="checkbox" id="enableCanny">Enable Canny</label>
-                            <label>Canny Strength:</label>
+                            <label>Canny Strength (0-100%):</label>
                             <input type="range" id="cannySlider" class="preprocessing-option-slider" min="0" max="100" value="50">
-                            <label>Canny Blend:</label>
-                            <input type="range" id="cannyBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                         </div>
                     </div>
                 </content>
@@ -934,14 +911,14 @@
     <div id="debugConsole"></div>
 
     <script>
-        /* This version:
-           - Adds separate blend sliders for each effect.
-           - Each effect now has an intensity (or strength) slider and a separate blend slider.
-           - In the shader, we first compute the effected color, then blend with the original color using the blend slider.
-           - No effect overwrites another; all are layered via mix() calls.
+        /* Final Pipeline Approach:
+           Each enabled effect modifies "color" in sequence. If multiple effects are enabled,
+           you see the cumulative result. For example:
+           - Enable Grayscale at 100%: image is now grayscale.
+           - Then enable Brightness at 100%: image is now a bright grayscale image.
+           No effect overwrites the others; they build on the current state of "color".
         */
 
-        // Brightness Thresholds
         const BRIGHTNESS_THRESHOLD_DARK = 80;
         const BRIGHTNESS_THRESHOLD_BRIGHT = 200;
 
@@ -981,50 +958,38 @@
         const ocrInfo = document.getElementById('ocr-info');
         const confidenceThresholdInput = document.getElementById('confidence-threshold-input');
 
-        // Effects
         const enableGrayscale = document.getElementById('enableGrayscale');
         const grayscaleSlider = document.getElementById('grayscaleSlider');
-        const grayscaleBlendSlider = document.getElementById('grayscaleBlendSlider');
 
         const enableDenoise = document.getElementById('enableDenoise');
         const denoiseSlider = document.getElementById('denoiseSlider');
-        const denoiseBlendSlider = document.getElementById('denoiseBlendSlider');
 
         const enableSharpen = document.getElementById('enableSharpen');
         const sharpenSlider = document.getElementById('sharpenSlider');
-        const sharpenBlendSlider = document.getElementById('sharpenBlendSlider');
 
         const enableBrightness = document.getElementById('enableBrightness');
         const brightnessSlider = document.getElementById('brightnessSlider');
-        const brightnessBlendSlider = document.getElementById('brightnessBlendSlider');
 
         const enableContrast = document.getElementById('enableContrast');
         const contrastSlider = document.getElementById('contrastSlider');
-        const contrastBlendSlider = document.getElementById('contrastBlendSlider');
 
         const enableClarity = document.getElementById('enableClarity');
         const claritySlider = document.getElementById('claritySlider');
-        const clarityBlendSlider = document.getElementById('clarityBlendSlider');
 
         const enableHighlights = document.getElementById('enableHighlights');
         const highlightsSlider = document.getElementById('highlightsSlider');
-        const highlightsBlendSlider = document.getElementById('highlightsBlendSlider');
 
         const enableSmoothing = document.getElementById('enableSmoothing');
         const smoothingSlider = document.getElementById('smoothingSlider');
-        const smoothingBlendSlider = document.getElementById('smoothingBlendSlider');
 
         const enableThreshold = document.getElementById('enableThreshold');
         const thresholdSlider = document.getElementById('thresholdSlider');
-        const thresholdBlendSlider = document.getElementById('thresholdBlendSlider');
 
         const enableEdgeDetection = document.getElementById('enableEdgeDetection');
         const enableSobel = document.getElementById('enableSobel');
         const sobelSlider = document.getElementById('sobelSlider');
-        const sobelBlendSlider = document.getElementById('sobelBlendSlider');
         const enableCanny = document.getElementById('enableCanny');
         const cannySlider = document.getElementById('cannySlider');
-        const cannyBlendSlider = document.getElementById('cannyBlendSlider');
 
         const roiWidthSlider = document.getElementById('roi-width-slider');
         const roiHeightSlider = document.getElementById('roi-height-slider');
@@ -1325,18 +1290,18 @@
             debugContext.font = '16px Arial';
             debugContext.fillStyle = 'yellow';
             let yOffset = 20;
-            if (enableGrayscale.checked) { debugContext.fillText(`Grayscale: ${grayscaleSlider.value}% Blend: ${grayscaleBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
-            if (enableDenoise.checked) { debugContext.fillText(`Denoise: ${denoiseSlider.value}% Blend: ${denoiseBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
-            if (enableSharpen.checked) { debugContext.fillText(`Sharpen: ${sharpenSlider.value}% Blend: ${sharpenBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
-            if (enableBrightness.checked) { debugContext.fillText(`Brightness: ${brightnessSlider.value}% Blend: ${brightnessBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
-            if (enableContrast.checked) { debugContext.fillText(`Contrast: ${contrastSlider.value}% Blend: ${contrastBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
-            if (enableClarity.checked) { debugContext.fillText(`Clarity: ${claritySlider.value}% Blend: ${clarityBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
-            if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}% Blend: ${highlightsBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
-            if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}% Blend: ${smoothingBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
-            if (enableThreshold.checked) { debugContext.fillText(`Threshold: ${thresholdSlider.value} Blend: ${thresholdBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableGrayscale.checked) { debugContext.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableDenoise.checked) { debugContext.fillText(`Denoise: ${denoiseSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableSharpen.checked) { debugContext.fillText(`Sharpen: ${sharpenSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableBrightness.checked) { debugContext.fillText(`Brightness: ${brightnessSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableContrast.checked) { debugContext.fillText(`Contrast: ${contrastSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableClarity.checked) { debugContext.fillText(`Clarity: ${claritySlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableThreshold.checked) { debugContext.fillText(`Threshold: ${thresholdSlider.value}`, 10, yOffset); yOffset += 20; }
             if (enableEdgeDetection.checked) {
-                if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}% Blend: ${sobelBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
-                if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}% Blend: ${cannyBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+                if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}%`, 10, yOffset); yOffset += 20; }
+                if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}%`, 10, yOffset); yOffset += 20; }
             }
 
             if (preprocessedBlob && scanning) {
@@ -1390,6 +1355,7 @@
                 const configData = await response.json();
 
                 document.getElementById('resolution-select').value = configData.resolution || '';
+
                 const cameraSelect = document.getElementById('camera-select');
                 const cameraLabel = configData.camera || '';
                 if (cameraLabel) {
@@ -1416,30 +1382,38 @@
 
                 const preprocessing = configData.preprocessing || {};
 
-                // Load each effect's enable, slider, and blend from config
-                function loadEffectConfig(enableElem, sliderElem, blendElem, effectName, defVal, defBlend) {
-                    enableElem.checked = preprocessing["enable" + effectName] || false;
-                    sliderElem.value = (typeof preprocessing[effectName.toLowerCase()] !== "undefined") ? preprocessing[effectName.toLowerCase()] : defVal;
-                    blendElem.value = (typeof preprocessing[effectName.toLowerCase()+"Blend"] !== "undefined") ? preprocessing[effectName.toLowerCase()+"Blend"] : defBlend;
-                }
+                enableGrayscale.checked = preprocessing.enableGrayscale || false;
+                grayscaleSlider.value = preprocessing.grayscale || 100;
 
-                loadEffectConfig(enableGrayscale, grayscaleSlider, grayscaleBlendSlider, "Grayscale", 100, 100);
-                loadEffectConfig(enableDenoise, denoiseSlider, denoiseBlendSlider, "Denoise", 50, 100);
-                loadEffectConfig(enableSharpen, sharpenSlider, sharpenBlendSlider, "Sharpen", 50, 100);
-                loadEffectConfig(enableBrightness, brightnessSlider, brightnessBlendSlider, "Brightness", 50, 100);
-                loadEffectConfig(enableContrast, contrastSlider, contrastBlendSlider, "Contrast", 50, 100);
-                loadEffectConfig(enableClarity, claritySlider, clarityBlendSlider, "Clarity", 50, 100);
-                loadEffectConfig(enableHighlights, highlightsSlider, highlightsBlendSlider, "Highlights", 50, 100);
-                loadEffectConfig(enableSmoothing, smoothingSlider, smoothingBlendSlider, "Smoothing", 50, 100);
-                loadEffectConfig(enableThreshold, thresholdSlider, thresholdBlendSlider, "Threshold", 128, 100);
+                enableDenoise.checked = preprocessing.enableDenoise || false;
+                denoiseSlider.value = preprocessing.denoise || 50;
+
+                enableSharpen.checked = preprocessing.enableSharpen || false;
+                sharpenSlider.value = preprocessing.sharpen || 50;
+
+                enableBrightness.checked = preprocessing.enableBrightness || false;
+                brightnessSlider.value = preprocessing.brightness || 50;
+
+                enableContrast.checked = preprocessing.enableContrast || false;
+                contrastSlider.value = preprocessing.contrast || 50;
+
+                enableClarity.checked = preprocessing.enableClarity || false;
+                claritySlider.value = preprocessing.clarity || 50;
+
+                enableHighlights.checked = preprocessing.enableHighlights || false;
+                highlightsSlider.value = preprocessing.highlights || 50;
+
+                enableSmoothing.checked = preprocessing.enableSmoothing || false;
+                smoothingSlider.value = preprocessing.smoothing || 50;
+
+                enableThreshold.checked = preprocessing.enableThreshold || false;
+                thresholdSlider.value = preprocessing.threshold || 128;
 
                 enableEdgeDetection.checked = preprocessing.enableEdgeDetection || false;
                 enableSobel.checked = preprocessing.enableSobel || false;
-                sobelSlider.value = (typeof preprocessing.sobel !== "undefined") ? preprocessing.sobel : 50;
-                sobelBlendSlider.value = (typeof preprocessing.sobelBlend !== "undefined") ? preprocessing.sobelBlend : 100;
+                sobelSlider.value = preprocessing.sobel || 50;
                 enableCanny.checked = preprocessing.enableCanny || false;
-                cannySlider.value = (typeof preprocessing.canny !== "undefined") ? preprocessing.canny : 50;
-                cannyBlendSlider.value = (typeof preprocessing.cannyBlend !== "undefined") ? preprocessing.cannyBlend : 100;
+                cannySlider.value = preprocessing.canny || 50;
 
                 const roiSettings = configData.roi || {};
                 roiWidthPercent = roiSettings.roiWidth || 60;
@@ -1470,47 +1444,36 @@
                 preprocessing: {
                     enableGrayscale: enableGrayscale.checked,
                     grayscale: grayscaleSlider.value,
-                    grayscaleBlend: grayscaleBlendSlider.value,
 
                     enableDenoise: enableDenoise.checked,
                     denoise: denoiseSlider.value,
-                    denoiseBlend: denoiseBlendSlider.value,
 
                     enableSharpen: enableSharpen.checked,
                     sharpen: sharpenSlider.value,
-                    sharpenBlend: sharpenBlendSlider.value,
 
                     enableBrightness: enableBrightness.checked,
                     brightness: brightnessSlider.value,
-                    brightnessBlend: brightnessBlendSlider.value,
 
                     enableContrast: enableContrast.checked,
                     contrast: contrastSlider.value,
-                    contrastBlend: contrastBlendSlider.value,
 
                     enableClarity: enableClarity.checked,
                     clarity: claritySlider.value,
-                    clarityBlend: clarityBlendSlider.value,
 
                     enableHighlights: enableHighlights.checked,
                     highlights: highlightsSlider.value,
-                    highlightsBlend: highlightsBlendSlider.value,
 
                     enableSmoothing: enableSmoothing.checked,
                     smoothing: smoothingSlider.value,
-                    smoothingBlend: smoothingBlendSlider.value,
 
                     enableThreshold: enableThreshold.checked,
                     threshold: thresholdSlider.value,
-                    thresholdBlend: thresholdBlendSlider.value,
 
                     enableEdgeDetection: enableEdgeDetection.checked,
                     enableSobel: enableSobel.checked,
                     sobel: sobelSlider.value,
-                    sobelBlend: sobelBlendSlider.value,
                     enableCanny: enableCanny.checked,
-                    canny: cannySlider.value,
-                    cannyBlend: cannyBlendSlider.value
+                    canny: cannySlider.value
                 },
                 roi: {
                     roiWidth: roiWidthPercent,
@@ -1850,6 +1813,8 @@
                 }
             `;
 
+            // Each effect modifies color in sequence. We never revert to the original image.
+            // Each slider value influences how strongly that effect is applied.
             const fragmentShaderSource = `
                 precision highp float;
 
@@ -1858,126 +1823,123 @@
 
                 uniform bool u_grayscaleEnabled;
                 uniform float u_grayscaleAmount;
-                uniform float u_grayscaleBlend;
 
                 uniform bool u_denoiseEnabled;
                 uniform float u_denoiseAmount;
-                uniform float u_denoiseBlend;
 
                 uniform bool u_sharpenEnabled;
                 uniform float u_sharpenAmount;
-                uniform float u_sharpenBlend;
 
                 uniform bool u_brightnessEnabled;
                 uniform float u_brightnessAmount;
-                uniform float u_brightnessBlend;
 
                 uniform bool u_contrastEnabled;
                 uniform float u_contrastAmount;
-                uniform float u_contrastBlend;
 
                 uniform bool u_clarityEnabled;
                 uniform float u_clarityAmount;
-                uniform float u_clarityBlend;
 
                 uniform bool u_highlightsEnabled;
                 uniform float u_highlightsAmount;
-                uniform float u_highlightsBlend;
 
                 uniform bool u_smoothingEnabled;
                 uniform float u_smoothingAmount;
-                uniform float u_smoothingBlend;
 
                 uniform bool u_thresholdEnabled;
                 uniform float u_thresholdValue;
-                uniform float u_thresholdBlend;
 
                 uniform bool u_edgeDetectionEnabled;
                 uniform bool u_sobelEnabled;
                 uniform float u_sobelAmount;
-                uniform float u_sobelBlend;
                 uniform bool u_cannyEnabled;
                 uniform float u_cannyAmount;
-                uniform float u_cannyBlend;
 
                 vec4 denoise(sampler2D tex, vec2 uv, float strength) {
-                    float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
+                    float offset = 1.0 / 300.0 * strength;
                     vec4 center = texture2D(tex, uv);
                     vec4 sum = center;
                     sum += texture2D(tex, uv + vec2(-offset, 0.0));
                     sum += texture2D(tex, uv + vec2(offset, 0.0));
                     sum += texture2D(tex, uv + vec2(0.0, -offset));
                     sum += texture2D(tex, uv + vec2(0.0, offset));
-                    return sum / 5.0;
+                    return mix(center, sum/5.0, strength);
                 }
 
                 vec4 sharpen(sampler2D tex, vec2 uv, float strength) {
-                    float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
+                    float offset = 1.0 / 300.0 * strength;
                     vec4 center = texture2D(tex, uv);
                     vec4 sum = center;
                     sum += texture2D(tex, uv + vec2(-offset, 0.0));
                     sum += texture2D(tex, uv + vec2(offset, 0.0));
                     sum += texture2D(tex, uv + vec2(0.0, -offset));
                     sum += texture2D(tex, uv + vec2(0.0, offset));
-                    float a = strength * 0.5;
                     vec4 blurColor = sum / 5.0;
-                    vec4 color = center * (1.0 + a) - blurColor * a;
-                    color.rgb = clamp(color.rgb, 0.0, 1.0);
-                    return color;
+                    // sharpen: color = center*(1+a)-blur*a
+                    float a = strength*0.5;
+                    vec4 color = center*(1.0+a)-blurColor*a;
+                    return mix(center, color, strength);
                 }
 
                 vec4 applyBrightness(vec4 color, float amount) {
+                    // amount 0-1.0 means -0.5 to +0.5 offset
                     float factor = (amount - 0.5);
-                    color.rgb += factor;
-                    color.rgb = clamp(color.rgb, 0.0, 1.0);
-                    return color;
+                    vec4 brightColor = color;
+                    brightColor.rgb += factor;
+                    brightColor.rgb = clamp(brightColor.rgb, 0.0, 1.0);
+                    return mix(color, brightColor, amount);
                 }
 
                 vec4 applyContrast(vec4 color, float amount) {
-                    float factor = amount;
-                    color.rgb = (color.rgb - 0.5) * factor + 0.5;
-                    color.rgb = clamp(color.rgb, 0.0, 1.0);
-                    return color;
+                    // amount 0-1.0 means 0 to some factor, here we map 0-100% to (0.5->1.5)
+                    float factor = amount + 0.5;
+                    vec4 contrastColor = color;
+                    contrastColor.rgb = (contrastColor.rgb - 0.5)*factor+0.5;
+                    contrastColor.rgb = clamp(contrastColor.rgb,0.0,1.0);
+                    return mix(color, contrastColor, amount);
                 }
 
                 vec4 applyClarity(vec4 color, float amount) {
+                    // clarity acts like local contrast around midtones
                     float factor = (amount - 0.5);
-                    color.r = (color.r - 0.5) * (1.0 + factor) + 0.5;
-                    color.g = (color.g - 0.5) * (1.0 + factor) + 0.5;
-                    color.b = (color.b - 0.5) * (1.0 + factor) + 0.5;
-                    color.rgb = clamp(color.rgb, 0.0, 1.0);
-                    return color;
+                    vec4 clarityColor = color;
+                    clarityColor.r = (clarityColor.r - 0.5)*(1.0+factor)+0.5;
+                    clarityColor.g = (clarityColor.g - 0.5)*(1.0+factor)+0.5;
+                    clarityColor.b = (clarityColor.b - 0.5)*(1.0+factor)+0.5;
+                    clarityColor.rgb = clamp(clarityColor.rgb,0.0,1.0);
+                    return mix(color, clarityColor, amount);
                 }
 
                 vec4 applyHighlights(vec4 color, float amount) {
+                    // Only affects highlights above 0.5
+                    vec4 highlightsColor = color;
                     float factor = (amount - 0.5);
-                    if (color.r > 0.5) color.r += factor * (color.r - 0.5);
-                    if (color.g > 0.5) color.g += factor * (color.g - 0.5);
-                    if (color.b > 0.5) color.b += factor * (color.b - 0.5);
-                    color.rgb = clamp(color.rgb, 0.0, 1.0);
-                    return color;
+                    if (highlightsColor.r > 0.5) highlightsColor.r += factor*(highlightsColor.r-0.5);
+                    if (highlightsColor.g > 0.5) highlightsColor.g += factor*(highlightsColor.g-0.5);
+                    if (highlightsColor.b > 0.5) highlightsColor.b += factor*(highlightsColor.b-0.5);
+                    highlightsColor.rgb = clamp(highlightsColor.rgb,0.0,1.0);
+                    return mix(color, highlightsColor, amount);
                 }
 
                 vec4 smooth(sampler2D tex, vec2 uv, float strength) {
-                    float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
-                    vec4 color = texture2D(tex, uv);
-                    color += texture2D(tex, uv + vec2(-offset, -offset));
-                    color += texture2D(tex, uv + vec2(offset, -offset));
-                    color += texture2D(tex, uv + vec2(-offset, offset));
-                    color += texture2D(tex, uv + vec2(offset, offset));
-                    color = color / 5.0;
-                    color.rgb = clamp(color.rgb, 0.0, 1.0);
-                    return color;
+                    float offset = 1.0/300.0*strength;
+                    vec4 sum = texture2D(tex, uv);
+                    sum += texture2D(tex, uv + vec2(-offset, -offset));
+                    sum += texture2D(tex, uv + vec2(offset, -offset));
+                    sum += texture2D(tex, uv + vec2(-offset, offset));
+                    sum += texture2D(tex, uv + vec2(offset, offset));
+                    sum = sum/5.0;
+                    return mix(texture2D(tex, uv), sum, strength);
                 }
 
                 vec4 applyThreshold(vec4 color, float threshold) {
                     float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
                     float binary = luminance > threshold ? 1.0 : 0.0;
-                    return vec4(vec3(binary), color.a);
+                    vec4 thresholdColor = vec4(vec3(binary), color.a);
+                    return thresholdColor; // threshold is always full since it's a binary op
                 }
 
                 vec4 applySobel(sampler2D tex, vec2 uv, float strength) {
-                    float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
+                    float offset = 1.0 / 300.0 * strength;
                     float Gx = -1.0 * texture2D(tex, uv + vec2(-offset, -offset)).r +
                                 1.0 * texture2D(tex, uv + vec2(offset, -offset)).r +
                                -2.0 * texture2D(tex, uv + vec2(-offset, 0.0)).r +
@@ -1996,7 +1958,9 @@
                 }
 
                 vec4 applyCanny(sampler2D tex, vec2 uv, float strength) {
-                    float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
+                    // This is similar to Sobel, but we'll just reuse it as edge detection
+                    // The logic is same, we produce edges:
+                    float offset = 1.0 / 300.0 * strength;
                     float Gx = -1.0 * texture2D(tex, uv + vec2(-offset, -offset)).r +
                                 1.0 * texture2D(tex, uv + vec2(offset, -offset)).r +
                                -2.0 * texture2D(tex, uv + vec2(-offset, 0.0)).r +
@@ -2015,73 +1979,71 @@
                 }
 
                 void main(void) {
-                    vec4 baseColor = texture2D(u_texture, v_texCoord);
-                    vec4 color = baseColor;
+                    vec4 color = texture2D(u_texture, v_texCoord);
 
-                    // Grayscale
-                    if (u_grayscaleEnabled) {
-                        float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-                        vec4 grayscaleColor = vec4(vec3(gray), color.a);
-                        grayscaleColor = mix(color, grayscaleColor, u_grayscaleAmount);
-                        color = mix(color, grayscaleColor, u_grayscaleBlend/100.0);
+                    // Apply effects in a pipeline. Each effect modifies color as it is.
+                    // If grayscale is enabled
+                    if(u_grayscaleEnabled) {
+                        float gray=dot(color.rgb,vec3(0.299,0.587,0.114));
+                        vec4 grayColor=vec4(vec3(gray), color.a);
+                        // intensity grayscaleAmount from 0-100% => 0.0 to 1.0
+                        float ga=u_grayscaleAmount/100.0;
+                        color=mix(color,grayColor,ga);
                     }
 
-                    // Denoise
-                    if (u_denoiseEnabled) {
-                        vec4 denoisedColor = denoise(u_texture, v_texCoord, u_denoiseAmount/100.0);
-                        color = mix(color, denoisedColor, u_denoiseBlend/100.0);
+                    if(u_denoiseEnabled) {
+                        float da=u_denoiseAmount/100.0;
+                        color=denoise(u_texture, v_texCoord, da);
                     }
 
-                    // Sharpen
-                    if (u_sharpenEnabled) {
-                        vec4 sharpenedColor = sharpen(u_texture, v_texCoord, u_sharpenAmount/100.0);
-                        color = mix(color, sharpenedColor, u_sharpenBlend/100.0);
+                    if(u_sharpenEnabled) {
+                        float sa=u_sharpenAmount/100.0;
+                        color=sharpen(u_texture, v_texCoord, sa);
                     }
 
-                    // Brightness
-                    if (u_brightnessEnabled) {
-                        vec4 brightColor = applyBrightness(color, u_brightnessAmount/100.0);
-                        color = mix(color, brightColor, u_brightnessBlend/100.0);
+                    if(u_brightnessEnabled) {
+                        float ba=u_brightnessAmount/100.0;
+                        color=applyBrightness(color, ba);
                     }
 
-                    // Contrast
-                    if (u_contrastEnabled) {
-                        vec4 contrastColor = applyContrast(color, u_contrastAmount/100.0 + 0.5);
-                        color = mix(color, contrastColor, u_contrastBlend/100.0);
+                    if(u_contrastEnabled) {
+                        float ca=u_contrastAmount/100.0;
+                        color=applyContrast(color, ca);
                     }
 
-                    // Clarity
-                    if (u_clarityEnabled) {
-                        vec4 clarityColor = applyClarity(color, u_clarityAmount/100.0);
-                        color = mix(color, clarityColor, u_clarityBlend/100.0);
+                    if(u_clarityEnabled) {
+                        float cla=u_clarityAmount/100.0;
+                        color=applyClarity(color, cla);
                     }
 
-                    // Highlights
-                    if (u_highlightsEnabled) {
-                        vec4 highlightsColor = applyHighlights(color, u_highlightsAmount/100.0);
-                        color = mix(color, highlightsColor, u_highlightsBlend/100.0);
+                    if(u_highlightsEnabled) {
+                        float hla=u_highlightsAmount/100.0;
+                        color=applyHighlights(color, hla);
                     }
 
-                    // Smoothing
-                    if (u_smoothingEnabled) {
-                        vec4 smoothColor = smooth(u_texture, v_texCoord, u_smoothingAmount/100.0);
-                        color = mix(color, smoothColor, u_smoothingBlend/100.0);
+                    if(u_smoothingEnabled) {
+                        float sma=u_smoothingAmount/100.0;
+                        color=smooth(u_texture, v_texCoord, sma);
                     }
 
-                    // Threshold
-                    if (u_thresholdEnabled) {
-                        vec4 thresholdColor = applyThreshold(color, u_thresholdValue/255.0);
-                        color = mix(color, thresholdColor, u_thresholdBlend/100.0);
+                    if(u_thresholdEnabled) {
+                        float tv = u_thresholdValue/255.0;
+                        color=applyThreshold(color, tv);
                     }
 
-                    // Edge Detection
-                    if (u_edgeDetectionEnabled) {
-                        if (u_sobelEnabled) {
-                            vec4 sobelColor = applySobel(u_texture, v_texCoord, u_sobelAmount/100.0);
-                            color = mix(color, sobelColor, u_sobelBlend/100.0);
-                        } else if (u_cannyEnabled) {
-                            vec4 cannyColor = applyCanny(u_texture, v_texCoord, u_cannyAmount/100.0);
-                            color = mix(color, cannyColor, u_cannyBlend/100.0);
+                    if(u_edgeDetectionEnabled) {
+                        if(u_sobelEnabled) {
+                            float soa=u_sobelAmount/100.0;
+                            vec4 sobelColor=applySobel(u_texture, v_texCoord, soa);
+                            // sobel fully replaces the structure with edges:
+                            // We apply it on current color: to keep effects visible, just apply sobel on top:
+                            // If sobel is on, it typically means we want edges only:
+                            // But to show layering: we can mix:
+                            color=mix(color, sobelColor, soa);
+                        } else if(u_cannyEnabled) {
+                            float caa=u_cannyAmount/100.0;
+                            vec4 cannyColor=applyCanny(u_texture, v_texCoord, caa);
+                            color=mix(color, cannyColor, caa);
                         }
                     }
 
@@ -2132,54 +2094,32 @@
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-            function getUniformLocation(name) {
-                return gl.getUniformLocation(glProgram, name);
-            }
+            function uLoc(n) { return gl.getUniformLocation(glProgram, n); }
 
             window.uLocations = {
-                grayscaleEnabled: getUniformLocation("u_grayscaleEnabled"),
-                grayscaleAmount: getUniformLocation("u_grayscaleAmount"),
-                grayscaleBlend: getUniformLocation("u_grayscaleBlend"),
-
-                denoiseEnabled: getUniformLocation("u_denoiseEnabled"),
-                denoiseAmount: getUniformLocation("u_denoiseAmount"),
-                denoiseBlend: getUniformLocation("u_denoiseBlend"),
-
-                sharpenEnabled: getUniformLocation("u_sharpenEnabled"),
-                sharpenAmount: getUniformLocation("u_sharpenAmount"),
-                sharpenBlend: getUniformLocation("u_sharpenBlend"),
-
-                brightnessEnabled: getUniformLocation("u_brightnessEnabled"),
-                brightnessAmount: getUniformLocation("u_brightnessAmount"),
-                brightnessBlend: getUniformLocation("u_brightnessBlend"),
-
-                contrastEnabled: getUniformLocation("u_contrastEnabled"),
-                contrastAmount: getUniformLocation("u_contrastAmount"),
-                contrastBlend: getUniformLocation("u_contrastBlend"),
-
-                clarityEnabled: getUniformLocation("u_clarityEnabled"),
-                clarityAmount: getUniformLocation("u_clarityAmount"),
-                clarityBlend: getUniformLocation("u_clarityBlend"),
-
-                highlightsEnabled: getUniformLocation("u_highlightsEnabled"),
-                highlightsAmount: getUniformLocation("u_highlightsAmount"),
-                highlightsBlend: getUniformLocation("u_highlightsBlend"),
-
-                smoothingEnabled: getUniformLocation("u_smoothingEnabled"),
-                smoothingAmount: getUniformLocation("u_smoothingAmount"),
-                smoothingBlend: getUniformLocation("u_smoothingBlend"),
-
-                thresholdEnabled: getUniformLocation("u_thresholdEnabled"),
-                thresholdValue: getUniformLocation("u_thresholdValue"),
-                thresholdBlend: getUniformLocation("u_thresholdBlend"),
-
-                edgeDetectionEnabled: getUniformLocation("u_edgeDetectionEnabled"),
-                sobelEnabled: getUniformLocation("u_sobelEnabled"),
-                sobelAmount: getUniformLocation("u_sobelAmount"),
-                sobelBlend: getUniformLocation("u_sobelBlend"),
-                cannyEnabled: getUniformLocation("u_cannyEnabled"),
-                cannyAmount: getUniformLocation("u_cannyAmount"),
-                cannyBlend: getUniformLocation("u_cannyBlend"),
+                grayscaleEnabled: uLoc("u_grayscaleEnabled"),
+                grayscaleAmount: uLoc("u_grayscaleAmount"),
+                denoiseEnabled: uLoc("u_denoiseEnabled"),
+                denoiseAmount: uLoc("u_denoiseAmount"),
+                sharpenEnabled: uLoc("u_sharpenEnabled"),
+                sharpenAmount: uLoc("u_sharpenAmount"),
+                brightnessEnabled: uLoc("u_brightnessEnabled"),
+                brightnessAmount: uLoc("u_brightnessAmount"),
+                contrastEnabled: uLoc("u_contrastEnabled"),
+                contrastAmount: uLoc("u_contrastAmount"),
+                clarityEnabled: uLoc("u_clarityEnabled"),
+                clarityAmount: uLoc("u_clarityAmount"),
+                highlightsEnabled: uLoc("u_highlightsEnabled"),
+                highlightsAmount: uLoc("u_highlightsAmount"),
+                smoothingEnabled: uLoc("u_smoothingEnabled"),
+                smoothingAmount: uLoc("u_smoothingAmount"),
+                thresholdEnabled: uLoc("u_thresholdEnabled"),
+                thresholdValue: uLoc("u_thresholdValue"),
+                edgeDetectionEnabled: uLoc("u_edgeDetectionEnabled"),
+                sobelEnabled: uLoc("u_sobelEnabled"),
+                sobelAmount: uLoc("u_sobelAmount"),
+                cannyEnabled: uLoc("u_cannyEnabled"),
+                cannyAmount: uLoc("u_cannyAmount"),
             };
 
             gl.clearColor(0.0,0.0,0.0,1.0);
@@ -2201,53 +2141,41 @@
             gl.bindTexture(gl.TEXTURE_2D, glTexture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
 
-            // Set uniforms
-            function setBoolUniform(loc, val) { gl.uniform1i(loc, val ? 1 : 0); }
-            function setFloatUniform(loc, val) { gl.uniform1f(loc, val); }
+            function setBool(u,v){ gl.uniform1i(u,v?1:0); }
+            function setFloat(u,v){ gl.uniform1f(u,v); }
 
-            setBoolUniform(window.uLocations.grayscaleEnabled, enableGrayscale.checked);
-            setFloatUniform(window.uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value)/100.0);
-            setFloatUniform(window.uLocations.grayscaleBlend, parseFloat(grayscaleBlendSlider.value));
+            setBool(uLocations.grayscaleEnabled, enableGrayscale.checked);
+            setFloat(uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value));
 
-            setBoolUniform(window.uLocations.denoiseEnabled, enableDenoise.checked);
-            setFloatUniform(window.uLocations.denoiseAmount, parseFloat(denoiseSlider.value));
-            setFloatUniform(window.uLocations.denoiseBlend, parseFloat(denoiseBlendSlider.value));
+            setBool(uLocations.denoiseEnabled, enableDenoise.checked);
+            setFloat(uLocations.denoiseAmount, parseFloat(denoiseSlider.value));
 
-            setBoolUniform(window.uLocations.sharpenEnabled, enableSharpen.checked);
-            setFloatUniform(window.uLocations.sharpenAmount, parseFloat(sharpenSlider.value));
-            setFloatUniform(window.uLocations.sharpenBlend, parseFloat(sharpenBlendSlider.value));
+            setBool(uLocations.sharpenEnabled, enableSharpen.checked);
+            setFloat(uLocations.sharpenAmount, parseFloat(sharpenSlider.value));
 
-            setBoolUniform(window.uLocations.brightnessEnabled, enableBrightness.checked);
-            setFloatUniform(window.uLocations.brightnessAmount, parseFloat(brightnessSlider.value));
-            setFloatUniform(window.uLocations.brightnessBlend, parseFloat(brightnessBlendSlider.value));
+            setBool(uLocations.brightnessEnabled, enableBrightness.checked);
+            setFloat(uLocations.brightnessAmount, parseFloat(brightnessSlider.value));
 
-            setBoolUniform(window.uLocations.contrastEnabled, enableContrast.checked);
-            setFloatUniform(window.uLocations.contrastAmount, parseFloat(contrastSlider.value));
-            setFloatUniform(window.uLocations.contrastBlend, parseFloat(contrastBlendSlider.value));
+            setBool(uLocations.contrastEnabled, enableContrast.checked);
+            setFloat(uLocations.contrastAmount, parseFloat(contrastSlider.value));
 
-            setBoolUniform(window.uLocations.clarityEnabled, enableClarity.checked);
-            setFloatUniform(window.uLocations.clarityAmount, parseFloat(claritySlider.value));
-            setFloatUniform(window.uLocations.clarityBlend, parseFloat(clarityBlendSlider.value));
+            setBool(uLocations.clarityEnabled, enableClarity.checked);
+            setFloat(uLocations.clarityAmount, parseFloat(claritySlider.value));
 
-            setBoolUniform(window.uLocations.highlightsEnabled, enableHighlights.checked);
-            setFloatUniform(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value));
-            setFloatUniform(window.uLocations.highlightsBlend, parseFloat(highlightsBlendSlider.value));
+            setBool(uLocations.highlightsEnabled, enableHighlights.checked);
+            setFloat(uLocations.highlightsAmount, parseFloat(highlightsSlider.value));
 
-            setBoolUniform(window.uLocations.smoothingEnabled, enableSmoothing.checked);
-            setFloatUniform(window.uLocations.smoothingAmount, parseFloat(smoothingSlider.value));
-            setFloatUniform(window.uLocations.smoothingBlend, parseFloat(smoothingBlendSlider.value));
+            setBool(uLocations.smoothingEnabled, enableSmoothing.checked);
+            setFloat(uLocations.smoothingAmount, parseFloat(smoothingSlider.value));
 
-            setBoolUniform(window.uLocations.thresholdEnabled, enableThreshold.checked);
-            setFloatUniform(window.uLocations.thresholdValue, parseFloat(thresholdSlider.value));
-            setFloatUniform(window.uLocations.thresholdBlend, parseFloat(thresholdBlendSlider.value));
+            setBool(uLocations.thresholdEnabled, enableThreshold.checked);
+            setFloat(uLocations.thresholdValue, parseFloat(thresholdSlider.value));
 
-            setBoolUniform(window.uLocations.edgeDetectionEnabled, enableEdgeDetection.checked);
-            setBoolUniform(window.uLocations.sobelEnabled, enableSobel.checked);
-            setFloatUniform(window.uLocations.sobelAmount, parseFloat(sobelSlider.value));
-            setFloatUniform(window.uLocations.sobelBlend, parseFloat(sobelBlendSlider.value));
-            setBoolUniform(window.uLocations.cannyEnabled, enableCanny.checked);
-            setFloatUniform(window.uLocations.cannyAmount, parseFloat(cannySlider.value));
-            setFloatUniform(window.uLocations.cannyBlend, parseFloat(cannyBlendSlider.value));
+            setBool(uLocations.edgeDetectionEnabled, enableEdgeDetection.checked);
+            setBool(uLocations.sobelEnabled, enableSobel.checked);
+            setFloat(uLocations.sobelAmount, parseFloat(sobelSlider.value));
+            setBool(uLocations.cannyEnabled, enableCanny.checked);
+            setFloat(uLocations.cannyAmount, parseFloat(cannySlider.value));
 
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
@@ -2307,24 +2235,18 @@
                             debugContext.font = '16px Arial';
                             debugContext.fillStyle = 'yellow';
                             let yOffset = 20;
-                            function showEffect(name, val, blend) {
-                                debugContext.fillText(`${name}: ${val}% Blend: ${blend}%`, 10, yOffset);
-                                yOffset += 20;
-                            }
-
-                            if (enableGrayscale.checked) showEffect('Grayscale', grayscaleSlider.value, grayscaleBlendSlider.value);
-                            if (enableDenoise.checked) showEffect('Denoise', denoiseSlider.value, denoiseBlendSlider.value);
-                            if (enableSharpen.checked) showEffect('Sharpen', sharpenSlider.value, sharpenBlendSlider.value);
-                            if (enableBrightness.checked) showEffect('Brightness', brightnessSlider.value, brightnessBlendSlider.value);
-                            if (enableContrast.checked) showEffect('Contrast', contrastSlider.value, contrastBlendSlider.value);
-                            if (enableClarity.checked) showEffect('Clarity', claritySlider.value, clarityBlendSlider.value);
-                            if (enableHighlights.checked) showEffect('Highlights', highlightsSlider.value, highlightsBlendSlider.value);
-                            if (enableSmoothing.checked) showEffect('Smoothing', smoothingSlider.value, smoothingBlendSlider.value);
-                            if (enableThreshold.checked) showEffect('Threshold', thresholdSlider.value, thresholdBlendSlider.value);
-
+                            if (enableGrayscale.checked) { debugContext.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset += 20; }
+                            if (enableDenoise.checked) { debugContext.fillText(`Denoise: ${denoiseSlider.value}%`, 10, yOffset); yOffset += 20; }
+                            if (enableSharpen.checked) { debugContext.fillText(`Sharpen: ${sharpenSlider.value}%`, 10, yOffset); yOffset += 20; }
+                            if (enableBrightness.checked) { debugContext.fillText(`Brightness: ${brightnessSlider.value}%`, 10, yOffset); yOffset += 20; }
+                            if (enableContrast.checked) { debugContext.fillText(`Contrast: ${contrastSlider.value}%`, 10, yOffset); yOffset += 20; }
+                            if (enableClarity.checked) { debugContext.fillText(`Clarity: ${claritySlider.value}%`, 10, yOffset); yOffset += 20; }
+                            if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}%`, 10, yOffset); yOffset += 20; }
+                            if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}%`, 10, yOffset); yOffset += 20; }
+                            if (enableThreshold.checked) { debugContext.fillText(`Threshold: ${thresholdSlider.value}`, 10, yOffset); yOffset += 20; }
                             if (enableEdgeDetection.checked) {
-                                if (enableSobel.checked) showEffect('Sobel', sobelSlider.value, sobelBlendSlider.value);
-                                if (enableCanny.checked) showEffect('Canny', cannySlider.value, cannyBlendSlider.value);
+                                if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}%`, 10, yOffset); yOffset += 20; }
+                                if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}%`, 10, yOffset); yOffset += 20; }
                             }
                         });
                     });
@@ -2332,19 +2254,19 @@
             }
         }
 
-        // Add event listeners to all controls to update preview on change
+        // Add event listeners to controls
         const controls = [
-            enableGrayscale, grayscaleSlider, grayscaleBlendSlider,
-            enableDenoise, denoiseSlider, denoiseBlendSlider,
-            enableSharpen, sharpenSlider, sharpenBlendSlider,
-            enableBrightness, brightnessSlider, brightnessBlendSlider,
-            enableContrast, contrastSlider, contrastBlendSlider,
-            enableClarity, claritySlider, clarityBlendSlider,
-            enableHighlights, highlightsSlider, highlightsBlendSlider,
-            enableSmoothing, smoothingSlider, smoothingBlendSlider,
-            enableThreshold, thresholdSlider, thresholdBlendSlider,
-            enableEdgeDetection, enableSobel, sobelSlider, sobelBlendSlider,
-            enableCanny, cannySlider, cannyBlendSlider,
+            enableGrayscale, grayscaleSlider,
+            enableDenoise, denoiseSlider,
+            enableSharpen, sharpenSlider,
+            enableBrightness, brightnessSlider,
+            enableContrast, contrastSlider,
+            enableClarity, claritySlider,
+            enableHighlights, highlightsSlider,
+            enableSmoothing, smoothingSlider,
+            enableThreshold, thresholdSlider,
+            enableEdgeDetection, enableSobel, sobelSlider,
+            enableCanny, cannySlider,
             workersSelect, frameSkippingSelect, frequencySelect, confidenceThresholdInput
         ];
 
