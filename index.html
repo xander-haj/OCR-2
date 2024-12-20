@@ -845,6 +845,10 @@
                         <label><input type="checkbox" id="enable-automation">Enable Smart Adjustments</label>
                         <small>If enabled, brightness, clarity, grayscale, highlights, smoothing, and sharpen will adjust automatically based on captured frames.</small>
                     </div>
+                    <div class="automation-option">
+                        <label><input type="checkbox" id="enable-auto-workers">Enable Auto Workers</label>
+                        <small>If enabled, the number of OCR workers will adjust automatically based on OCR times.</small>
+                    </div>
                 </content>
             </details>
             <!-- *** AUTOMATION ADDITION END *** -->
@@ -991,9 +995,13 @@
         const enableChangeDetection = document.getElementById('enable-change-detection');
     
         const enableAutomation = document.getElementById('enable-automation');
+        const enableAutoWorkers = document.getElementById('enable-auto-workers');
     
         let lastRecognizedText = "";
         let lastFrameData = null;
+        let ocrTimes = []; // store last few OCR operation times in ms
+        const maxWorkers = 4; // define a max number of workers we allow
+        const minWorkers = 1; // minimum number of workers
     
         const lightingFeedback = document.createElement('div');
         lightingFeedback.id = 'lightingFeedback';
@@ -1211,7 +1219,15 @@
         }
     
         async function performOCR(blob) {
+            const startTime = performance.now();
             const results = await Promise.all(workers.map(worker => worker.recognize(blob)));
+            const endTime = performance.now();
+            const ocrDuration = endTime - startTime; // measure OCR time
+            ocrTimes.push(ocrDuration);
+            if (ocrTimes.length > 20) { // keep last 20 measurements
+                ocrTimes.shift();
+            }
+
             let aggText = '';
             let totalConf = 0;
             results.forEach(r => {
@@ -1293,6 +1309,43 @@
     
             updatePreview();
         }
+
+        function adjustWorkersIfNeeded() {
+            if (!enableAutoWorkers.checked) return;
+            if (ocrTimes.length < 10) return; // wait until we have some data
+
+            const avgOcrTime = ocrTimes.reduce((a,b) => a+b,0)/ocrTimes.length;
+
+            // Example heuristic:
+            // If avg OCR time > 1200 ms and we have fewer than maxWorkers, increase workers.
+            // If avg OCR time < 500 ms and we have more than minWorkers, decrease workers.
+            // Be careful to not thrash worker counts too frequently.
+            if (avgOcrTime > 1200 && workers.length < maxWorkers) {
+                // Increase workers by 1
+                reinitializeWorkers(workers.length + 1);
+                ocrTimes = [];
+            } else if (avgOcrTime < 500 && workers.length > minWorkers) {
+                // Decrease workers by 1
+                reinitializeWorkers(workers.length - 1);
+                ocrTimes = [];
+            }
+        }
+
+async function reinitializeWorkers(newCount) {
+    // gracefully stop current workers
+    await Promise.all(workers.map(w => w.terminate()));
+    workers = [];
+    console.log(`Reinitializing workers to count: ${newCount}`);
+    for (let i = 0; i < newCount; i++) {
+        const worker = await Tesseract.createWorker({
+            lang: 'eng',
+            logger: m => console.log(`[Worker ${i+1}] ${m.status}: ${Math.round(m.progress * 100)}%`)
+        });
+        await worker.loadLanguage('eng');
+        await worker.initialize('eng');
+        workers.push(worker);
+    }
+}
     
         async function processFrame() {
             if (!scanning) return;
@@ -1388,6 +1441,9 @@
                     frameSkipping--;
                 }
             }
+
+            // Check if we need to adjust workers automatically
+            adjustWorkersIfNeeded();
     
             if (scanning) requestAnimationFrame(processFrame);
         }
