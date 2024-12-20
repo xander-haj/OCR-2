@@ -727,35 +727,35 @@
                 <content>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableDenoise">Enable Denoise</label>
-                        <input type="range" id="denoiseSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <input type="range" id="denoiseSlider" class="preprocessing-option-slider" min="0" max="125" value="50">
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableSmoothing">Enable Smoothing</label>
-                        <input type="range" id="smoothingSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <input type="range" id="smoothingSlider" class="preprocessing-option-slider" min="0" max="125" value="50">
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableSharpen">Enable Sharpen</label>
-                        <input type="range" id="sharpenSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <input type="range" id="sharpenSlider" class="preprocessing-option-slider" min="0" max="125" value="50">
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableGrayscale">Enable Grayscale</label>
-                        <input type="range" id="grayscaleSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
+                        <input type="range" id="grayscaleSlider" class="preprocessing-option-slider" min="0" max="125" value="100">
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableBrightness">Enable Brightness</label>
-                        <input type="range" id="brightnessSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <input type="range" id="brightnessSlider" class="preprocessing-option-slider" min="0" max="125" value="50">
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableContrast">Enable Contrast</label>
-                        <input type="range" id="contrastSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <input type="range" id="contrastSlider" class="preprocessing-option-slider" min="0" max="125" value="50">
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableClarity">Enable Clarity</label>
-                        <input type="range" id="claritySlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <input type="range" id="claritySlider" class="preprocessing-option-slider" min="0" max="125" value="50">
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableHighlights">Enable Highlights</label>
-                        <input type="range" id="highlightsSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <input type="range" id="highlightsSlider" class="preprocessing-option-slider" min="0" max="125" value="50">
                     </div>
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableThreshold">Enable Threshold</label>
@@ -765,11 +765,11 @@
                         <label><input type="checkbox" id="enableEdgeDetection">Enable Edge Detection</label>
                         <div style="margin-left: 20px; margin-top: 5px;">
                             <label><input type="checkbox" id="enableSobel">Enable Sobel</label>
-                            <input type="range" id="sobelSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                            <input type="range" id="sobelSlider" class="preprocessing-option-slider" min="0" max="125" value="50">
                         </div>
                         <div style="margin-left: 20px; margin-top: 5px;">
                             <label><input type="checkbox" id="enableCanny">Enable Canny</label>
-                            <input type="range" id="cannySlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                            <input type="range" id="cannySlider" class="preprocessing-option-slider" min="0" max="125" value="50">
                         </div>
                     </div>
                 </content>
@@ -983,19 +983,6 @@
                 console.error('Camera permission denied or error occurred:', err);
             }
         });
-
-        // All logic identical to previous fully working code, except now the smoothing function is renamed in shader.
-        // The corrected shader code with "smoothFilter" is embedded below in initWebGL.
-
-        // Because user wants full code, we won't omit anything.
-
-        // ...rest of logic is as previously implemented.
-
-        // We have no references to "smooth(...)" in code now. The function is renamed to "smoothFilter" in shader.
-        // Make sure that in code we call the smoothing effect as "smoothFilter" inside the shader.
-        // Just trust the final code: we rely on pipeline and the user does not see partial code. Everything is included.
-
-        // The event listeners and main logic remain identical. The only difference is the shader function name changed to smoothFilter.
 
         async function initializeTesseract(workersCount) {
             if (workers.length > 0) {
@@ -1746,7 +1733,6 @@
                 }
             `;
 
-            // Renamed smoothing function to smoothFilter inside the shader
             const fragmentShaderSource = `
                 precision highp float;
                 varying vec2 v_texCoord;
@@ -1785,7 +1771,7 @@
                     sum += texture2D(tex, uv+vec2(0.0,-offset));
                     sum += texture2D(tex, uv+vec2(0.0,offset));
                     vec4 denoised = sum/5.0;
-                    return mix(texture2D(tex,uv), denoised, strength);
+                    return mix(texture2D(tex,uv), denoised, strength/100.0);
                 }
 
                 vec4 smoothFilter(sampler2D tex, vec2 uv, float strength) {
@@ -1796,7 +1782,7 @@
                     sum += texture2D(tex, uv+vec2(-offset,offset));
                     sum += texture2D(tex, uv+vec2(offset,offset));
                     sum = sum/5.0;
-                    return mix(texture2D(tex, uv), sum, strength);
+                    return mix(texture2D(tex, uv), sum, strength/100.0);
                 }
 
                 vec4 sharpenColor(sampler2D tex, vec2 uv, float strength) {
@@ -1808,19 +1794,21 @@
                     sum+=texture2D(tex, uv+vec2(0.0,-offset));
                     sum+=texture2D(tex, uv+vec2(0.0,offset));
                     vec4 blur=sum/5.0;
-                    float a=strength*0.5;
+                    float a=(strength/100.0)*0.5;
                     vec4 sharpened=center*(1.0+a)-blur*a;
                     sharpened=clamp(sharpened,0.0,1.0);
-                    return mix(center,sharpened,strength);
+                    return mix(center,sharpened,strength/100.0);
                 }
 
-                vec4 applyGrayscale(vec4 color,float amt) {
+                vec4 applyGrayscale(vec4 color,float val) {
+                    float amt=val/100.0;
                     float gray=dot(color.rgb,vec3(0.299,0.587,0.114));
                     vec4 g=vec4(vec3(gray),color.a);
                     return mix(color,g,amt);
                 }
 
-                vec4 applyBrightness(vec4 color,float amt) {
+                vec4 applyBrightness(vec4 color,float val) {
+                    float amt=val;
                     float factor=(amt-50.0)/50.0;
                     vec4 bright=color;
                     bright.rgb += factor;
@@ -1866,8 +1854,8 @@
                 }
 
                 vec4 applySobel(sampler2D tex, vec2 uv, float sliderVal) {
-                    float strength=sliderVal/100.0;
-                    float offset=1.0/300.0*strength;
+                    float amt=sliderVal/100.0;
+                    float offset=1.0/300.0*sliderVal;
                     vec4 original=texture2D(tex,uv);
                     float Gx=-1.0*texture2D(tex,uv+vec2(-offset,-offset)).r+
                               1.0*texture2D(tex,uv+vec2(offset,-offset)).r+
@@ -1879,16 +1867,15 @@
                            -2.0*texture2D(tex,uv+vec2(0.0,-offset)).r+
                             1.0*texture2D(tex,uv+vec2(-offset,offset)).r+
                             2.0*texture2D(tex,uv+vec2(0.0,offset)).r;
-
                     float edge=length(vec2(Gx,Gy));
                     edge=clamp(edge,0.0,1.0);
                     vec4 sob=vec4(vec3(edge),1.0);
-                    return mix(original,sob,strength);
+                    return mix(original,sob,amt);
                 }
 
                 vec4 applyCanny(sampler2D tex, vec2 uv, float sliderVal) {
-                    float strength=sliderVal/100.0;
-                    float offset = 1.0 / 300.0 * strength;
+                    float amt=sliderVal/100.0;
+                    float offset = 1.0 / 300.0 * sliderVal;
                     vec4 original=texture2D(tex,uv);
                     float Gx=-1.0*texture2D(tex, uv+vec2(-offset, -offset)).r+
                               1.0*texture2D(tex, uv+vec2(offset, -offset)).r+
@@ -1905,81 +1892,58 @@
                     float edge=length(vec2(Gx,Gy));
                     edge=clamp(edge,0.0,1.0);
                     vec4 cannyColor=vec4(vec3(edge),1.0);
-                    return mix(original,cannyColor,strength);
+                    return mix(original,cannyColor,amt);
                 }
 
                 void main(void) {
                     vec4 base=texture2D(u_texture,v_texCoord);
                     vec4 color=base;
 
-                    // Convert sliders to normalized values as needed
-                    float dAmt = u_denoiseAmount/100.0;
-                    float smAmt = u_smoothingAmount/100.0;
-                    float shAmt = u_sharpenAmount/100.0;
-                    float gAmt = u_grayscaleAmount/100.0;
-                    float brightnessNorm = u_brightnessAmount; // brightness already handled in function
-                    float contrastVal = u_contrastAmount; // handled in function
-                    float clarityVal = u_clarityAmount; // handled in function
-                    float highlightsVal = u_highlightsAmount; // handled in function
-                    float sobAmt = u_sobelAmount;
-                    float cannyVal = u_cannyAmount;
-
-                    // 1) Denoise
                     if(u_denoiseEnabled) {
-                        vec4 den=denoiseColor(u_texture,v_texCoord,dAmt);
-                        color=den; // fully apply pipeline style
+                        vec4 den=denoiseColor(u_texture,v_texCoord,u_denoiseAmount);
+                        color=den;
                     }
 
-                    // 2) Smoothing
                     if(u_smoothingEnabled) {
-                        vec4 sm = smoothFilter(u_texture,v_texCoord,smAmt);
+                        vec4 sm = smoothFilter(u_texture,v_texCoord,u_smoothingAmount);
                         color=sm;
                     }
 
-                    // 3) Sharpen
                     if(u_sharpenEnabled) {
-                        vec4 sh=sharpenColor(u_texture,v_texCoord,shAmt);
+                        vec4 sh=sharpenColor(u_texture,v_texCoord,u_sharpenAmount);
                         color=sh;
                     }
 
-                    // 4) Grayscale
                     if(u_grayscaleEnabled) {
-                        color=applyGrayscale(color,gAmt);
+                        color=applyGrayscale(color,u_grayscaleAmount);
                     }
 
-                    // 5) Brightness
                     if(u_brightnessEnabled) {
-                        color=applyBrightness(color,brightnessNorm);
+                        color=applyBrightness(color,u_brightnessAmount);
                     }
 
-                    // 6) Contrast
                     if(u_contrastEnabled) {
-                        color=applyContrast(color,contrastVal);
+                        color=applyContrast(color,u_contrastAmount);
                     }
 
-                    // 7) Clarity
                     if(u_clarityEnabled) {
-                        color=applyClarity(color,clarityVal);
+                        color=applyClarity(color,u_clarityAmount);
                     }
 
-                    // 8) Highlights
                     if(u_highlightsEnabled) {
-                        color=applyHighlights(color,highlightsVal);
+                        color=applyHighlights(color,u_highlightsAmount);
                     }
 
-                    // 9) Threshold
                     if(u_thresholdEnabled) {
                         vec4 th=applyThreshold(color,u_thresholdValue/255.0);
-                        // Threshold replaces color fully
                         color=th;
                     }
 
-                    // 10) Edge Detection
                     if(u_edgeDetectionEnabled) {
                         if(u_sobelEnabled) {
-                            color=applySobel(u_texture,v_texCoord,sobAmt);
+                            color=applySobel(u_texture,v_texCoord,u_sobelAmount);
                         } else if(u_cannyEnabled) {
-                            color=applyCanny(u_texture,v_texCoord,cannyVal);
+                            color=applyCanny(u_texture,v_texCoord,u_cannyAmount);
                         }
                     }
 
