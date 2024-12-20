@@ -746,51 +746,94 @@
             <details class="collapsible">
                 <summary>WebGL Preprocessing</summary>
                 <content>
+                    <!-- Grayscale -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableGrayscale">Enable Grayscale</label>
+                        <label>Grayscale Intensity:</label>
                         <input type="range" id="grayscaleSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
+                        <label>Grayscale Blend:</label>
+                        <input type="range" id="grayscaleBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
+                    <!-- Denoise -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableDenoise">Enable Denoise</label>
+                        <label>Denoise Strength:</label>
                         <input type="range" id="denoiseSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <label>Denoise Blend:</label>
+                        <input type="range" id="denoiseBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
+                    <!-- Sharpen -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableSharpen">Enable Sharpening</label>
+                        <label>Sharpen Strength:</label>
                         <input type="range" id="sharpenSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <label>Sharpen Blend:</label>
+                        <input type="range" id="sharpenBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
+                    <!-- Brightness -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableBrightness">Enable Brightness</label>
+                        <label>Brightness Amount:</label>
                         <input type="range" id="brightnessSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <label>Brightness Blend:</label>
+                        <input type="range" id="brightnessBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
+                    <!-- Contrast -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableContrast">Enable Contrast</label>
+                        <label>Contrast Amount:</label>
                         <input type="range" id="contrastSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <label>Contrast Blend:</label>
+                        <input type="range" id="contrastBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
+                    <!-- Clarity -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableClarity">Enable Clarity</label>
+                        <label>Clarity Amount:</label>
                         <input type="range" id="claritySlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <label>Clarity Blend:</label>
+                        <input type="range" id="clarityBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
+                    <!-- Highlights -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableHighlights">Enable Highlights</label>
+                        <label>Highlights Amount:</label>
                         <input type="range" id="highlightsSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <label>Highlights Blend:</label>
+                        <input type="range" id="highlightsBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
+                    <!-- Smoothing -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableSmoothing">Enable Smoothing</label>
+                        <label>Smoothing Amount:</label>
                         <input type="range" id="smoothingSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                        <label>Smoothing Blend:</label>
+                        <input type="range" id="smoothingBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
+                    <!-- Threshold -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableThreshold">Enable Threshold</label>
+                        <label>Threshold Value:</label>
                         <input type="range" id="thresholdSlider" class="preprocessing-option-slider" min="0" max="255" value="128">
+                        <label>Threshold Blend:</label>
+                        <input type="range" id="thresholdBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                     </div>
+                    <!-- Edge Detection -->
                     <div class="preprocessing-option">
                         <label><input type="checkbox" id="enableEdgeDetection">Enable Edge Detection</label>
                         <div style="margin-left: 20px; margin-top: 5px;">
                             <label><input type="checkbox" id="enableSobel">Enable Sobel</label>
+                            <label>Sobel Strength:</label>
                             <input type="range" id="sobelSlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                            <label>Sobel Blend:</label>
+                            <input type="range" id="sobelBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                         </div>
                         <div style="margin-left: 20px; margin-top: 5px;">
                             <label><input type="checkbox" id="enableCanny">Enable Canny</label>
+                            <label>Canny Strength:</label>
                             <input type="range" id="cannySlider" class="preprocessing-option-slider" min="0" max="100" value="50">
+                            <label>Canny Blend:</label>
+                            <input type="range" id="cannyBlendSlider" class="preprocessing-option-slider" min="0" max="100" value="100">
                         </div>
                     </div>
                 </content>
@@ -891,11 +934,11 @@
     <div id="debugConsole"></div>
 
     <script>
-        /* Comprehensive Fixes:
-           - Add event listeners for checkboxes and sliders to update in real-time.
-           - Ensure effects layer as intended (they already apply in sequence, which is layering).
-           - When controls change, re-run preprocessing on the current frame if possible to show changes in debugCanvas.
-           No features are removed or overwritten, only additions.
+        /* This version:
+           - Adds separate blend sliders for each effect.
+           - Each effect now has an intensity (or strength) slider and a separate blend slider.
+           - In the shader, we first compute the effected color, then blend with the original color using the blend slider.
+           - No effect overwrites another; all are layered via mix() calls.
         */
 
         // Brightness Thresholds
@@ -937,29 +980,52 @@
         const frequencySelect = document.getElementById('frequency-select');
         const ocrInfo = document.getElementById('ocr-info');
         const confidenceThresholdInput = document.getElementById('confidence-threshold-input');
+
+        // Effects
         const enableGrayscale = document.getElementById('enableGrayscale');
         const grayscaleSlider = document.getElementById('grayscaleSlider');
+        const grayscaleBlendSlider = document.getElementById('grayscaleBlendSlider');
+
         const enableDenoise = document.getElementById('enableDenoise');
         const denoiseSlider = document.getElementById('denoiseSlider');
+        const denoiseBlendSlider = document.getElementById('denoiseBlendSlider');
+
         const enableSharpen = document.getElementById('enableSharpen');
         const sharpenSlider = document.getElementById('sharpenSlider');
+        const sharpenBlendSlider = document.getElementById('sharpenBlendSlider');
+
         const enableBrightness = document.getElementById('enableBrightness');
         const brightnessSlider = document.getElementById('brightnessSlider');
+        const brightnessBlendSlider = document.getElementById('brightnessBlendSlider');
+
         const enableContrast = document.getElementById('enableContrast');
         const contrastSlider = document.getElementById('contrastSlider');
+        const contrastBlendSlider = document.getElementById('contrastBlendSlider');
+
         const enableClarity = document.getElementById('enableClarity');
         const claritySlider = document.getElementById('claritySlider');
+        const clarityBlendSlider = document.getElementById('clarityBlendSlider');
+
         const enableHighlights = document.getElementById('enableHighlights');
         const highlightsSlider = document.getElementById('highlightsSlider');
+        const highlightsBlendSlider = document.getElementById('highlightsBlendSlider');
+
         const enableSmoothing = document.getElementById('enableSmoothing');
         const smoothingSlider = document.getElementById('smoothingSlider');
+        const smoothingBlendSlider = document.getElementById('smoothingBlendSlider');
+
         const enableThreshold = document.getElementById('enableThreshold');
         const thresholdSlider = document.getElementById('thresholdSlider');
+        const thresholdBlendSlider = document.getElementById('thresholdBlendSlider');
+
         const enableEdgeDetection = document.getElementById('enableEdgeDetection');
         const enableSobel = document.getElementById('enableSobel');
         const sobelSlider = document.getElementById('sobelSlider');
+        const sobelBlendSlider = document.getElementById('sobelBlendSlider');
         const enableCanny = document.getElementById('enableCanny');
         const cannySlider = document.getElementById('cannySlider');
+        const cannyBlendSlider = document.getElementById('cannyBlendSlider');
+
         const roiWidthSlider = document.getElementById('roi-width-slider');
         const roiHeightSlider = document.getElementById('roi-height-slider');
         const configSelect = document.getElementById('config-select');
@@ -1259,18 +1325,18 @@
             debugContext.font = '16px Arial';
             debugContext.fillStyle = 'yellow';
             let yOffset = 20;
-            if (enableGrayscale.checked) { debugContext.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset += 20; }
-            if (enableDenoise.checked) { debugContext.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableSharpen.checked) { debugContext.fillText(`Sharpen: ${sharpenSlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableBrightness.checked) { debugContext.fillText(`Brightness: ${brightnessSlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableContrast.checked) { debugContext.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableClarity.checked) { debugContext.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}`, 10, yOffset); yOffset += 20; }
-            if (enableThreshold.checked) { debugContext.fillText(`Threshold: ${thresholdSlider.value}`, 10, yOffset); yOffset += 20; }
+            if (enableGrayscale.checked) { debugContext.fillText(`Grayscale: ${grayscaleSlider.value}% Blend: ${grayscaleBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableDenoise.checked) { debugContext.fillText(`Denoise: ${denoiseSlider.value}% Blend: ${denoiseBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableSharpen.checked) { debugContext.fillText(`Sharpen: ${sharpenSlider.value}% Blend: ${sharpenBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableBrightness.checked) { debugContext.fillText(`Brightness: ${brightnessSlider.value}% Blend: ${brightnessBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableContrast.checked) { debugContext.fillText(`Contrast: ${contrastSlider.value}% Blend: ${contrastBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableClarity.checked) { debugContext.fillText(`Clarity: ${claritySlider.value}% Blend: ${clarityBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}% Blend: ${highlightsBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}% Blend: ${smoothingBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+            if (enableThreshold.checked) { debugContext.fillText(`Threshold: ${thresholdSlider.value} Blend: ${thresholdBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
             if (enableEdgeDetection.checked) {
-                if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}`, 10, yOffset); yOffset += 20; }
-                if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}`, 10, yOffset); yOffset += 20; }
+                if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}% Blend: ${sobelBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
+                if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}% Blend: ${cannyBlendSlider.value}%`, 10, yOffset); yOffset += 20; }
             }
 
             if (preprocessedBlob && scanning) {
@@ -1324,7 +1390,6 @@
                 const configData = await response.json();
 
                 document.getElementById('resolution-select').value = configData.resolution || '';
-
                 const cameraSelect = document.getElementById('camera-select');
                 const cameraLabel = configData.camera || '';
                 if (cameraLabel) {
@@ -1350,29 +1415,31 @@
                 confidenceThreshold = configData.confidenceThreshold || 60;
 
                 const preprocessing = configData.preprocessing || {};
-                document.getElementById('enableGrayscale').checked = preprocessing.enableGrayscale || false;
-                document.getElementById('grayscaleSlider').value = preprocessing.grayscale || 100;
-                document.getElementById('enableDenoise').checked = preprocessing.enableDenoise || false;
-                document.getElementById('denoiseSlider').value = preprocessing.denoise || 50;
-                document.getElementById('enableSharpen').checked = preprocessing.enableSharpen || false;
-                document.getElementById('sharpenSlider').value = preprocessing.sharpen || 50;
-                document.getElementById('enableBrightness').checked = preprocessing.enableBrightness || false;
-                document.getElementById('brightnessSlider').value = preprocessing.brightness || 50;
-                document.getElementById('enableContrast').checked = preprocessing.enableContrast || false;
-                document.getElementById('contrastSlider').value = preprocessing.contrast || 50;
-                document.getElementById('enableClarity').checked = preprocessing.enableClarity || false;
-                document.getElementById('claritySlider').value = preprocessing.clarity || 50;
-                document.getElementById('enableHighlights').checked = preprocessing.enableHighlights || false;
-                document.getElementById('highlightsSlider').value = preprocessing.highlights || 50;
-                document.getElementById('enableSmoothing').checked = preprocessing.enableSmoothing || false;
-                document.getElementById('smoothingSlider').value = preprocessing.smoothing || 50;
-                document.getElementById('enableThreshold').checked = preprocessing.enableThreshold || false;
-                document.getElementById('thresholdSlider').value = preprocessing.threshold || 128;
-                document.getElementById('enableEdgeDetection').checked = preprocessing.enableEdgeDetection || false;
-                document.getElementById('enableSobel').checked = preprocessing.enableSobel || false;
-                document.getElementById('sobelSlider').value = preprocessing.sobel || 50;
-                document.getElementById('enableCanny').checked = preprocessing.enableCanny || false;
-                document.getElementById('cannySlider').value = preprocessing.canny || 50;
+
+                // Load each effect's enable, slider, and blend from config
+                function loadEffectConfig(enableElem, sliderElem, blendElem, effectName, defVal, defBlend) {
+                    enableElem.checked = preprocessing["enable" + effectName] || false;
+                    sliderElem.value = (typeof preprocessing[effectName.toLowerCase()] !== "undefined") ? preprocessing[effectName.toLowerCase()] : defVal;
+                    blendElem.value = (typeof preprocessing[effectName.toLowerCase()+"Blend"] !== "undefined") ? preprocessing[effectName.toLowerCase()+"Blend"] : defBlend;
+                }
+
+                loadEffectConfig(enableGrayscale, grayscaleSlider, grayscaleBlendSlider, "Grayscale", 100, 100);
+                loadEffectConfig(enableDenoise, denoiseSlider, denoiseBlendSlider, "Denoise", 50, 100);
+                loadEffectConfig(enableSharpen, sharpenSlider, sharpenBlendSlider, "Sharpen", 50, 100);
+                loadEffectConfig(enableBrightness, brightnessSlider, brightnessBlendSlider, "Brightness", 50, 100);
+                loadEffectConfig(enableContrast, contrastSlider, contrastBlendSlider, "Contrast", 50, 100);
+                loadEffectConfig(enableClarity, claritySlider, clarityBlendSlider, "Clarity", 50, 100);
+                loadEffectConfig(enableHighlights, highlightsSlider, highlightsBlendSlider, "Highlights", 50, 100);
+                loadEffectConfig(enableSmoothing, smoothingSlider, smoothingBlendSlider, "Smoothing", 50, 100);
+                loadEffectConfig(enableThreshold, thresholdSlider, thresholdBlendSlider, "Threshold", 128, 100);
+
+                enableEdgeDetection.checked = preprocessing.enableEdgeDetection || false;
+                enableSobel.checked = preprocessing.enableSobel || false;
+                sobelSlider.value = (typeof preprocessing.sobel !== "undefined") ? preprocessing.sobel : 50;
+                sobelBlendSlider.value = (typeof preprocessing.sobelBlend !== "undefined") ? preprocessing.sobelBlend : 100;
+                enableCanny.checked = preprocessing.enableCanny || false;
+                cannySlider.value = (typeof preprocessing.canny !== "undefined") ? preprocessing.canny : 50;
+                cannyBlendSlider.value = (typeof preprocessing.cannyBlend !== "undefined") ? preprocessing.cannyBlend : 100;
 
                 const roiSettings = configData.roi || {};
                 roiWidthPercent = roiSettings.roiWidth || 60;
@@ -1401,29 +1468,49 @@
                 frequency: document.getElementById('frequency-select').value,
                 confidenceThreshold: document.getElementById('confidence-threshold-input').value,
                 preprocessing: {
-                    enableGrayscale: document.getElementById('enableGrayscale').checked,
-                    grayscale: document.getElementById('grayscaleSlider').value,
-                    enableDenoise: document.getElementById('enableDenoise').checked,
-                    denoise: document.getElementById('denoiseSlider').value,
-                    enableSharpen: document.getElementById('enableSharpen').checked,
-                    sharpen: document.getElementById('sharpenSlider').value,
-                    enableBrightness: document.getElementById('enableBrightness').checked,
-                    brightness: document.getElementById('brightnessSlider').value,
-                    enableContrast: document.getElementById('enableContrast').checked,
-                    contrast: document.getElementById('contrastSlider').value,
-                    enableClarity: document.getElementById('enableClarity').checked,
-                    clarity: document.getElementById('claritySlider').value,
-                    enableHighlights: document.getElementById('enableHighlights').checked,
-                    highlights: document.getElementById('highlightsSlider').value,
-                    enableSmoothing: document.getElementById('enableSmoothing').checked,
-                    smoothing: document.getElementById('smoothingSlider').value,
-                    enableThreshold: document.getElementById('enableThreshold').checked,
-                    threshold: document.getElementById('thresholdSlider').value,
-                    enableEdgeDetection: document.getElementById('enableEdgeDetection').checked,
-                    enableSobel: document.getElementById('enableSobel').checked,
-                    sobel: document.getElementById('sobelSlider').value,
-                    enableCanny: document.getElementById('enableCanny').checked,
-                    canny: document.getElementById('cannySlider').value
+                    enableGrayscale: enableGrayscale.checked,
+                    grayscale: grayscaleSlider.value,
+                    grayscaleBlend: grayscaleBlendSlider.value,
+
+                    enableDenoise: enableDenoise.checked,
+                    denoise: denoiseSlider.value,
+                    denoiseBlend: denoiseBlendSlider.value,
+
+                    enableSharpen: enableSharpen.checked,
+                    sharpen: sharpenSlider.value,
+                    sharpenBlend: sharpenBlendSlider.value,
+
+                    enableBrightness: enableBrightness.checked,
+                    brightness: brightnessSlider.value,
+                    brightnessBlend: brightnessBlendSlider.value,
+
+                    enableContrast: enableContrast.checked,
+                    contrast: contrastSlider.value,
+                    contrastBlend: contrastBlendSlider.value,
+
+                    enableClarity: enableClarity.checked,
+                    clarity: claritySlider.value,
+                    clarityBlend: clarityBlendSlider.value,
+
+                    enableHighlights: enableHighlights.checked,
+                    highlights: highlightsSlider.value,
+                    highlightsBlend: highlightsBlendSlider.value,
+
+                    enableSmoothing: enableSmoothing.checked,
+                    smoothing: smoothingSlider.value,
+                    smoothingBlend: smoothingBlendSlider.value,
+
+                    enableThreshold: enableThreshold.checked,
+                    threshold: thresholdSlider.value,
+                    thresholdBlend: thresholdBlendSlider.value,
+
+                    enableEdgeDetection: enableEdgeDetection.checked,
+                    enableSobel: enableSobel.checked,
+                    sobel: sobelSlider.value,
+                    sobelBlend: sobelBlendSlider.value,
+                    enableCanny: enableCanny.checked,
+                    canny: cannySlider.value,
+                    cannyBlend: cannyBlendSlider.value
                 },
                 roi: {
                     roiWidth: roiWidthPercent,
@@ -1771,28 +1858,47 @@
 
                 uniform bool u_grayscaleEnabled;
                 uniform float u_grayscaleAmount;
+                uniform float u_grayscaleBlend;
+
                 uniform bool u_denoiseEnabled;
                 uniform float u_denoiseAmount;
+                uniform float u_denoiseBlend;
+
                 uniform bool u_sharpenEnabled;
                 uniform float u_sharpenAmount;
+                uniform float u_sharpenBlend;
+
                 uniform bool u_brightnessEnabled;
                 uniform float u_brightnessAmount;
+                uniform float u_brightnessBlend;
+
                 uniform bool u_contrastEnabled;
                 uniform float u_contrastAmount;
+                uniform float u_contrastBlend;
+
                 uniform bool u_clarityEnabled;
                 uniform float u_clarityAmount;
+                uniform float u_clarityBlend;
+
                 uniform bool u_highlightsEnabled;
                 uniform float u_highlightsAmount;
+                uniform float u_highlightsBlend;
 
                 uniform bool u_smoothingEnabled;
                 uniform float u_smoothingAmount;
+                uniform float u_smoothingBlend;
+
                 uniform bool u_thresholdEnabled;
                 uniform float u_thresholdValue;
+                uniform float u_thresholdBlend;
+
                 uniform bool u_edgeDetectionEnabled;
                 uniform bool u_sobelEnabled;
                 uniform float u_sobelAmount;
+                uniform float u_sobelBlend;
                 uniform bool u_cannyEnabled;
                 uniform float u_cannyAmount;
+                uniform float u_cannyBlend;
 
                 vec4 denoise(sampler2D tex, vec2 uv, float strength) {
                     float offset = 1.0 / 300.0 * clamp(strength, 0.0, 1.0);
@@ -1909,50 +2015,73 @@
                 }
 
                 void main(void) {
-                    vec4 color = texture2D(u_texture, v_texCoord);
+                    vec4 baseColor = texture2D(u_texture, v_texCoord);
+                    vec4 color = baseColor;
 
+                    // Grayscale
                     if (u_grayscaleEnabled) {
                         float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-                        color = mix(color, vec4(vec3(gray), color.a), u_grayscaleAmount);
+                        vec4 grayscaleColor = vec4(vec3(gray), color.a);
+                        grayscaleColor = mix(color, grayscaleColor, u_grayscaleAmount);
+                        color = mix(color, grayscaleColor, u_grayscaleBlend/100.0);
                     }
 
+                    // Denoise
                     if (u_denoiseEnabled) {
-                        color = denoise(u_texture, v_texCoord, u_denoiseAmount);
+                        vec4 denoisedColor = denoise(u_texture, v_texCoord, u_denoiseAmount/100.0);
+                        color = mix(color, denoisedColor, u_denoiseBlend/100.0);
                     }
 
+                    // Sharpen
                     if (u_sharpenEnabled) {
-                        color = sharpen(u_texture, v_texCoord, u_sharpenAmount);
+                        vec4 sharpenedColor = sharpen(u_texture, v_texCoord, u_sharpenAmount/100.0);
+                        color = mix(color, sharpenedColor, u_sharpenBlend/100.0);
                     }
 
+                    // Brightness
                     if (u_brightnessEnabled) {
-                        color = applyBrightness(color, u_brightnessAmount);
+                        vec4 brightColor = applyBrightness(color, u_brightnessAmount/100.0);
+                        color = mix(color, brightColor, u_brightnessBlend/100.0);
                     }
 
+                    // Contrast
                     if (u_contrastEnabled) {
-                        color = applyContrast(color, u_contrastAmount);
+                        vec4 contrastColor = applyContrast(color, u_contrastAmount/100.0 + 0.5);
+                        color = mix(color, contrastColor, u_contrastBlend/100.0);
                     }
 
+                    // Clarity
                     if (u_clarityEnabled) {
-                        color = applyClarity(color, u_clarityAmount);
+                        vec4 clarityColor = applyClarity(color, u_clarityAmount/100.0);
+                        color = mix(color, clarityColor, u_clarityBlend/100.0);
                     }
 
+                    // Highlights
                     if (u_highlightsEnabled) {
-                        color = applyHighlights(color, u_highlightsAmount);
+                        vec4 highlightsColor = applyHighlights(color, u_highlightsAmount/100.0);
+                        color = mix(color, highlightsColor, u_highlightsBlend/100.0);
                     }
 
+                    // Smoothing
                     if (u_smoothingEnabled) {
-                        color = smooth(u_texture, v_texCoord, u_smoothingAmount);
+                        vec4 smoothColor = smooth(u_texture, v_texCoord, u_smoothingAmount/100.0);
+                        color = mix(color, smoothColor, u_smoothingBlend/100.0);
                     }
 
+                    // Threshold
                     if (u_thresholdEnabled) {
-                        color = applyThreshold(color, u_thresholdValue);
+                        vec4 thresholdColor = applyThreshold(color, u_thresholdValue/255.0);
+                        color = mix(color, thresholdColor, u_thresholdBlend/100.0);
                     }
 
+                    // Edge Detection
                     if (u_edgeDetectionEnabled) {
                         if (u_sobelEnabled) {
-                            color = applySobel(u_texture, v_texCoord, u_sobelAmount);
+                            vec4 sobelColor = applySobel(u_texture, v_texCoord, u_sobelAmount/100.0);
+                            color = mix(color, sobelColor, u_sobelBlend/100.0);
                         } else if (u_cannyEnabled) {
-                            color = applyCanny(u_texture, v_texCoord, u_cannyAmount);
+                            vec4 cannyColor = applyCanny(u_texture, v_texCoord, u_cannyAmount/100.0);
+                            color = mix(color, cannyColor, u_cannyBlend/100.0);
                         }
                     }
 
@@ -2003,30 +2132,54 @@
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
+            function getUniformLocation(name) {
+                return gl.getUniformLocation(glProgram, name);
+            }
+
             window.uLocations = {
-                grayscaleEnabled: gl.getUniformLocation(glProgram, "u_grayscaleEnabled"),
-                grayscaleAmount: gl.getUniformLocation(glProgram, "u_grayscaleAmount"),
-                denoiseEnabled: gl.getUniformLocation(glProgram, "u_denoiseEnabled"),
-                denoiseAmount: gl.getUniformLocation(glProgram, "u_denoiseAmount"),
-                sharpenEnabled: gl.getUniformLocation(glProgram, "u_sharpenEnabled"),
-                sharpenAmount: gl.getUniformLocation(glProgram, "u_sharpenAmount"),
-                brightnessEnabled: gl.getUniformLocation(glProgram, "u_brightnessEnabled"),
-                brightnessAmount: gl.getUniformLocation(glProgram, "u_brightnessAmount"),
-                contrastEnabled: gl.getUniformLocation(glProgram, "u_contrastEnabled"),
-                contrastAmount: gl.getUniformLocation(glProgram, "u_contrastAmount"),
-                clarityEnabled: gl.getUniformLocation(glProgram, "u_clarityEnabled"),
-                clarityAmount: gl.getUniformLocation(glProgram, "u_clarityAmount"),
-                highlightsEnabled: gl.getUniformLocation(glProgram, "u_highlightsEnabled"),
-                highlightsAmount: gl.getUniformLocation(glProgram, "u_highlightsAmount"),
-                smoothingEnabled: gl.getUniformLocation(glProgram, "u_smoothingEnabled"),
-                smoothingAmount: gl.getUniformLocation(glProgram, "u_smoothingAmount"),
-                thresholdEnabled: gl.getUniformLocation(glProgram, "u_thresholdEnabled"),
-                thresholdValue: gl.getUniformLocation(glProgram, "u_thresholdValue"),
-                edgeDetectionEnabled: gl.getUniformLocation(glProgram, "u_edgeDetectionEnabled"),
-                sobelEnabled: gl.getUniformLocation(glProgram, "u_sobelEnabled"),
-                sobelAmount: gl.getUniformLocation(glProgram, "u_sobelAmount"),
-                cannyEnabled: gl.getUniformLocation(glProgram, "u_cannyEnabled"),
-                cannyAmount: gl.getUniformLocation(glProgram, "u_cannyAmount"),
+                grayscaleEnabled: getUniformLocation("u_grayscaleEnabled"),
+                grayscaleAmount: getUniformLocation("u_grayscaleAmount"),
+                grayscaleBlend: getUniformLocation("u_grayscaleBlend"),
+
+                denoiseEnabled: getUniformLocation("u_denoiseEnabled"),
+                denoiseAmount: getUniformLocation("u_denoiseAmount"),
+                denoiseBlend: getUniformLocation("u_denoiseBlend"),
+
+                sharpenEnabled: getUniformLocation("u_sharpenEnabled"),
+                sharpenAmount: getUniformLocation("u_sharpenAmount"),
+                sharpenBlend: getUniformLocation("u_sharpenBlend"),
+
+                brightnessEnabled: getUniformLocation("u_brightnessEnabled"),
+                brightnessAmount: getUniformLocation("u_brightnessAmount"),
+                brightnessBlend: getUniformLocation("u_brightnessBlend"),
+
+                contrastEnabled: getUniformLocation("u_contrastEnabled"),
+                contrastAmount: getUniformLocation("u_contrastAmount"),
+                contrastBlend: getUniformLocation("u_contrastBlend"),
+
+                clarityEnabled: getUniformLocation("u_clarityEnabled"),
+                clarityAmount: getUniformLocation("u_clarityAmount"),
+                clarityBlend: getUniformLocation("u_clarityBlend"),
+
+                highlightsEnabled: getUniformLocation("u_highlightsEnabled"),
+                highlightsAmount: getUniformLocation("u_highlightsAmount"),
+                highlightsBlend: getUniformLocation("u_highlightsBlend"),
+
+                smoothingEnabled: getUniformLocation("u_smoothingEnabled"),
+                smoothingAmount: getUniformLocation("u_smoothingAmount"),
+                smoothingBlend: getUniformLocation("u_smoothingBlend"),
+
+                thresholdEnabled: getUniformLocation("u_thresholdEnabled"),
+                thresholdValue: getUniformLocation("u_thresholdValue"),
+                thresholdBlend: getUniformLocation("u_thresholdBlend"),
+
+                edgeDetectionEnabled: getUniformLocation("u_edgeDetectionEnabled"),
+                sobelEnabled: getUniformLocation("u_sobelEnabled"),
+                sobelAmount: getUniformLocation("u_sobelAmount"),
+                sobelBlend: getUniformLocation("u_sobelBlend"),
+                cannyEnabled: getUniformLocation("u_cannyEnabled"),
+                cannyAmount: getUniformLocation("u_cannyAmount"),
+                cannyBlend: getUniformLocation("u_cannyBlend"),
             };
 
             gl.clearColor(0.0,0.0,0.0,1.0);
@@ -2048,29 +2201,53 @@
             gl.bindTexture(gl.TEXTURE_2D, glTexture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
 
-            gl.uniform1i(window.uLocations.grayscaleEnabled, enableGrayscale.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value) / 100.0);
-            gl.uniform1i(window.uLocations.denoiseEnabled, enableDenoise.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.denoiseAmount, parseFloat(denoiseSlider.value) / 100.0);
-            gl.uniform1i(window.uLocations.sharpenEnabled, enableSharpen.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.sharpenAmount, parseFloat(sharpenSlider.value) / 100.0);
-            gl.uniform1i(window.uLocations.brightnessEnabled, enableBrightness.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.brightnessAmount, parseFloat(brightnessSlider.value) / 100.0);
-            gl.uniform1i(window.uLocations.contrastEnabled, enableContrast.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.contrastAmount, parseFloat(contrastSlider.value) / 100.0);
-            gl.uniform1i(window.uLocations.clarityEnabled, enableClarity.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.clarityAmount, parseFloat(claritySlider.value) / 100.0);
-            gl.uniform1i(window.uLocations.highlightsEnabled, enableHighlights.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value) / 100.0);
-            gl.uniform1i(window.uLocations.smoothingEnabled, enableSmoothing.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.smoothingAmount, parseFloat(smoothingSlider.value) / 100.0);
-            gl.uniform1i(window.uLocations.thresholdEnabled, enableThreshold.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.thresholdValue, parseFloat(thresholdSlider.value) / 255.0);
-            gl.uniform1i(window.uLocations.edgeDetectionEnabled, enableEdgeDetection.checked ? 1 : 0);
-            gl.uniform1i(window.uLocations.sobelEnabled, enableSobel.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.sobelAmount, parseFloat(sobelSlider.value) / 100.0);
-            gl.uniform1i(window.uLocations.cannyEnabled, enableCanny.checked ? 1 : 0);
-            gl.uniform1f(window.uLocations.cannyAmount, parseFloat(cannySlider.value) / 100.0);
+            // Set uniforms
+            function setBoolUniform(loc, val) { gl.uniform1i(loc, val ? 1 : 0); }
+            function setFloatUniform(loc, val) { gl.uniform1f(loc, val); }
+
+            setBoolUniform(window.uLocations.grayscaleEnabled, enableGrayscale.checked);
+            setFloatUniform(window.uLocations.grayscaleAmount, parseFloat(grayscaleSlider.value)/100.0);
+            setFloatUniform(window.uLocations.grayscaleBlend, parseFloat(grayscaleBlendSlider.value));
+
+            setBoolUniform(window.uLocations.denoiseEnabled, enableDenoise.checked);
+            setFloatUniform(window.uLocations.denoiseAmount, parseFloat(denoiseSlider.value));
+            setFloatUniform(window.uLocations.denoiseBlend, parseFloat(denoiseBlendSlider.value));
+
+            setBoolUniform(window.uLocations.sharpenEnabled, enableSharpen.checked);
+            setFloatUniform(window.uLocations.sharpenAmount, parseFloat(sharpenSlider.value));
+            setFloatUniform(window.uLocations.sharpenBlend, parseFloat(sharpenBlendSlider.value));
+
+            setBoolUniform(window.uLocations.brightnessEnabled, enableBrightness.checked);
+            setFloatUniform(window.uLocations.brightnessAmount, parseFloat(brightnessSlider.value));
+            setFloatUniform(window.uLocations.brightnessBlend, parseFloat(brightnessBlendSlider.value));
+
+            setBoolUniform(window.uLocations.contrastEnabled, enableContrast.checked);
+            setFloatUniform(window.uLocations.contrastAmount, parseFloat(contrastSlider.value));
+            setFloatUniform(window.uLocations.contrastBlend, parseFloat(contrastBlendSlider.value));
+
+            setBoolUniform(window.uLocations.clarityEnabled, enableClarity.checked);
+            setFloatUniform(window.uLocations.clarityAmount, parseFloat(claritySlider.value));
+            setFloatUniform(window.uLocations.clarityBlend, parseFloat(clarityBlendSlider.value));
+
+            setBoolUniform(window.uLocations.highlightsEnabled, enableHighlights.checked);
+            setFloatUniform(window.uLocations.highlightsAmount, parseFloat(highlightsSlider.value));
+            setFloatUniform(window.uLocations.highlightsBlend, parseFloat(highlightsBlendSlider.value));
+
+            setBoolUniform(window.uLocations.smoothingEnabled, enableSmoothing.checked);
+            setFloatUniform(window.uLocations.smoothingAmount, parseFloat(smoothingSlider.value));
+            setFloatUniform(window.uLocations.smoothingBlend, parseFloat(smoothingBlendSlider.value));
+
+            setBoolUniform(window.uLocations.thresholdEnabled, enableThreshold.checked);
+            setFloatUniform(window.uLocations.thresholdValue, parseFloat(thresholdSlider.value));
+            setFloatUniform(window.uLocations.thresholdBlend, parseFloat(thresholdBlendSlider.value));
+
+            setBoolUniform(window.uLocations.edgeDetectionEnabled, enableEdgeDetection.checked);
+            setBoolUniform(window.uLocations.sobelEnabled, enableSobel.checked);
+            setFloatUniform(window.uLocations.sobelAmount, parseFloat(sobelSlider.value));
+            setFloatUniform(window.uLocations.sobelBlend, parseFloat(sobelBlendSlider.value));
+            setBoolUniform(window.uLocations.cannyEnabled, enableCanny.checked);
+            setFloatUniform(window.uLocations.cannyAmount, parseFloat(cannySlider.value));
+            setFloatUniform(window.uLocations.cannyBlend, parseFloat(cannyBlendSlider.value));
 
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
@@ -2091,7 +2268,7 @@
             });
         }
 
-        // Function to update debugCanvas whenever controls change (if scanning is off, show last frame)
+        // Update preview when controls change (if not scanning)
         function updatePreview() {
             if (!scanning && video.readyState === video.HAVE_ENOUGH_DATA) {
                 const videoDisplayWidth = video.clientWidth;
@@ -2130,18 +2307,24 @@
                             debugContext.font = '16px Arial';
                             debugContext.fillStyle = 'yellow';
                             let yOffset = 20;
-                            if (enableGrayscale.checked) { debugContext.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset += 20; }
-                            if (enableDenoise.checked) { debugContext.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset); yOffset += 20; }
-                            if (enableSharpen.checked) { debugContext.fillText(`Sharpen: ${sharpenSlider.value}`, 10, yOffset); yOffset += 20; }
-                            if (enableBrightness.checked) { debugContext.fillText(`Brightness: ${brightnessSlider.value}`, 10, yOffset); yOffset += 20; }
-                            if (enableContrast.checked) { debugContext.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset += 20; }
-                            if (enableClarity.checked) { debugContext.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset += 20; }
-                            if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); yOffset += 20; }
-                            if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}`, 10, yOffset); yOffset += 20; }
-                            if (enableThreshold.checked) { debugContext.fillText(`Threshold: ${thresholdSlider.value}`, 10, yOffset); yOffset += 20; }
+                            function showEffect(name, val, blend) {
+                                debugContext.fillText(`${name}: ${val}% Blend: ${blend}%`, 10, yOffset);
+                                yOffset += 20;
+                            }
+
+                            if (enableGrayscale.checked) showEffect('Grayscale', grayscaleSlider.value, grayscaleBlendSlider.value);
+                            if (enableDenoise.checked) showEffect('Denoise', denoiseSlider.value, denoiseBlendSlider.value);
+                            if (enableSharpen.checked) showEffect('Sharpen', sharpenSlider.value, sharpenBlendSlider.value);
+                            if (enableBrightness.checked) showEffect('Brightness', brightnessSlider.value, brightnessBlendSlider.value);
+                            if (enableContrast.checked) showEffect('Contrast', contrastSlider.value, contrastBlendSlider.value);
+                            if (enableClarity.checked) showEffect('Clarity', claritySlider.value, clarityBlendSlider.value);
+                            if (enableHighlights.checked) showEffect('Highlights', highlightsSlider.value, highlightsBlendSlider.value);
+                            if (enableSmoothing.checked) showEffect('Smoothing', smoothingSlider.value, smoothingBlendSlider.value);
+                            if (enableThreshold.checked) showEffect('Threshold', thresholdSlider.value, thresholdBlendSlider.value);
+
                             if (enableEdgeDetection.checked) {
-                                if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}`, 10, yOffset); yOffset += 20; }
-                                if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}`, 10, yOffset); yOffset += 20; }
+                                if (enableSobel.checked) showEffect('Sobel', sobelSlider.value, sobelBlendSlider.value);
+                                if (enableCanny.checked) showEffect('Canny', cannySlider.value, cannyBlendSlider.value);
                             }
                         });
                     });
@@ -2149,19 +2332,19 @@
             }
         }
 
-        // Add event listeners to controls
+        // Add event listeners to all controls to update preview on change
         const controls = [
-            enableGrayscale, grayscaleSlider,
-            enableDenoise, denoiseSlider,
-            enableSharpen, sharpenSlider,
-            enableBrightness, brightnessSlider,
-            enableContrast, contrastSlider,
-            enableClarity, claritySlider,
-            enableHighlights, highlightsSlider,
-            enableSmoothing, smoothingSlider,
-            enableThreshold, thresholdSlider,
-            enableEdgeDetection, enableSobel, sobelSlider,
-            enableCanny, cannySlider,
+            enableGrayscale, grayscaleSlider, grayscaleBlendSlider,
+            enableDenoise, denoiseSlider, denoiseBlendSlider,
+            enableSharpen, sharpenSlider, sharpenBlendSlider,
+            enableBrightness, brightnessSlider, brightnessBlendSlider,
+            enableContrast, contrastSlider, contrastBlendSlider,
+            enableClarity, claritySlider, clarityBlendSlider,
+            enableHighlights, highlightsSlider, highlightsBlendSlider,
+            enableSmoothing, smoothingSlider, smoothingBlendSlider,
+            enableThreshold, thresholdSlider, thresholdBlendSlider,
+            enableEdgeDetection, enableSobel, sobelSlider, sobelBlendSlider,
+            enableCanny, cannySlider, cannyBlendSlider,
             workersSelect, frameSkippingSelect, frequencySelect, confidenceThresholdInput
         ];
 
@@ -2169,7 +2352,6 @@
             ctrl.addEventListener('change', updatePreview);
             ctrl.addEventListener('input', updatePreview);
         });
-
     </script>
 </body>
 </html>
