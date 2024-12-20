@@ -804,6 +804,27 @@
                     <button id="save-config-button">Save Current Config</button>
                 </div>
             </details>
+
+            <!-- *** PERFORMANCE ADDITION START *** -->
+            <details class="collapsible">
+                <summary>Performance Optimization</summary>
+                <content>
+                    <div>
+                        <label><input type="checkbox" id="skip-duplicates-checkbox">Skip Duplicate Results</label>
+                    </div>
+                    <div>
+                        <label for="ocr-scale-slider">OCR Downscale (%):</label>
+                        <input type="range" id="ocr-scale-slider" min="10" max="100" value="100">
+                        <small>Use a lower percentage to downscale the ROI before OCR, improving speed.</small>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" id="enable-change-detection">Enable Change Detection</label>
+                        <small>If enabled, OCR runs only if ROI visually changed since last scan.</small>
+                    </div>
+                </content>
+            </details>
+            <!-- *** PERFORMANCE ADDITION END *** -->
+
         </div>
 
         <button id="debug-button" class="debug-button">Show Debug</button>
@@ -984,18 +1005,11 @@
             }
         });
 
-        // All logic identical to previous fully working code, except now the smoothing function is renamed in shader.
-        // The corrected shader code with "smoothFilter" is embedded below in initWebGL.
-
-        // Because user wants full code, we won't omit anything.
-
-        // ...rest of logic is as previously implemented.
-
-        // We have no references to "smooth(...)" in code now. The function is renamed to "smoothFilter" in shader.
-        // Make sure that in code we call the smoothing effect as "smoothFilter" inside the shader.
-        // Just trust the final code: we rely on pipeline and the user does not see partial code. Everything is included.
-
-        // The event listeners and main logic remain identical. The only difference is the shader function name changed to smoothFilter.
+        let lastRecognizedText = ""; // *** PERFORMANCE ADDITION: Track last recognized text
+        let skipDuplicatesCheckbox = document.getElementById('skip-duplicates-checkbox');
+        let ocrScaleSlider = document.getElementById('ocr-scale-slider');
+        let enableChangeDetection = document.getElementById('enable-change-detection');
+        let lastFrameData = null; // *** PERFORMANCE ADDITION: Track last frame data for change detection
 
         async function initializeTesseract(workersCount) {
             if (workers.length > 0) {
@@ -1137,6 +1151,8 @@
             stopButton.disabled = false;
             startButton.innerText = 'Scanning...';
             output.value = '';
+            lastRecognizedText = ""; // reset last recognized text
+            lastFrameData = null;    // reset last frame data
 
             const debugCanvasElement = document.getElementById('debugCanvas');
             if (debugCanvasElement.style.display === 'block') {
@@ -1175,14 +1191,39 @@
                 totalConf += r.data.confidence;
             });
             const avgConf = totalConf / workers.length;
-            if (avgConf >= confidenceThreshold && aggText.trim().length > 0) {
+            const trimmedText = aggText.trim();
+
+            // *** PERFORMANCE ADDITION: Skip duplicates if enabled
+            if (skipDuplicatesCheckbox.checked && trimmedText === lastRecognizedText) {
+                return;
+            }
+
+            if (avgConf >= confidenceThreshold && trimmedText.length > 0) {
                 roiOverlay.style.borderColor = '#2cb67d';
-                if (!output.value.includes(aggText.trim())) {
-                    output.value += aggText.trim() + '\n';
+                if (!output.value.includes(trimmedText)) {
+                    output.value += trimmedText + '\n';
                 }
+                lastRecognizedText = trimmedText; // update last recognized text
             } else {
                 roiOverlay.style.borderColor = '#d00000';
             }
+        }
+
+        function imagesAreSimilar(data1, data2, threshold = 10) {
+            // *** PERFORMANCE ADDITION: Simple change detection by comparing pixel sums
+            if (!data1 || !data2 || data1.length !== data2.length) return false;
+            let diffCount = 0;
+            for (let i = 0; i < data1.length; i += 4) {
+                const dr = Math.abs(data1[i] - data2[i]);
+                const dg = Math.abs(data1[i+1] - data2[i+1]);
+                const db = Math.abs(data1[i+2] - data2[i+2]);
+                const dist = dr+dg+db;
+                if (dist > 50) { // arbitrary threshold for difference per pixel
+                    diffCount++;
+                    if (diffCount > threshold) return false;
+                }
+            }
+            return true;
         }
 
         async function processFrame() {
@@ -1225,6 +1266,17 @@
             roiCanvas.height = roiH;
             const roiCtx = roiCanvas.getContext('2d');
             roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+            // *** PERFORMANCE ADDITION: Change detection
+            if (enableChangeDetection.checked) {
+                const roiData = roiCtx.getImageData(0,0,roiW,roiH).data;
+                if (lastFrameData && imagesAreSimilar(lastFrameData, roiData)) {
+                    // Skip OCR if no significant change
+                    if (scanning) requestAnimationFrame(processFrame);
+                    return;
+                }
+                lastFrameData = roiData;
+            }
 
             const preprocessedBlob = await preprocessWithWebGL(roiCanvas);
 
@@ -1746,7 +1798,6 @@
                 }
             `;
 
-            // Renamed smoothing function to smoothFilter inside the shader
             const fragmentShaderSource = `
                 precision highp float;
                 varying vec2 v_texCoord;
@@ -1879,7 +1930,6 @@
                            -2.0*texture2D(tex,uv+vec2(0.0,-offset)).r+
                             1.0*texture2D(tex,uv+vec2(-offset,offset)).r+
                             2.0*texture2D(tex,uv+vec2(0.0,offset)).r;
-
                     float edge=length(vec2(Gx,Gy));
                     edge=clamp(edge,0.0,1.0);
                     vec4 sob=vec4(vec3(edge),1.0);
@@ -1896,12 +1946,10 @@
                               2.0*texture2D(tex, uv+vec2(offset,0.0)).r+
                              -1.0*texture2D(tex, uv+vec2(-offset, offset)).r+
                               1.0*texture2D(tex, uv+vec2(offset, offset)).r;
-
                     float Gy=-1.0*texture2D(tex, uv+vec2(-offset, -offset)).r+
                            -2.0*texture2D(tex, uv+vec2(0.0, -offset)).r+
                             1.0*texture2D(tex, uv+vec2(-offset, offset)).r+
                             2.0*texture2D(tex, uv+vec2(0.0, offset)).r;
-
                     float edge=length(vec2(Gx,Gy));
                     edge=clamp(edge,0.0,1.0);
                     vec4 cannyColor=vec4(vec3(edge),1.0);
@@ -1912,69 +1960,57 @@
                     vec4 base=texture2D(u_texture,v_texCoord);
                     vec4 color=base;
 
-                    // Convert sliders to normalized values as needed
                     float dAmt = u_denoiseAmount/100.0;
                     float smAmt = u_smoothingAmount/100.0;
                     float shAmt = u_sharpenAmount/100.0;
                     float gAmt = u_grayscaleAmount/100.0;
-                    float brightnessNorm = u_brightnessAmount; // brightness already handled in function
-                    float contrastVal = u_contrastAmount; // handled in function
-                    float clarityVal = u_clarityAmount; // handled in function
-                    float highlightsVal = u_highlightsAmount; // handled in function
+                    float brightnessNorm = u_brightnessAmount;
+                    float contrastVal = u_contrastAmount;
+                    float clarityVal = u_clarityAmount;
+                    float highlightsVal = u_highlightsAmount;
                     float sobAmt = u_sobelAmount;
                     float cannyVal = u_cannyAmount;
 
-                    // 1) Denoise
                     if(u_denoiseEnabled) {
                         vec4 den=denoiseColor(u_texture,v_texCoord,dAmt);
-                        color=den; // fully apply pipeline style
+                        color=den;
                     }
 
-                    // 2) Smoothing
                     if(u_smoothingEnabled) {
                         vec4 sm = smoothFilter(u_texture,v_texCoord,smAmt);
                         color=sm;
                     }
 
-                    // 3) Sharpen
                     if(u_sharpenEnabled) {
                         vec4 sh=sharpenColor(u_texture,v_texCoord,shAmt);
                         color=sh;
                     }
 
-                    // 4) Grayscale
                     if(u_grayscaleEnabled) {
                         color=applyGrayscale(color,gAmt);
                     }
 
-                    // 5) Brightness
                     if(u_brightnessEnabled) {
                         color=applyBrightness(color,brightnessNorm);
                     }
 
-                    // 6) Contrast
                     if(u_contrastEnabled) {
                         color=applyContrast(color,contrastVal);
                     }
 
-                    // 7) Clarity
                     if(u_clarityEnabled) {
                         color=applyClarity(color,clarityVal);
                     }
 
-                    // 8) Highlights
                     if(u_highlightsEnabled) {
                         color=applyHighlights(color,highlightsVal);
                     }
 
-                    // 9) Threshold
                     if(u_thresholdEnabled) {
                         vec4 th=applyThreshold(color,u_thresholdValue/255.0);
-                        // Threshold replaces color fully
                         color=th;
                     }
 
-                    // 10) Edge Detection
                     if(u_edgeDetectionEnabled) {
                         if(u_sobelEnabled) {
                             color=applySobel(u_texture,v_texCoord,sobAmt);
@@ -2067,15 +2103,26 @@
             const width = sourceCanvas.width;
             const height = sourceCanvas.height;
 
-            const webglCanvas = document.getElementById('webglCanvas');
-            webglCanvas.width = width;
-            webglCanvas.height = height;
+            // *** PERFORMANCE ADDITION: Downscale ROI before OCR if needed
+            const scaleFactor = parseInt(ocrScaleSlider.value) / 100;
+            const scaledWidth = Math.max(1, Math.floor(width * scaleFactor));
+            const scaledHeight = Math.max(1, Math.floor(height * scaleFactor));
 
-            gl.viewport(0,0,width,height);
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = scaledWidth;
+            tempCanvas.height = scaledHeight;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.drawImage(sourceCanvas, 0, 0, width, height, 0, 0, scaledWidth, scaledHeight);
+
+            const webglCanvas = document.getElementById('webglCanvas');
+            webglCanvas.width = scaledWidth;
+            webglCanvas.height = scaledHeight;
+
+            gl.viewport(0,0,scaledWidth,scaledHeight);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
             gl.bindTexture(gl.TEXTURE_2D, glTexture);
-            gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,sourceCanvas);
+            gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,tempCanvas);
 
             function setBool(u,v){ gl.uniform1i(u,v?1:0); }
             function setFloat(u,v){ gl.uniform1f(u,v); }
@@ -2115,14 +2162,14 @@
 
             gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 
-            const pixels = new Uint8ClampedArray(width*height*4);
-            gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+            const pixels = new Uint8ClampedArray(scaledWidth*scaledHeight*4);
+            gl.readPixels(0, 0, scaledWidth, scaledHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
             const offscreen=document.createElement('canvas');
-            offscreen.width=width;
-            offscreen.height=height;
+            offscreen.width=scaledWidth;
+            offscreen.height=scaledHeight;
             const offCtx=offscreen.getContext('2d');
-            const imageData=new ImageData(pixels,width,height);
+            const imageData=new ImageData(pixels,scaledWidth,scaledHeight);
             offCtx.putImageData(imageData,0,0);
 
             return new Promise(resolve=>{
@@ -2201,7 +2248,8 @@
             enableThreshold, thresholdSlider,
             enableEdgeDetection, enableSobel, sobelSlider,
             enableCanny, cannySlider,
-            workersSelect, frameSkippingSelect, frequencySelect, confidenceThresholdInput
+            workersSelect, frameSkippingSelect, frequencySelect, confidenceThresholdInput,
+            skipDuplicatesCheckbox, ocrScaleSlider, enableChangeDetection // *** PERFORMANCE ADDITION: Add new controls
         ];
 
         controls.forEach(ctrl => {
