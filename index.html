@@ -1312,7 +1312,7 @@
 
         function adjustWorkersIfNeeded() {
             if (!enableAutoWorkers.checked) return;
-            if (ocrTimes.length < 10) return; // wait until we have some data
+            if (ocrTimes.length < 6) return; // wait until we have some data
 
             const avgOcrTime = ocrTimes.reduce((a,b) => a+b,0)/ocrTimes.length;
 
@@ -1320,7 +1320,7 @@
             // If avg OCR time > 1200 ms and we have fewer than maxWorkers, increase workers.
             // If avg OCR time < 500 ms and we have more than minWorkers, decrease workers.
             // Be careful to not thrash worker counts too frequently.
-            if (avgOcrTime > 1200 && workers.length < maxWorkers) {
+            if (avgOcrTime > 800 && workers.length < maxWorkers) {
                 // Increase workers by 1
                 reinitializeWorkers(workers.length + 1);
                 ocrTimes = [];
