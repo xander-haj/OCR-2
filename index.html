@@ -309,8 +309,6 @@
             z-index: 3;
         }
 
-        /* We do not set width or height in CSS for #debugCanvas.
-           We will set them via JavaScript to match the ROI exactly. */
         #debugCanvas {
             position: absolute;
             top: 0;
@@ -894,13 +892,10 @@
 
     <script>
         /* Comprehensive Fixes:
-           - Ensure debugCanvas matches the ROI overlay size exactly.
-           - Ensure no scaling occurs.
-           - Disable image smoothing.
-           - Restore camera permission prompt on page load and auto-reload after granting permissions.
-           - Ensure all computations are done with rounding to avoid fractional pixels.
-           - High precision in shaders.
-           - No brevity, full code.
+           - Add event listeners for checkboxes and sliders to update in real-time.
+           - Ensure effects layer as intended (they already apply in sequence, which is layering).
+           - When controls change, re-run preprocessing on the current frame if possible to show changes in debugCanvas.
+           No features are removed or overwritten, only additions.
         */
 
         // Brightness Thresholds
@@ -1005,22 +1000,17 @@
             }
         });
 
-        // Camera permission logic (restored)
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const permissionStatus = await navigator.permissions.query({name: 'camera'});
                 if (permissionStatus.state !== 'granted') {
-                    // Request camera access
                     const tempStream = await navigator.mediaDevices.getUserMedia({video: true});
-                    // After granting, stop the stream to release the camera
                     tempStream.getTracks().forEach(track => track.stop());
-                    // Reload the page after permissions are granted
                     alert("Permissions granted successfully, page will now reload");
                     window.location.reload();
                 }
             } catch (err) {
                 console.error('Camera permission denied or error occurred:', err);
-                // If denied, user must manually grant permissions or no scanning.
             }
         });
 
@@ -1260,9 +1250,7 @@
             debugContext.clearRect(0, 0, debugCanvasElement.width, debugCanvasElement.height);
             const img = await createImageBitmap(preprocessedBlob);
 
-            debugContext.imageSmoothingEnabled = false; // Disable smoothing
-            // Draw without scaling if possible. If the img matches roiCanvas size, we can just draw it:
-            // debugCanvas and roiCanvas should have the same size as the ROI overlay.
+            debugContext.imageSmoothingEnabled = false;
             debugContext.drawImage(img, 0, 0, debugCanvasElement.width, debugCanvasElement.height);
 
             const averageBrightness = calculateAverageBrightness(debugCanvasElement);
@@ -1607,11 +1595,13 @@
         roiWidthSlider.addEventListener('input', function() {
             roiWidthPercent = parseInt(this.value);
             updateROIOverlay();
+            updatePreview();
         });
 
         roiHeightSlider.addEventListener('input', function() {
             roiHeightPercent = parseInt(this.value);
             updateROIOverlay();
+            updatePreview();
         });
 
         async function populateCameras(){
@@ -1722,7 +1712,7 @@
             const preprocessedBlob = await preprocessWithWebGL(roiCanvas);
 
             const debugCanvasElement = document.getElementById('debugCanvas');
-            debugCanvasElement.width = debugCanvasElement.width; // re-assign to ensure no scaling
+            debugCanvasElement.width = debugCanvasElement.width; 
             debugCanvasElement.height = debugCanvasElement.height; 
             const debugContext = debugCanvasElement.getContext('2d');
             debugContext.clearRect(0,0,debugCanvasElement.width, debugCanvasElement.height);
@@ -2028,7 +2018,6 @@
                 clarityAmount: gl.getUniformLocation(glProgram, "u_clarityAmount"),
                 highlightsEnabled: gl.getUniformLocation(glProgram, "u_highlightsEnabled"),
                 highlightsAmount: gl.getUniformLocation(glProgram, "u_highlightsAmount"),
-
                 smoothingEnabled: gl.getUniformLocation(glProgram, "u_smoothingEnabled"),
                 smoothingAmount: gl.getUniformLocation(glProgram, "u_smoothingAmount"),
                 thresholdEnabled: gl.getUniformLocation(glProgram, "u_thresholdEnabled"),
@@ -2101,6 +2090,86 @@
                 }, 'image/png');
             });
         }
+
+        // Function to update debugCanvas whenever controls change (if scanning is off, show last frame)
+        function updatePreview() {
+            if (!scanning && video.readyState === video.HAVE_ENOUGH_DATA) {
+                const videoDisplayWidth = video.clientWidth;
+                const videoDisplayHeight = video.clientHeight;
+                videoCanvas.width = videoDisplayWidth;
+                videoCanvas.height = videoDisplayHeight;
+                const ctx = videoCanvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, videoDisplayWidth, videoDisplayHeight);
+
+                const overlayRect = roiOverlay.getBoundingClientRect();
+                const videoRect = video.getBoundingClientRect();
+                const scaleX = videoDisplayWidth / videoRect.width;
+                const scaleY = videoDisplayHeight / videoRect.height;
+                const roiX = Math.round((overlayRect.left - videoRect.left) * scaleX);
+                const roiY = Math.round((overlayRect.top - videoRect.top) * scaleY);
+                const roiW = Math.round(overlayRect.width * scaleX);
+                const roiH = Math.round(overlayRect.height * scaleY);
+
+                if (roiW > 0 && roiH > 0) {
+                    roiCanvas.width = roiW;
+                    roiCanvas.height = roiH;
+                    const roiCtx = roiCanvas.getContext('2d');
+                    roiCtx.drawImage(videoCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+                    preprocessWithWebGL(roiCanvas).then(blob => {
+                        const debugCanvasElement = document.getElementById('debugCanvas');
+                        const debugContext = debugCanvasElement.getContext('2d');
+                        debugContext.clearRect(0, 0, debugCanvasElement.width, debugCanvasElement.height);
+
+                        createImageBitmap(blob).then(img => {
+                            debugContext.imageSmoothingEnabled = false;
+                            debugContext.drawImage(img, 0, 0, debugCanvasElement.width, debugCanvasElement.height);
+                            const averageBrightness = calculateAverageBrightness(debugCanvasElement);
+                            updateLightbulb(averageBrightness);
+
+                            debugContext.font = '16px Arial';
+                            debugContext.fillStyle = 'yellow';
+                            let yOffset = 20;
+                            if (enableGrayscale.checked) { debugContext.fillText(`Grayscale: ${grayscaleSlider.value}%`, 10, yOffset); yOffset += 20; }
+                            if (enableDenoise.checked) { debugContext.fillText(`Denoise: ${denoiseSlider.value}`, 10, yOffset); yOffset += 20; }
+                            if (enableSharpen.checked) { debugContext.fillText(`Sharpen: ${sharpenSlider.value}`, 10, yOffset); yOffset += 20; }
+                            if (enableBrightness.checked) { debugContext.fillText(`Brightness: ${brightnessSlider.value}`, 10, yOffset); yOffset += 20; }
+                            if (enableContrast.checked) { debugContext.fillText(`Contrast: ${contrastSlider.value}`, 10, yOffset); yOffset += 20; }
+                            if (enableClarity.checked) { debugContext.fillText(`Clarity: ${claritySlider.value}`, 10, yOffset); yOffset += 20; }
+                            if (enableHighlights.checked) { debugContext.fillText(`Highlights: ${highlightsSlider.value}`, 10, yOffset); yOffset += 20; }
+                            if (enableSmoothing.checked) { debugContext.fillText(`Smoothing: ${smoothingSlider.value}`, 10, yOffset); yOffset += 20; }
+                            if (enableThreshold.checked) { debugContext.fillText(`Threshold: ${thresholdSlider.value}`, 10, yOffset); yOffset += 20; }
+                            if (enableEdgeDetection.checked) {
+                                if (enableSobel.checked) { debugContext.fillText(`Sobel: ${sobelSlider.value}`, 10, yOffset); yOffset += 20; }
+                                if (enableCanny.checked) { debugContext.fillText(`Canny: ${cannySlider.value}`, 10, yOffset); yOffset += 20; }
+                            }
+                        });
+                    });
+                }
+            }
+        }
+
+        // Add event listeners to controls
+        const controls = [
+            enableGrayscale, grayscaleSlider,
+            enableDenoise, denoiseSlider,
+            enableSharpen, sharpenSlider,
+            enableBrightness, brightnessSlider,
+            enableContrast, contrastSlider,
+            enableClarity, claritySlider,
+            enableHighlights, highlightsSlider,
+            enableSmoothing, smoothingSlider,
+            enableThreshold, thresholdSlider,
+            enableEdgeDetection, enableSobel, sobelSlider,
+            enableCanny, cannySlider,
+            workersSelect, frameSkippingSelect, frequencySelect, confidenceThresholdInput
+        ];
+
+        controls.forEach(ctrl => {
+            ctrl.addEventListener('change', updatePreview);
+            ctrl.addEventListener('input', updatePreview);
+        });
+
     </script>
 </body>
 </html>
